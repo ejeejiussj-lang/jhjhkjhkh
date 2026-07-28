@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   FileText,
   Clock,
@@ -95,6 +95,9 @@ const parseNoteCompetencyDate = (note: ServiceNote) => {
 const isNoteLinkedToCommitment = (note: ServiceNote, commitment: Commitment) =>
   note.commitmentId === commitment.id || (!!note.commitmentNumber && note.commitmentNumber === commitment.number);
 
+const getNoteUniqueKey = (note: ServiceNote) =>
+  `${note.noteNumber || ''}|${note.contractNum || ''}`.toLowerCase().trim();
+
 const ACTIVE_TABS: ActiveTab[] = [
   'dashboard',
   'contratos-lancados',
@@ -116,6 +119,7 @@ const normalizeAlertTab = (tab?: string): ActiveTab => {
 };
 
 export default function App() {
+  const balanceSyncSignatureRef = useRef('');
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDate, setSelectedDate] = useState('07 de Julho, 2025');
@@ -349,6 +353,91 @@ export default function App() {
     localStorage.setItem('fiscalpro_categories', JSON.stringify(categories));
   }, [categories]);
 
+  useEffect(() => {
+    if (commitments.length === 0) return;
+
+    const seenNoteKeys = new Set<string>();
+    const duplicateNotes: ServiceNote[] = [];
+    const uniqueNotes = notes.filter((note) => {
+      const key = getNoteUniqueKey(note);
+      if (seenNoteKeys.has(key)) {
+        duplicateNotes.push(note);
+        return false;
+      }
+      seenNoteKeys.add(key);
+      return true;
+    });
+
+    const adjustedNotes = uniqueNotes.map((note) => ({ ...note }));
+
+    commitments.forEach((commitment) => {
+      let runningBalance = Number(commitment.value || 0);
+      adjustedNotes
+        .filter((note) => isNoteLinkedToCommitment(note, commitment))
+        .sort((a, b) => parseNoteCompetencyDate(a) - parseNoteCompetencyDate(b) || a.noteNumber.localeCompare(b.noteNumber))
+        .forEach((note) => {
+          note.commitmentId = commitment.id;
+          note.commitmentNumber = commitment.number;
+          note.commitmentValue = commitment.value;
+          note.budgetAllocation = commitment.budgetAllocation;
+          note.program = commitment.program;
+          note.commitmentBalance = runningBalance;
+          runningBalance -= Number(note.value || 0);
+          note.currentBalance = runningBalance;
+        });
+    });
+
+    const adjustedCommitments = commitments.map((commitment) => {
+      const usedValue = adjustedNotes
+        .filter((note) => isNoteLinkedToCommitment(note, commitment))
+        .reduce((sum, note) => sum + Number(note.value || 0), 0);
+      return {
+        ...commitment,
+        currentBalance: Number(commitment.value || 0) - usedValue
+      };
+    });
+
+    const signature = JSON.stringify({
+      notes: adjustedNotes.map((note) => [
+        note.id,
+        note.noteNumber,
+        note.contractNum,
+        note.attestationDate,
+        note.value,
+        note.commitmentId,
+        note.commitmentBalance,
+        note.currentBalance
+      ]),
+      commitments: adjustedCommitments.map((commitment) => [commitment.id, commitment.currentBalance])
+    });
+
+    if (signature === balanceSyncSignatureRef.current) return;
+    balanceSyncSignatureRef.current = signature;
+
+    const notesChanged =
+      duplicateNotes.length > 0 ||
+      adjustedNotes.length !== notes.length ||
+      adjustedNotes.some((note, index) => JSON.stringify(note) !== JSON.stringify(notes[index]));
+    const commitmentsChanged = adjustedCommitments.some(
+      (commitment, index) => commitment.currentBalance !== commitments[index]?.currentBalance
+    );
+
+    if (notesChanged) {
+      setNotes(adjustedNotes);
+      adjustedNotes.forEach((note) => saveNoteToSupabase(note));
+      duplicateNotes.forEach((note) => deleteNoteFromSupabase(note.id));
+    }
+
+    if (commitmentsChanged) {
+      setCommitments(adjustedCommitments);
+      adjustedCommitments.forEach((commitment, index) => {
+        if (commitment.currentBalance !== commitments[index]?.currentBalance) {
+          saveCommitmentToSupabase(commitment);
+        }
+      });
+    }
+  }, [notes, commitments]);
+
   const handleAddCategory = (newCat: string) => {
     const trimmed = newCat.trim();
     if (trimmed && !categories.includes(trimmed)) {
@@ -456,7 +545,18 @@ export default function App() {
   };
 
   const applyNotesAndRecalculateBalances = (nextNotes: ServiceNote[]) => {
-    const adjustedNotes = nextNotes.map((note) => ({ ...note }));
+    const seenNoteKeys = new Set<string>();
+    const duplicateNotes: ServiceNote[] = [];
+    const uniqueNotes = nextNotes.filter((note) => {
+      const key = getNoteUniqueKey(note);
+      if (seenNoteKeys.has(key)) {
+        duplicateNotes.push(note);
+        return false;
+      }
+      seenNoteKeys.add(key);
+      return true;
+    });
+    const adjustedNotes = uniqueNotes.map((note) => ({ ...note }));
 
     commitments.forEach((commitment) => {
       let runningBalance = Number(commitment.value || 0);
@@ -478,6 +578,7 @@ export default function App() {
 
     setNotes(adjustedNotes);
     adjustedNotes.forEach((note) => saveNoteToSupabase(note));
+    duplicateNotes.forEach((note) => deleteNoteFromSupabase(note.id));
 
     setCommitments((prev) =>
       prev.map((commitment) => {

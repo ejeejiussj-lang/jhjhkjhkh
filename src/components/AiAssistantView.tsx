@@ -81,6 +81,44 @@ interface AiAssistantViewProps {
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
 
+const fixMojibake = (value: string) => {
+  const replacements: Record<string, string> = {
+    'OlÃ¡': 'Olá',
+    'VocÃª': 'Você',
+    'tambÃ©m': 'também',
+    'estÃ¡': 'está',
+    'possÃ­veis': 'possíveis',
+    'pendÃªncias': 'pendências',
+    'atenÃ§Ã£o': 'atenção',
+    'anÃ¡lise': 'análise',
+    'nÃ£o': 'não',
+    'aÃ§Ã£o': 'ação',
+    'aÃ§Ãµes': 'ações',
+    'AÃ§Ãµes': 'Ações',
+    'automÃ¡tica': 'automática',
+    'automÃ¡tico': 'automático',
+    'disponÃ­vel': 'disponível',
+    'nÃºmero': 'número',
+    'descriÃ§Ã£o': 'descrição',
+    'lÃ­quido': 'líquido',
+    'informaÃ§Ãµes': 'informações',
+    'rÃ¡pida': 'rápida',
+    'NÃ£o': 'Não',
+    'ConcluÃ­': 'Concluí',
+    'Ã¡': 'á',
+    'Ã©': 'é',
+    'Ã­': 'í',
+    'Ã³': 'ó',
+    'Ãº': 'ú',
+    'Ã£': 'ã',
+    'Ãµ': 'õ',
+    'Ã§': 'ç',
+    'Ãª': 'ê'
+  };
+
+  return Object.entries(replacements).reduce((text, [from, to]) => text.replaceAll(from, to), value);
+};
+
 const parseJsonResponse = (text: string): AiResponse => {
   const cleaned = text
     .replace(/```json/gi, '')
@@ -91,9 +129,13 @@ const parseJsonResponse = (text: string): AiResponse => {
   const jsonText = firstBrace >= 0 && lastBrace >= 0 ? cleaned.slice(firstBrace, lastBrace + 1) : cleaned;
 
   try {
-    return JSON.parse(jsonText);
+    const parsed = JSON.parse(jsonText);
+    return {
+      ...parsed,
+      reply: fixMojibake(parsed.reply || '')
+    };
   } catch {
-    return { reply: cleaned || 'Consegui analisar, mas nao consegui montar uma acao automatica.' };
+    return { reply: fixMojibake(cleaned) || 'Consegui analisar, mas não consegui montar uma ação automática.' };
   }
 };
 
@@ -190,7 +232,7 @@ const createLocalResponse = (prompt: string): AiResponse => {
       creditor,
       object,
       totalValue,
-      category: 'Secretaria Municipal de Saude'
+      category: 'Secretaria Municipal de Saúde'
     });
   }
 
@@ -221,12 +263,12 @@ const createLocalResponse = (prompt: string): AiResponse => {
   if (actions.length === 0) {
     return {
       reply:
-        'Consegui ler a mensagem, mas faltam dados para cadastrar. Envie numero de contrato ou empenho, credor, objeto, dotacao e valor.'
+        'Consegui ler a mensagem, mas faltam dados para cadastrar. Envie número de contrato ou empenho, credor, objeto, dotação e valor.'
     };
   }
 
   return {
-    reply: 'Identifiquei os dados principais e executei o cadastro automatico disponivel.',
+    reply: 'Identifiquei os dados principais e executei o cadastro automático disponível.',
     actions
   };
 };
@@ -370,7 +412,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
         actions.push({
           type: 'create_alert',
           title: `Alerta de saldo do empenho ${commitment.number}`,
-          desc: `Saldo atual: ${formatCurrency(currentBalance)}. Dotacao ${commitment.budgetAllocation}, programa ${commitment.program}.`,
+          desc: `Saldo atual: ${formatCurrency(currentBalance)}. Dotação ${commitment.budgetAllocation}, programa ${commitment.program}.`,
           linkTab: 'empenhos'
         });
       }
@@ -378,11 +420,11 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
 
     notes.forEach((note) => {
       if (!note.commitmentNumber || !note.budgetAllocation || !note.program) {
-        findings.push(`Nota ${note.noteNumber} sem vinculo completo de empenho/dotacao/programa.`);
+        findings.push(`Nota ${note.noteNumber} sem vínculo completo de empenho/dotação/programa.`);
         actions.push({
           type: 'create_alert',
           title: `Nota ${note.noteNumber} sem empenho completo`,
-          desc: `Vincule a nota ao empenho correto para puxar dotacao, programa e saldo.`,
+          desc: `Vincule a nota ao empenho correto para puxar dotação, programa e saldo.`,
           linkTab: 'notas'
         });
       }
@@ -392,7 +434,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
         actions.push({
           type: 'create_alert',
           title: `Nota ${note.noteNumber} pendente de atesto`,
-          desc: `Informe a data de atesto para marcar a nota como concluida.`,
+          desc: `Informe a data de atesto para marcar a nota como concluída.`,
           linkTab: 'notas'
         });
       }
@@ -452,7 +494,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
             id: `cred-ai-${Date.now()}-${Math.random().toString(16).slice(2)}`,
             name: action.name,
             cnpj: action.cnpj || '',
-            category: action.category || 'Saude',
+            category: action.category || 'Saúde',
             activeContractsCount: 0,
             totalValue: 0,
             status: 'Ativo'
@@ -473,7 +515,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
             totalValue: Number(action.totalValue) || 0,
             usedValue: 0,
             status: 'Ativo',
-            category: action.category || 'Secretaria Municipal de Saude',
+            category: action.category || 'Secretaria Municipal de Saúde',
             fiscalName: '',
             fiscalPortaria: '',
             fiscalPortariaPublicationDate: '',
@@ -512,8 +554,8 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
           onAddNote({
             id: `n-ai-${Date.now()}-${Math.random().toString(16).slice(2)}`,
             noteNumber: action.noteNumber,
-            contractNum: action.contractNum || selectedContract?.contractNum || 'Contrato Nao Selecionado',
-            creditor: action.creditor || selectedContract?.creditor || 'Credor Nao Identificado',
+            contractNum: action.contractNum || selectedContract?.contractNum || 'Contrato Não Selecionado',
+            creditor: action.creditor || selectedContract?.creditor || 'Credor Não Identificado',
             issueDate: new Date().toLocaleDateString('pt-BR'),
             value: noteValue,
             status: 'Pendente',
@@ -671,7 +713,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
             </div>
             <div>
               <h1 className="text-base font-bold text-slate-900">IA FiscalPro</h1>
-              <p className="text-xs text-slate-500">Contratos, notas, empenhos, objetos e cadastros automaticos.</p>
+              <p className="text-xs text-slate-500">Contratos, notas, empenhos, objetos e cadastros automáticos.</p>
             </div>
           </div>
           <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
@@ -750,7 +792,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
                 }
               }}
               rows={2}
-              placeholder="Digite uma orientacao ou anexe PDFs para extrair contrato, empenho, nota fiscal, alertas e cadastros..."
+              placeholder="Digite uma orientação ou anexe PDFs para extrair contrato, empenho, nota fiscal, alertas e cadastros..."
               className="flex-1 resize-none px-3.5 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
             />
             <button
@@ -772,12 +814,12 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
             <span>O que ela faz</span>
           </h2>
           <div className="mt-3 space-y-2 text-xs text-slate-600">
-            <p>Identifica objeto, numero de contrato, credor, empenho, dotacao, programa e valores.</p>
-            <p>Le PDFs anexados e extrai informacoes de contratos, empenhos e notas fiscais.</p>
+            <p>Identifica objeto, número de contrato, credor, empenho, dotação, programa e valores.</p>
+            <p>Lê PDFs anexados e extrai informações de contratos, empenhos e notas fiscais.</p>
             <p>Cadastra contrato, empenho, credor e nota quando os dados estiverem completos.</p>
-            <p>Emite alertas administrativos para o usuario quando detectar risco ou pendencia.</p>
-            <p>Ao lancar nota, desconta do saldo do empenho pelo fluxo normal do sistema.</p>
-            <p>Remove PDFs anexados antes do envio pelo botao ao lado do arquivo.</p>
+            <p>Emite alertas administrativos para o usuário quando detectar risco ou pendência.</p>
+            <p>Ao lançar nota, desconta do saldo do empenho pelo fluxo normal do sistema.</p>
+            <p>Remove PDFs anexados antes do envio pelo botão ao lado do arquivo.</p>
           </div>
         </div>
 
@@ -801,7 +843,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
 
         {lastActions.length > 0 && (
           <div className="border-t border-slate-100 pt-4">
-            <h3 className="text-xs font-bold uppercase text-slate-400">Ultimas acoes</h3>
+            <h3 className="text-xs font-bold uppercase text-slate-400">Últimas ações</h3>
             <div className="mt-3 space-y-2">
               {lastActions.map((item) => (
                 <div key={item} className="flex items-start gap-2 text-xs text-emerald-700 font-semibold">
