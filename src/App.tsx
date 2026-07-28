@@ -45,6 +45,7 @@ import {
   deleteCreditorFromSupabase,
   fetchNotesFromSupabase,
   saveNoteToSupabase,
+  deleteNoteFromSupabase,
   fetchCommitmentsFromSupabase,
   saveCommitmentToSupabase,
   deleteCommitmentFromSupabase,
@@ -62,6 +63,26 @@ const DEFAULT_CATEGORIES = [
   'Secretaria Municipal de Saúde',
   'Fundo Municipal de Saúde'
 ];
+
+const parseContractEndDate = (endDate: string) => {
+  const parts = endDate.split('/');
+  if (parts.length !== 3) return null;
+  const d = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10) - 1;
+  const y = parseInt(parts[2], 10);
+  if ([d, m, y].some(Number.isNaN)) return null;
+  const date = new Date(y, m, d);
+  date.setHours(0, 0, 0, 0);
+  return date;
+};
+
+const getDaysUntilDate = (endDate: string) => {
+  const target = parseContractEndDate(endDate);
+  if (!target) return null;
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+};
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
@@ -328,6 +349,12 @@ export default function App() {
       c.object.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const dashboardContracts = [...contracts].sort((a, b) => {
+    const aDate = parseContractEndDate(a.endDate)?.getTime() ?? Number.MAX_SAFE_INTEGER;
+    const bDate = parseContractEndDate(b.endDate)?.getTime() ?? Number.MAX_SAFE_INTEGER;
+    return aDate - bDate;
+  });
+
   // Handlers
   const handleAddContract = (newContract: Omit<Contract, 'id'>) => {
     const contract: Contract = {
@@ -384,6 +411,25 @@ export default function App() {
           const updatedCommitment = {
             ...commitment,
             currentBalance: note.currentBalance ?? Math.max(0, commitment.currentBalance - note.value)
+          };
+          saveCommitmentToSupabase(updatedCommitment);
+          return updatedCommitment;
+        })
+      );
+    }
+  };
+
+  const handleDeleteNote = (note: ServiceNote) => {
+    setNotes(notes.filter((item) => item.id !== note.id));
+    deleteNoteFromSupabase(note.id);
+
+    if (note.commitmentId) {
+      setCommitments((prev) =>
+        prev.map((commitment) => {
+          if (commitment.id !== note.commitmentId) return commitment;
+          const updatedCommitment = {
+            ...commitment,
+            currentBalance: (commitment.currentBalance || 0) + note.value
           };
           saveCommitmentToSupabase(updatedCommitment);
           return updatedCommitment;
@@ -504,8 +550,8 @@ export default function App() {
       if (c.status === 'A Vencer') {
         items.push({
           id: `contract-exp-${c.id}`,
-          title: `Contrato A Vencer: ${c.contractNum}`,
-          desc: `Credor: ${c.creditor} | Vencimento: ${c.endDate}`,
+          title: `Contrato A Vencer: ${c.creditor}`,
+          desc: `Contrato: ${c.contractNum} | Vencimento: ${c.endDate}`,
           time: 'Atenção Vigência',
           type: 'contract',
           read: readNotificationIds.includes(`contract-exp-${c.id}`),
@@ -690,7 +736,7 @@ export default function App() {
                       <p className="font-semibold text-slate-700 text-xs">Nenhum contrato cadastrado</p>
                     </div>
                   ) : (
-                    contracts.map((c) => {
+                    dashboardContracts.map((c) => {
                       const notesSum = notes
                         ? notes.filter((n) => n.contractNum === c.contractNum).reduce((sum, n) => sum + n.value, 0)
                         : 0;
@@ -698,21 +744,8 @@ export default function App() {
                       const remaining = Math.max(0, c.totalValue - used);
                       const usagePct = c.totalValue > 0 ? Math.round((used / c.totalValue) * 100) : 0;
 
-                      // Calculate days until expiration
-                      let daysRemaining: number | null = null;
-                      if (c.endDate) {
-                        const parts = c.endDate.split('/');
-                        if (parts.length === 3) {
-                          const d = parseInt(parts[0], 10);
-                          const m = parseInt(parts[1], 10) - 1;
-                          const y = parseInt(parts[2], 10);
-                          const target = new Date(y, m, d);
-                          const now = new Date();
-                          now.setHours(0, 0, 0, 0);
-                          target.setHours(0, 0, 0, 0);
-                          daysRemaining = Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-                        }
-                      }
+                      const daysRemaining = getDaysUntilDate(c.endDate);
+                      const isExpiring = daysRemaining !== null && daysRemaining <= 90;
 
                       // Determine Balance Alert
                       let balanceBadge = (
@@ -761,14 +794,21 @@ export default function App() {
                       }
 
                       return (
-                        <div key={c.id} className="py-3.5 first:pt-1 last:pb-1 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                        <div
+                          key={c.id}
+                          className={`py-3.5 first:pt-1 last:pb-1 flex flex-col md:flex-row md:items-center justify-between gap-3 ${
+                            isExpiring ? 'bg-rose-50/45 -mx-3 px-3 rounded-xl' : ''
+                          }`}
+                        >
                           <div className="space-y-1 md:w-[35%] shrink-0">
                             <div className="flex items-center space-x-2">
-                              <span className="text-xs font-bold text-slate-900 font-mono">{c.contractNum}</span>
+                              <span className={`text-xs font-bold ${isExpiring ? 'text-rose-800' : 'text-slate-900'} truncate`} title={c.creditor}>
+                                {c.creditor}
+                              </span>
                               {balanceBadge}
                             </div>
-                            <span className="text-xs text-slate-600 font-medium block truncate" title={c.creditor}>
-                              {c.creditor}
+                            <span className="text-xs text-slate-600 font-medium block truncate font-mono" title={c.contractNum}>
+                              Contrato {c.contractNum}
                             </span>
                           </div>
 
@@ -886,6 +926,7 @@ export default function App() {
               commitments={commitments}
               creditors={creditors}
               onAddNote={handleAddNote}
+              onDeleteNote={handleDeleteNote}
             />
           )}
 

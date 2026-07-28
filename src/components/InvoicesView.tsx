@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
-import { Receipt, Plus, FileText, CheckCircle2, Clock, Link2, Link2Off, Eye, Info, HelpCircle, X, Search, Building2, Landmark, Filter } from 'lucide-react';
+import { Receipt, Plus, FileText, CheckCircle2, Clock, Link2, Link2Off, Eye, Info, HelpCircle, X, Search, Building2, Landmark, Filter, Trash2 } from 'lucide-react';
 import { ServiceNote, Contract, Creditor, Commitment } from '../types';
 
 const BUDGET_ALLOCATIONS = ['06.01', '06.06'];
@@ -10,6 +10,7 @@ interface InvoicesViewProps {
   commitments: Commitment[];
   creditors?: Creditor[];
   onAddNote: (note: ServiceNote) => void;
+  onDeleteNote: (note: ServiceNote) => void;
 }
 
 export const InvoicesView: React.FC<InvoicesViewProps> = ({
@@ -17,7 +18,8 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
   contracts = [],
   commitments = [],
   creditors = [],
-  onAddNote
+  onAddNote,
+  onDeleteNote
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [noteNumber, setNoteNumber] = useState('');
@@ -230,12 +232,13 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                 <th className="py-3 px-4">Valor Líquido</th>
                 <th className="py-3 px-4">Saldo Atual</th>
                 <th className="py-3 px-4">Status</th>
+                <th className="py-3 px-4 text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredNotes.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="text-center py-8 text-slate-400 italic">
+                  <td colSpan={12} className="text-center py-8 text-slate-400 italic">
                     Nenhuma nota fiscal encontrada para os filtros selecionados.
                   </td>
                 </tr>
@@ -333,6 +336,21 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                         >
                           {n.status}
                         </span>
+                      </td>
+
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Deseja excluir a nota ${n.noteNumber}? O valor volta para o saldo do empenho vinculado.`)) {
+                              onDeleteNote(n);
+                            }
+                          }}
+                          className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-rose-700 bg-rose-100/70 hover:bg-rose-200/80 border border-rose-200/80 rounded-lg transition-colors cursor-pointer"
+                          title="Excluir nota"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Excluir</span>
+                        </button>
                       </td>
                     </tr>
                   );

@@ -299,6 +299,14 @@ export async function saveNoteToSupabase(note: ServiceNote) {
   }
 }
 
+export async function deleteNoteFromSupabase(id: string) {
+  try {
+    await supabase.from('service_notes').delete().eq('id', id);
+  } catch (err) {
+    console.error('Erro ao deletar nota no Supabase:', err);
+  }
+}
+
 export async function fetchCommitmentsFromSupabase(): Promise<Commitment[] | null> {
   try {
     const { data, error } = await supabase.from('commitments').select('*');
