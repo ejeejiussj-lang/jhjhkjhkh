@@ -50,6 +50,8 @@ export interface ServiceNote {
   contractNum: string;
   creditor: string;
   issueDate: string;
+  attestationDate?: string;
+  fiscalName?: string;
   value: number;
   status: 'Emitida' | 'Paga' | 'Pendente' | 'Concluido';
   budgetAllocation?: '06.01' | '06.06' | string;

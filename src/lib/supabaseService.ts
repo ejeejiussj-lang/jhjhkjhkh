@@ -74,6 +74,8 @@ CREATE TABLE IF NOT EXISTS public.service_notes (
   contract_num TEXT,
   creditor TEXT NOT NULL,
   issue_date TEXT,
+  attestation_date TEXT,
+  fiscal_name TEXT,
   value NUMERIC DEFAULT 0,
   status TEXT DEFAULT 'Pendente',
   budget_allocation TEXT,
@@ -87,6 +89,8 @@ CREATE TABLE IF NOT EXISTS public.service_notes (
 );
 
 ALTER TABLE public.service_notes ADD COLUMN IF NOT EXISTS budget_allocation TEXT;
+ALTER TABLE public.service_notes ADD COLUMN IF NOT EXISTS attestation_date TEXT;
+ALTER TABLE public.service_notes ADD COLUMN IF NOT EXISTS fiscal_name TEXT;
 ALTER TABLE public.service_notes ADD COLUMN IF NOT EXISTS program TEXT;
 ALTER TABLE public.service_notes ADD COLUMN IF NOT EXISTS commitment_number TEXT;
 ALTER TABLE public.service_notes ADD COLUMN IF NOT EXISTS commitment_value NUMERIC DEFAULT 0;
@@ -260,6 +264,8 @@ export async function fetchNotesFromSupabase(): Promise<ServiceNote[] | null> {
       contractNum: item.contract_num || '',
       creditor: item.creditor || '',
       issueDate: item.issue_date || '',
+      attestationDate: item.attestation_date || '',
+      fiscalName: item.fiscal_name || '',
       value: Number(item.value || 0),
       status: item.status || 'Pendente',
       budgetAllocation: item.budget_allocation || '',
@@ -284,6 +290,8 @@ export async function saveNoteToSupabase(note: ServiceNote) {
       contract_num: note.contractNum,
       creditor: note.creditor,
       issue_date: note.issueDate,
+      attestation_date: note.attestationDate || '',
+      fiscal_name: note.fiscalName || '',
       value: note.value,
       status: note.status,
       budget_allocation: note.budgetAllocation,

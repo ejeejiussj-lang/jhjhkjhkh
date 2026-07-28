@@ -991,9 +991,7 @@ export default function App() {
               commitments={commitments}
               creditors={creditors}
               onAddNote={handleAddNote}
-              onUpdateNote={handleUpdateNote}
               onDeleteNote={handleDeleteNote}
-              onViewCommitment={() => setActiveTab('empenhos')}
             />
           )}
 
