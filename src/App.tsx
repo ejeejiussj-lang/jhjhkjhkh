@@ -84,6 +84,17 @@ const getDaysUntilDate = (endDate: string) => {
   return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 };
 
+const parseNoteCompetencyDate = (note: ServiceNote) => {
+  const value = note.attestationDate || note.issueDate || '';
+  const br = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (br) return new Date(Number(br[3]), Number(br[2]) - 1, Number(br[1])).getTime();
+  const parsed = new Date(value).getTime();
+  return Number.isNaN(parsed) ? Number.MAX_SAFE_INTEGER : parsed;
+};
+
+const isNoteLinkedToCommitment = (note: ServiceNote, commitment: Commitment) =>
+  note.commitmentId === commitment.id || (!!note.commitmentNumber && note.commitmentNumber === commitment.number);
+
 const ACTIVE_TABS: ActiveTab[] = [
   'dashboard',
   'contratos-lancados',
@@ -444,69 +455,61 @@ export default function App() {
     saveCreditorToSupabase(creditor);
   };
 
-  const handleAddNote = (note: ServiceNote) => {
-    setNotes([note, ...notes]);
-    saveNoteToSupabase(note);
+  const applyNotesAndRecalculateBalances = (nextNotes: ServiceNote[]) => {
+    const adjustedNotes = nextNotes.map((note) => ({ ...note }));
 
-    if (note.commitmentId) {
-      setCommitments((prev) =>
-        prev.map((commitment) => {
-          if (commitment.id !== note.commitmentId) return commitment;
-          const updatedCommitment = {
-            ...commitment,
-            currentBalance: note.currentBalance ?? Math.max(0, commitment.currentBalance - note.value)
-          };
+    commitments.forEach((commitment) => {
+      let runningBalance = Number(commitment.value || 0);
+      const linkedNotes = adjustedNotes
+        .filter((note) => isNoteLinkedToCommitment(note, commitment))
+        .sort((a, b) => parseNoteCompetencyDate(a) - parseNoteCompetencyDate(b) || a.noteNumber.localeCompare(b.noteNumber));
+
+      linkedNotes.forEach((note) => {
+        note.commitmentId = commitment.id;
+        note.commitmentNumber = commitment.number;
+        note.commitmentValue = commitment.value;
+        note.budgetAllocation = commitment.budgetAllocation;
+        note.program = commitment.program;
+        note.commitmentBalance = runningBalance;
+        runningBalance -= Number(note.value || 0);
+        note.currentBalance = runningBalance;
+      });
+    });
+
+    setNotes(adjustedNotes);
+    adjustedNotes.forEach((note) => saveNoteToSupabase(note));
+
+    setCommitments((prev) =>
+      prev.map((commitment) => {
+        const usedValue = adjustedNotes
+          .filter((note) => isNoteLinkedToCommitment(note, commitment))
+          .reduce((sum, note) => sum + Number(note.value || 0), 0);
+        const updatedCommitment = {
+          ...commitment,
+          currentBalance: Number(commitment.value || 0) - usedValue
+        };
+
+        if (updatedCommitment.currentBalance !== commitment.currentBalance) {
           saveCommitmentToSupabase(updatedCommitment);
-          return updatedCommitment;
-        })
-      );
-    }
+        }
+
+        return updatedCommitment;
+      })
+    );
+  };
+
+  const handleAddNote = (note: ServiceNote) => {
+    applyNotesAndRecalculateBalances([note, ...notes]);
   };
 
   const handleDeleteNote = (note: ServiceNote) => {
-    setNotes(notes.filter((item) => item.id !== note.id));
+    const nextNotes = notes.filter((item) => item.id !== note.id);
     deleteNoteFromSupabase(note.id);
-
-    if (note.commitmentId) {
-      setCommitments((prev) =>
-        prev.map((commitment) => {
-          if (commitment.id !== note.commitmentId) return commitment;
-          const updatedCommitment = {
-            ...commitment,
-            currentBalance: (commitment.currentBalance || 0) + note.value
-          };
-          saveCommitmentToSupabase(updatedCommitment);
-          return updatedCommitment;
-        })
-      );
-    }
+    applyNotesAndRecalculateBalances(nextNotes);
   };
 
   const handleUpdateNote = (note: ServiceNote) => {
-    const oldNote = notes.find((item) => item.id === note.id);
-    setNotes(notes.map((item) => (item.id === note.id ? note : item)));
-    saveNoteToSupabase(note);
-
-    if (oldNote?.commitmentId || note.commitmentId) {
-      setCommitments((prev) =>
-        prev.map((commitment) => {
-          let updatedBalance = commitment.currentBalance || 0;
-          if (oldNote?.commitmentId === commitment.id) {
-            updatedBalance += oldNote.value;
-          }
-          if (note.commitmentId === commitment.id) {
-            updatedBalance -= note.value;
-          }
-          if (updatedBalance === commitment.currentBalance) return commitment;
-          const updatedCommitment = {
-            ...commitment,
-            currentBalance: updatedBalance
-          };
-          saveCommitmentToSupabase(updatedCommitment);
-          return updatedCommitment;
-        })
-      );
-    }
+    applyNotesAndRecalculateBalances(notes.map((item) => (item.id === note.id ? note : item)));
   };
 
   const handleAddAiAlert = (alert: { title: string; desc: string; linkTab?: ActiveTab }) => {

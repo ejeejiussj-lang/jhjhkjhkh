@@ -41,9 +41,9 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
     };
   });
 
-  // Filter notes
+  // Filter notes by competency: Data de Atesto
   const filteredNotes = enrichedNotes.filter((note) => {
-    const d = parseBRDate(note.issueDate);
+    const d = parseBRDate(note.attestationDate || '');
     const monthMatch = selectedMonth === 'all' || (d && d.getMonth() + 1 === selectedMonth);
     const secretariaMatch =
       selectedSecretaria === 'all' || note.secretaria.toLowerCase() === selectedSecretaria.toLowerCase();
@@ -55,6 +55,10 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       note.secretaria.toLowerCase().includes(searchTerm.toLowerCase());
 
     return monthMatch && secretariaMatch && searchMatch;
+  }).sort((a, b) => {
+    const aDate = parseBRDate(a.attestationDate || '')?.getTime() ?? Number.MAX_SAFE_INTEGER;
+    const bDate = parseBRDate(b.attestationDate || '')?.getTime() ?? Number.MAX_SAFE_INTEGER;
+    return aDate - bDate;
   });
 
   const totalFilteredValue = filteredNotes.reduce((acc, curr) => acc + curr.value, 0);
@@ -196,6 +200,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               <thead>
                 <tr className="bg-slate-50/80 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200/60 text-[10px]">
                   <th className="py-3 px-4">Nº da Nota</th>
+                  <th className="py-3 px-4">Competência / Atesto</th>
                   <th className="py-3 px-4">Data de Emissão</th>
                   <th className="py-3 px-4">Credor / Empresa</th>
                   <th className="py-3 px-4">Contrato</th>
@@ -210,9 +215,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                     <td className="py-3 px-4 font-extrabold text-slate-900 font-mono">
                       {note.noteNumber}
                     </td>
-                    <td className="py-3 px-4 font-semibold text-slate-700">
-                      {note.issueDate}
-                    </td>
+                    <td className="py-3 px-4 font-semibold text-slate-700">{note.attestationDate || '-'}</td>
+                    <td className="py-3 px-4 font-semibold text-slate-700">{note.issueDate || '-'}</td>
                     <td className="py-3 px-4 font-semibold text-slate-800">
                       {note.creditor}
                     </td>
@@ -258,7 +262,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between text-xs">
             <span className="font-semibold text-slate-700">Total Notas (SMS)</span>
             <span className="font-extrabold text-slate-900">
-              R$ {enrichedNotes.filter(n => n.secretaria.toLowerCase().includes('secretaria')).reduce((sum, n) => sum + n.value, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              R$ {filteredNotes.filter(n => n.secretaria.toLowerCase().includes('secretaria')).reduce((sum, n) => sum + n.value, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </span>
           </div>
         </div>
@@ -271,7 +275,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between text-xs">
             <span className="font-semibold text-slate-700">Total Notas (FMS)</span>
             <span className="font-extrabold text-slate-900">
-              R$ {enrichedNotes.filter(n => n.secretaria.toLowerCase().includes('fundo')).reduce((sum, n) => sum + n.value, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              R$ {filteredNotes.filter(n => n.secretaria.toLowerCase().includes('fundo')).reduce((sum, n) => sum + n.value, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </span>
           </div>
         </div>
@@ -279,5 +283,3 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
     </div>
   );
 };
-
-

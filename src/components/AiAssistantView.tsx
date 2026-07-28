@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Bot, CheckCircle2, FileText, Loader2, Paperclip, Send, Sparkles, Wand2, X } from 'lucide-react';
 import { ActiveTab, Commitment, Contract, Creditor, ServiceNote } from '../types';
 import { PROGRAMS_BY_ALLOCATION } from './CommitmentsView';
-import { supabase } from '../lib/supabase';
+import { getSupabaseConfig } from '../lib/supabase';
 
 type ChatRole = 'assistant' | 'user';
 
@@ -600,11 +600,19 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
 
     try {
       const audit = runAudit ? buildSystemAudit() : undefined;
-      const { data, error } = await supabase.functions.invoke('openrouter-chat', {
-        body: { prompt: finalPrompt, systemContext, localAudit: audit?.reply || '', files: filesToSend }
+      const supabaseConfig = getSupabaseConfig();
+      const response = await fetch(`${supabaseConfig.url}/functions/v1/openrouter-chat`, {
+        method: 'POST',
+        headers: {
+          apikey: supabaseConfig.anonKey,
+          Authorization: `Bearer ${supabaseConfig.anonKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ prompt: finalPrompt, systemContext, localAudit: audit?.reply || '', files: filesToSend })
       });
+      const data = await response.json().catch(() => null);
 
-      if (error || data?.error) {
+      if (!response.ok || data?.error) {
         const fallback = createLocalResponse(finalPrompt);
         const executed = executeActions([...(audit?.actions || []), ...(fallback.actions || [])]);
         const executedText = executed.length ? `\n\nAções executadas:\n${executed.map((item) => `- ${item}`).join('\n')}` : '';
