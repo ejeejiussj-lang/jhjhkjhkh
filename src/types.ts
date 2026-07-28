@@ -106,7 +106,8 @@ export type ActiveTab =
   | 'notas'
   | 'aditivos'
   | 'relatorios'
-  | 'alertas';
+  | 'alertas'
+  | 'ia';
 
 export interface SystemNotification {
   id: string;

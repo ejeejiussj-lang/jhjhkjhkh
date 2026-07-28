@@ -8,6 +8,7 @@ import {
   Layers,
   BarChart3,
   BellRing,
+  Bot,
   Settings,
   ShieldCheck,
   FileCheck2,
@@ -46,7 +47,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const gestaoItems = [
     { id: 'relatorios', label: 'Relatórios', icon: BarChart3 },
-    { id: 'alertas', label: 'Alertas', icon: BellRing }
+    { id: 'alertas', label: 'Alertas', icon: BellRing },
+    { id: 'ia', label: 'IA', icon: Bot }
   ];
 
   const configuracoesItems = [

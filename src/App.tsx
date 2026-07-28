@@ -31,6 +31,7 @@ import { AlertsView } from './components/AlertsView';
 import { FiscaisView } from './components/FiscaisView';
 import { AmendmentsView } from './components/AmendmentsView';
 import { CommitmentsView } from './components/CommitmentsView';
+import { AiAssistantView } from './components/AiAssistantView';
 import { AuthModal } from './components/AuthModal';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { supabase } from './lib/supabase';
@@ -912,6 +913,8 @@ export default function App() {
               onNavigateTab={(tab) => setActiveTab(tab)}
             />
           )}
+
+          {activeTab === 'ia' && <AiAssistantView />}
         </main>
       </div>
 
