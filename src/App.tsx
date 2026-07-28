@@ -545,10 +545,12 @@ export default function App() {
         if (c.contractNum === newAmend.contractNum) {
           const updatedValue = newAmend.valueChange ? c.totalValue + newAmend.valueChange : c.totalValue;
           const updatedEndDate = newAmend.newEndDate ? newAmend.newEndDate : c.endDate;
+          const updatedStatus = newAmend.type === 'Aditivo por Rescisão' ? 'Encerrado' : c.status;
           const updatedContract = {
             ...c,
             totalValue: updatedValue,
-            endDate: updatedEndDate
+            endDate: updatedEndDate,
+            status: updatedStatus as Contract['status']
           };
           saveContractToSupabase(updatedContract);
           return updatedContract;
@@ -937,6 +939,7 @@ export default function App() {
                     setActiveTab('lancar-contrato');
                   }}
                   onDeleteContract={handleDeleteContract}
+                  onAddAmendment={handleAddAmendment}
                   onViewAllContracts={() => setActiveTab('contratos-lancados')}
                 />
               </div>

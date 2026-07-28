@@ -5,7 +5,6 @@ import {
   Users,
   Receipt,
   Banknote,
-  Layers,
   BarChart3,
   BellRing,
   Bot,
@@ -41,8 +40,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'fiscais', label: 'Cadastrar Fiscais / Portarias', icon: UserCheck },
     { id: 'credores', label: 'Credores', icon: Users },
     { id: 'empenhos', label: 'Empenhos', icon: Banknote },
-    { id: 'notas', label: 'Notas de Serviços', icon: Receipt },
-    { id: 'aditivos', label: 'Aditivos', icon: Layers }
+    { id: 'notas', label: 'Notas de Serviços', icon: Receipt }
   ];
 
   const gestaoItems = [

@@ -89,7 +89,18 @@ export interface ContractAmendment {
   amendmentNum: string;
   contractNum: string;
   creditor: string;
-  type: 'Prorrogação de Prazo' | 'Acréscimo de Valor' | 'Redução de Valor' | 'Reajuste / Repactuação' | 'Alteração Qualitativa' | 'Outros';
+  type:
+    | 'Prorrogação Contratual'
+    | 'Realinhamento'
+    | 'Aditivo por Rescisão'
+    | 'Aditivo de Redução de Valor'
+    | 'Acréscimo de Valor'
+    | 'Aditivo por Diversas Alterações'
+    | 'Prorrogação de Prazo'
+    | 'Redução de Valor'
+    | 'Reajuste / Repactuação'
+    | 'Alteração Qualitativa'
+    | 'Outros';
   valueChange: number;
   newEndDate?: string;
   signatureDate: string;

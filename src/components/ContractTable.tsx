@@ -16,9 +16,11 @@ import {
   Clock,
   Receipt,
   Link2,
-  UserCheck
+  UserCheck,
+  X,
+  Check
 } from 'lucide-react';
-import { Contract, ContractStatus, ServiceNote } from '../types';
+import { Contract, ContractAmendment, ContractStatus, ServiceNote } from '../types';
 
 interface ContractTableProps {
   contracts: Contract[];
@@ -27,6 +29,7 @@ interface ContractTableProps {
   onViewContractDetails?: (contract: Contract) => void;
   onEditContract?: (contract: Contract) => void;
   onDeleteContract?: (id: string) => void;
+  onAddAmendment?: (amendment: Omit<ContractAmendment, 'id'>, updateContract?: boolean) => void;
   onViewAllContracts?: () => void;
 }
 
@@ -36,7 +39,8 @@ export const ContractTable: React.FC<ContractTableProps> = ({
   onOpenNewContractModal,
   onViewContractDetails,
   onEditContract,
-  onDeleteContract
+  onDeleteContract,
+  onAddAmendment
 }) => {
   const [activeActionId, setActiveActionId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'Todos' | ContractStatus>('Todos');
@@ -46,6 +50,93 @@ export const ContractTable: React.FC<ContractTableProps> = ({
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [exportNotice, setExportNotice] = useState<string | null>(null);
   const [expandedContracts, setExpandedContracts] = useState<Record<string, boolean>>({});
+  const [amendmentContract, setAmendmentContract] = useState<Contract | null>(null);
+  const [amendmentNum, setAmendmentNum] = useState('');
+  const [amendmentType, setAmendmentType] = useState<ContractAmendment['type']>('Prorrogação Contratual');
+  const [amendmentValue, setAmendmentValue] = useState('');
+  const [newEndDate, setNewEndDate] = useState('');
+  const [signatureDate, setSignatureDate] = useState('');
+  const [publicationDate, setPublicationDate] = useState('');
+  const [justification, setJustification] = useState('');
+  const [scopeChange, setScopeChange] = useState('');
+  const [autoUpdateContract, setAutoUpdateContract] = useState(true);
+
+  const amendmentTypes: ContractAmendment['type'][] = [
+    'Prorrogação Contratual',
+    'Realinhamento',
+    'Aditivo por Rescisão',
+    'Aditivo de Redução de Valor',
+    'Acréscimo de Valor',
+    'Aditivo por Diversas Alterações'
+  ];
+
+  const resetAmendmentForm = (contract?: Contract) => {
+    setAmendmentContract(contract || null);
+    setAmendmentNum('');
+    setAmendmentType('Prorrogação Contratual');
+    setAmendmentValue('');
+    setNewEndDate(contract?.endDate || '');
+    setSignatureDate('');
+    setPublicationDate('');
+    setJustification('');
+    setScopeChange('');
+    setAutoUpdateContract(true);
+  };
+
+  const requiresNewEndDate = amendmentType === 'Prorrogação Contratual' || amendmentType === 'Aditivo por Diversas Alterações';
+  const requiresValue = ['Realinhamento', 'Aditivo de Redução de Valor', 'Acréscimo de Valor', 'Aditivo por Diversas Alterações'].includes(amendmentType);
+  const requiresScope = ['Aditivo por Rescisão', 'Aditivo por Diversas Alterações'].includes(amendmentType);
+
+  const getSignedValueChange = () => {
+    const parsed = parseFloat(amendmentValue) || 0;
+    if (amendmentType === 'Aditivo de Redução de Valor' || amendmentType === 'Aditivo por Rescisão') {
+      return parsed > 0 ? -parsed : parsed;
+    }
+    return parsed;
+  };
+
+  const getAmendmentGuidance = () => {
+    if (amendmentType === 'Prorrogação Contratual') {
+      return 'Preencha a nova vigência, a justificativa da continuidade, a data de assinatura e a publicação.';
+    }
+    if (amendmentType === 'Realinhamento') {
+      return 'Informe o valor do realinhamento, a justificativa técnica/econômica e as datas do termo.';
+    }
+    if (amendmentType === 'Aditivo por Rescisão') {
+      return 'Informe o motivo da rescisão, assinatura, publicação e eventual valor/saldo rescindido.';
+    }
+    if (amendmentType === 'Aditivo de Redução de Valor') {
+      return 'Informe o valor reduzido, a justificativa e as datas. O impacto financeiro será registrado como negativo.';
+    }
+    if (amendmentType === 'Acréscimo de Valor') {
+      return 'Informe o valor acrescido, a justificativa, a data de assinatura e a publicação.';
+    }
+    return 'Informe nova vigência ou valor quando houver, descreva todas as alterações e registre assinatura/publicação.';
+  };
+
+  const submitAmendment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!amendmentContract || !onAddAmendment) return;
+
+    const detail = scopeChange.trim() ? `${justification}\n\nAlterações: ${scopeChange}` : justification;
+    onAddAmendment(
+      {
+        amendmentNum,
+        contractNum: amendmentContract.contractNum,
+        creditor: amendmentContract.creditor,
+        type: amendmentType,
+        valueChange: getSignedValueChange(),
+        newEndDate: newEndDate || undefined,
+        signatureDate,
+        publicationDate: publicationDate || undefined,
+        justification: detail,
+        status: 'Vigente'
+      },
+      autoUpdateContract
+    );
+
+    resetAmendmentForm();
+  };
 
   const toggleExpand = (contractId: string) => {
     setExpandedContracts((prev) => ({
@@ -517,7 +608,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                           <button
                             onClick={() => {
                               setActiveActionId(null);
-                              alert(`Lançar aditivo para o contrato ${c.contractNum}`);
+                              resetAmendmentForm(c);
                             }}
                             className="w-full flex items-center space-x-2 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
                           >
@@ -692,6 +783,199 @@ export const ContractTable: React.FC<ContractTableProps> = ({
           </div>
         </div>
       </div>
+
+      {amendmentContract && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-2xl overflow-hidden animate-fadeIn my-8">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Lançar Aditivo</h3>
+                <p className="text-[11px] text-slate-500">
+                  Contrato {amendmentContract.contractNum} - {amendmentContract.creditor}
+                </p>
+              </div>
+              <button
+                onClick={() => resetAmendmentForm()}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer"
+                title="Fechar"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={submitAmendment} className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
+              <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-3 text-xs grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <span className="block text-[10px] uppercase font-bold text-emerald-700">Valor atual</span>
+                  <span className="font-bold text-slate-900">{formatCurrency(amendmentContract.totalValue)}</span>
+                </div>
+                <div>
+                  <span className="block text-[10px] uppercase font-bold text-emerald-700">Vigência atual</span>
+                  <span className="font-bold text-slate-900">{amendmentContract.startDate} até {amendmentContract.endDate}</span>
+                </div>
+                <div>
+                  <span className="block text-[10px] uppercase font-bold text-emerald-700">Status</span>
+                  <span className="font-bold text-slate-900">{amendmentContract.status}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Número / Identificação do Aditivo <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={amendmentNum}
+                    onChange={(e) => setAmendmentNum(e.target.value)}
+                    placeholder="Ex: 1º Termo Aditivo"
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold text-slate-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Motivo do Aditivo <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    required
+                    value={amendmentType}
+                    onChange={(e) => setAmendmentType(e.target.value as ContractAmendment['type'])}
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold text-slate-900 cursor-pointer"
+                  >
+                    {amendmentTypes.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-xs text-amber-900 font-semibold">
+                {getAmendmentGuidance()}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Valor da Alteração (R$) {requiresValue && <span className="text-rose-500">*</span>}
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required={requiresValue}
+                    value={amendmentValue}
+                    onChange={(e) => setAmendmentValue(e.target.value)}
+                    placeholder={amendmentType === 'Aditivo de Redução de Valor' ? 'Ex: 5000' : 'Ex: 15000'}
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold text-slate-900"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">Redução e rescisão são gravadas como impacto negativo.</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Nova Data de Término {requiresNewEndDate && <span className="text-rose-500">*</span>}
+                  </label>
+                  <input
+                    type="text"
+                    required={requiresNewEndDate}
+                    value={newEndDate}
+                    onChange={(e) => setNewEndDate(e.target.value)}
+                    placeholder="Ex: 31/12/2026"
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Data de Assinatura <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={signatureDate}
+                    onChange={(e) => setSignatureDate(e.target.value)}
+                    placeholder="Ex: 10/05/2026"
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Data de Publicação</label>
+                  <input
+                    type="text"
+                    value={publicationDate}
+                    onChange={(e) => setPublicationDate(e.target.value)}
+                    placeholder="Ex: 12/05/2026"
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-900"
+                  />
+                </div>
+              </div>
+
+              {requiresScope && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Alterações / Escopo <span className="text-rose-500">*</span>
+                  </label>
+                  <textarea
+                    required
+                    rows={3}
+                    value={scopeChange}
+                    onChange={(e) => setScopeChange(e.target.value)}
+                    placeholder="Descreva as cláusulas, itens, obrigações ou condições alteradas."
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-900"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Justificativa / Fundamentação <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  value={justification}
+                  onChange={(e) => setJustification(e.target.value)}
+                  placeholder="Informe o motivo administrativo, necessidade, base do pedido e justificativa do termo."
+                  className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-900"
+                />
+              </div>
+
+              <label className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-xs font-semibold text-slate-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={autoUpdateContract}
+                  onChange={(e) => setAutoUpdateContract(e.target.checked)}
+                  className="w-4 h-4 accent-emerald-600"
+                />
+                <span>Atualizar automaticamente o contrato com o novo valor ou nova data de término</span>
+              </label>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => resetAmendmentForm()}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-colors cursor-pointer"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>Salvar Aditivo</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
