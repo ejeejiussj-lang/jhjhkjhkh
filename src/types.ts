@@ -51,7 +51,7 @@ export interface ServiceNote {
   creditor: string;
   issueDate: string;
   value: number;
-  status: 'Emitida' | 'Paga' | 'Pendente';
+  status: 'Emitida' | 'Paga' | 'Pendente' | 'Concluido';
   budgetAllocation?: '06.01' | '06.06' | string;
   program?: string;
   commitmentNumber?: string;

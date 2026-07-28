@@ -477,6 +477,11 @@ export default function App() {
     }
   };
 
+  const handleUpdateNote = (note: ServiceNote) => {
+    setNotes(notes.map((item) => (item.id === note.id ? note : item)));
+    saveNoteToSupabase(note);
+  };
+
   const handleAddAiAlert = (alert: { title: string; desc: string; linkTab?: ActiveTab }) => {
     const notification: SystemNotification = {
       id: `ai-alert-${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -986,7 +991,9 @@ export default function App() {
               commitments={commitments}
               creditors={creditors}
               onAddNote={handleAddNote}
+              onUpdateNote={handleUpdateNote}
               onDeleteNote={handleDeleteNote}
+              onViewCommitment={() => setActiveTab('empenhos')}
             />
           )}
 

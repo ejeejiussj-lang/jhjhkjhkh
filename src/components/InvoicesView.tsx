@@ -1,8 +1,7 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
-import { Receipt, Plus, FileText, CheckCircle2, Clock, Link2, Link2Off, Eye, Info, HelpCircle, X, Search, Building2, Landmark, Filter, Trash2 } from 'lucide-react';
+import { Receipt, Plus, FileText, CheckCircle2, Clock, Link2, Link2Off, Eye, Info, HelpCircle, X, Search, Building2, Landmark, Filter, Trash2, ArrowRight } from 'lucide-react';
 import { ServiceNote, Contract, Creditor, Commitment } from '../types';
-
-const BUDGET_ALLOCATIONS = ['06.01', '06.06'];
+import { BUDGET_ALLOCATIONS, PROGRAMS_BY_ALLOCATION } from './CommitmentsView';
 
 interface InvoicesViewProps {
   notes: ServiceNote[];
@@ -10,7 +9,9 @@ interface InvoicesViewProps {
   commitments: Commitment[];
   creditors?: Creditor[];
   onAddNote: (note: ServiceNote) => void;
+  onUpdateNote: (note: ServiceNote) => void;
   onDeleteNote: (note: ServiceNote) => void;
+  onViewCommitment: () => void;
 }
 
 export const InvoicesView: React.FC<InvoicesViewProps> = ({
@@ -19,15 +20,20 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
   commitments = [],
   creditors = [],
   onAddNote,
-  onDeleteNote
+  onUpdateNote,
+  onDeleteNote,
+  onViewCommitment
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [noteNumber, setNoteNumber] = useState('');
+  const [issueDate, setIssueDate] = useState(new Date().toLocaleDateString('pt-BR'));
   const [contractNum, setContractNum] = useState('');
   const [creditor, setCreditor] = useState('');
   const [value, setValue] = useState('');
   const [budgetAllocation, setBudgetAllocation] = useState('06.01');
+  const [program, setProgram] = useState(PROGRAMS_BY_ALLOCATION['06.01'][0]);
   const [commitmentId, setCommitmentId] = useState('');
+  const [fiscalSigned, setFiscalSigned] = useState(false);
 
   // Search & Filter state for notes table
   const [searchTerm, setSearchTerm] = useState('');
@@ -63,20 +69,25 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
   }, [registeredCompanies]);
 
   const availableCommitments = useMemo(() => {
-    return commitments.filter((commitment) => commitment.budgetAllocation === budgetAllocation);
-  }, [commitments, budgetAllocation]);
+    return commitments.filter((commitment) => commitment.budgetAllocation === budgetAllocation && commitment.program === program);
+  }, [commitments, budgetAllocation, program]);
 
   const selectedCommitment = commitments.find((commitment) => commitment.id === commitmentId);
+  const selectedContract = contracts.find((contract) => contract.contractNum === contractNum);
+  const availablePrograms = PROGRAMS_BY_ALLOCATION[budgetAllocation] || [];
 
   // Reset form to empty values when modal opens
   useEffect(() => {
     if (showModal) {
       setNoteNumber('');
+      setIssueDate(new Date().toLocaleDateString('pt-BR'));
       setContractNum('');
       setCreditor('');
       setValue('');
       setBudgetAllocation('06.01');
+      setProgram(PROGRAMS_BY_ALLOCATION['06.01'][0]);
       setCommitmentId('');
+      setFiscalSigned(false);
     }
   }, [showModal]);
 
@@ -100,11 +111,11 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
       noteNumber,
       contractNum: contractNum || 'Contrato Não Selecionado',
       creditor: creditor || 'Credor Não Identificado',
-      issueDate: new Date().toLocaleDateString('pt-BR'),
+      issueDate,
       value: noteValue,
-      status: 'Pendente',
+      status: fiscalSigned ? 'Concluido' : 'Pendente',
       budgetAllocation,
-      program: selectedCommitment?.program || '',
+      program: selectedCommitment?.program || program,
       commitmentNumber: selectedCommitment?.number || '',
       commitmentValue: parsedCommitmentValue,
       commitmentBalance: parsedCommitmentBalance,
@@ -121,10 +132,23 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 
   const handleBudgetAllocationChange = (allocation: string) => {
     setBudgetAllocation(allocation);
+    setProgram(PROGRAMS_BY_ALLOCATION[allocation]?.[0] || '');
+    setCommitmentId('');
+  };
+
+  const handleProgramChange = (selectedProgram: string) => {
+    setProgram(selectedProgram);
     setCommitmentId('');
   };
 
   const previewCurrentBalance = (selectedCommitment?.currentBalance ?? selectedCommitment?.balance ?? 0) - (parseFloat(value) || 0);
+
+  const handleMarkConcluded = (note: ServiceNote) => {
+    onUpdateNote({
+      ...note,
+      status: 'Concluido'
+    });
+  };
 
   // Filter notes
   const filteredNotes = useMemo(() => {
@@ -327,7 +351,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                            n.status === 'Paga'
+                            n.status === 'Paga' || n.status === 'Concluido'
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
                               : n.status === 'Pendente'
                               ? 'bg-amber-50 text-amber-700 border border-amber-100'
@@ -339,18 +363,40 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                       </td>
 
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                        <button
-                          onClick={() => {
-                            if (window.confirm(`Deseja excluir a nota ${n.noteNumber}? O valor volta para o saldo do empenho vinculado.`)) {
-                              onDeleteNote(n);
-                            }
-                          }}
-                          className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-rose-700 bg-rose-100/70 hover:bg-rose-200/80 border border-rose-200/80 rounded-lg transition-colors cursor-pointer"
-                          title="Excluir nota"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>Excluir</span>
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          {n.status === 'Pendente' && (
+                            <button
+                              onClick={() => handleMarkConcluded(n)}
+                              className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-lg transition-colors cursor-pointer"
+                              title="Marcar como concluido"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          {n.commitmentNumber && (
+                            <button
+                              onClick={onViewCommitment}
+                              className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg transition-colors cursor-pointer"
+                              title="Ver em empenhos"
+                            >
+                              <Landmark className="w-3.5 h-3.5" />
+                              <span>Ver empenho</span>
+                            </button>
+                          )}
+                          <button
+                            onClick={() => {
+                              if (window.confirm(`Deseja excluir a nota ${n.noteNumber}? O valor volta para o saldo do empenho vinculado.`)) {
+                                onDeleteNote(n);
+                              }
+                            }}
+                            className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-rose-700 bg-rose-100/70 hover:bg-rose-200/80 border border-rose-200/80 rounded-lg transition-colors cursor-pointer"
+                            title="Excluir nota"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Excluir</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -422,6 +468,30 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
               </div>
 
               {/* Creditor / Company Select Dropdown */}
+              {selectedContract && (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 md:items-center">
+                  <div>
+                    <span className="block text-[10px] font-bold uppercase text-slate-400">Fiscal do contrato</span>
+                    <span className="font-bold text-slate-900">
+                      {selectedContract.fiscalName || 'Fiscal nao informado'}
+                    </span>
+                    {selectedContract.fiscalPortaria && (
+                      <span className="ml-2 text-slate-500">Portaria {selectedContract.fiscalPortaria}</span>
+                    )}
+                  </div>
+                  <label className="inline-flex items-center gap-2 text-xs font-bold text-emerald-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={fiscalSigned}
+                      onChange={(e) => setFiscalSigned(e.target.checked)}
+                      className="w-4 h-4 accent-emerald-600"
+                    />
+                    <span>Assinado pelo fiscal: marcar como concluido</span>
+                  </label>
+                </div>
+              )}
+
+              {/* Creditor / Company Select Dropdown */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
                   Selecionar Empresa / Credor Cadastrado <span className="text-rose-500">*</span>
@@ -449,7 +519,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
                     Dotação <span className="text-rose-500">*</span>
@@ -461,6 +531,24 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                     className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-bold text-slate-800 cursor-pointer"
                   >
                     {BUDGET_ALLOCATIONS.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Programa <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    required
+                    value={program}
+                    onChange={(e) => handleProgramChange(e.target.value)}
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-bold text-slate-800 cursor-pointer"
+                  >
+                    {availablePrograms.map((item) => (
                       <option key={item} value={item}>
                         {item}
                       </option>
@@ -527,6 +615,20 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                   value={value}
                   onChange={(e) => setValue(e.target.value)}
                   placeholder="0.00"
+                  className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-bold text-slate-800"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Data de Emissão <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={issueDate}
+                  onChange={(e) => setIssueDate(e.target.value)}
+                  placeholder="Ex: 28/07/2026"
                   className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-bold text-slate-800"
                 />
               </div>
