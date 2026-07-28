@@ -11,20 +11,20 @@ export default defineConfig(({ mode }) => {
       react(),
       tailwindcss(),
       {
-        name: 'gemini-chat-api',
+        name: 'openrouter-chat-api',
         configureServer(server) {
-          server.middlewares.use('/api/gemini-chat', async (req, res) => {
+          server.middlewares.use('/api/openrouter-chat', async (req, res) => {
             if (req.method !== 'POST') {
               res.statusCode = 405;
               res.end('Method not allowed');
               return;
             }
 
-            const apiKey = env.GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+            const apiKey = env.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY;
             if (!apiKey) {
               res.statusCode = 500;
               res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ error: 'GEMINI_API_KEY not configured' }));
+              res.end(JSON.stringify({ error: 'OPENROUTER_API_KEY not configured' }));
               return;
             }
 
@@ -35,23 +35,25 @@ export default defineConfig(({ mode }) => {
             req.on('end', async () => {
               try {
                 const { prompt, systemContext } = JSON.parse(rawBody || '{}');
-                const geminiResponse = await fetch(
-                  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
+                const openRouterResponse = await fetch(
+                  'https://openrouter.ai/api/v1/chat/completions',
                   {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                      Authorization: `Bearer ${apiKey}`,
+                      'Content-Type': 'application/json',
+                      'HTTP-Referer': 'http://localhost:3000',
+                      'X-Title': 'FiscalPro'
+                    },
                     body: JSON.stringify({
-                      generationConfig: {
-                        temperature: 0.2,
-                        maxOutputTokens: 900,
-                        responseMimeType: 'application/json'
-                      },
-                      contents: [
+                      model: env.OPENROUTER_MODEL || 'openrouter/free',
+                      temperature: 0.2,
+                      max_tokens: 900,
+                      response_format: { type: 'json_object' },
+                      messages: [
                         {
-                          role: 'user',
-                          parts: [
-                            {
-                              text: `Voce e a IA do painel FiscalPro. Responda sempre em portugues do Brasil, direto e sem enrolacao.
+                          role: 'system',
+                          content: `Voce e a IA do painel FiscalPro. Responda sempre em portugues do Brasil, direto e sem enrolacao.
 
 Use o contexto do sistema para identificar contratos, empenhos, notas fiscais, objetos, dotacoes, programas, valores e saldos.
 Quando o usuario pedir cadastro, lancamento, salvar ou quando o texto tiver dados suficientes, devolva actions para o sistema executar automaticamente.
@@ -78,26 +80,25 @@ Campos para create_note: noteNumber, contractNum, creditor, value, commitmentNum
 Campos para create_creditor: name, cnpj, category.
 
 CONTEXTO DO SISTEMA:
-${systemContext}
-
-MENSAGEM DO USUARIO:
-${prompt}`
-                            }
-                          ]
+${systemContext}`
+                        },
+                        {
+                          role: 'user',
+                          content: prompt
                         }
                       ]
                     })
                   }
                 );
 
-                const data = await geminiResponse.json();
-                res.statusCode = geminiResponse.status;
+                const data = await openRouterResponse.json();
+                res.statusCode = openRouterResponse.status;
                 res.setHeader('Content-Type', 'application/json');
                 res.end(JSON.stringify(data));
               } catch (error) {
                 res.statusCode = 500;
                 res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({ error: 'Gemini request failed' }));
+                res.end(JSON.stringify({ error: 'OpenRouter request failed' }));
               }
             });
           });

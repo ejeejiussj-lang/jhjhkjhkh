@@ -349,7 +349,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
     setLastActions([]);
 
     try {
-      const response = await fetch('/api/gemini-chat', {
+      const response = await fetch('/api/openrouter-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt, systemContext })
@@ -365,14 +365,14 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
           {
             id: `a-${Date.now()}`,
             role: 'assistant',
-            text: `${fallback.reply}\n\nGemini sem cota agora, usei leitura rapida local.${executedText}`
+            text: `${fallback.reply}\n\nOpenRouter nao respondeu agora, usei leitura rapida local.${executedText}`
           }
         ]);
         return;
       }
 
       const data = await response.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const text = data?.choices?.[0]?.message?.content || '';
       const aiResponse = parseJsonResponse(text);
       const executed = executeActions(aiResponse.actions || []);
       const executedText = executed.length ? `\n\nAcoes executadas:\n${executed.map((item) => `- ${item}`).join('\n')}` : '';
@@ -396,7 +396,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
         {
           id: `a-${Date.now()}`,
           role: 'assistant',
-          text: `${fallback.reply}\n\nNao consegui falar com o Gemini agora, usei leitura rapida local.${executedText}`
+          text: `${fallback.reply}\n\nNao consegui falar com o OpenRouter agora, usei leitura rapida local.${executedText}`
         }
       ]);
     } finally {
@@ -419,7 +419,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
           </div>
           <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Gemini rapido</span>
+            <span>OpenRouter</span>
           </div>
         </div>
 
