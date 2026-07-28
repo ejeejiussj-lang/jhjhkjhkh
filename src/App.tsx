@@ -914,7 +914,17 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'ia' && <AiAssistantView />}
+          {activeTab === 'ia' && (
+            <AiAssistantView
+              contracts={contracts}
+              creditors={creditors}
+              commitments={commitments}
+              onAddContract={handleAddContract}
+              onAddCommitment={handleAddCommitment}
+              onAddNote={handleAddNote}
+              onAddCreditor={handleAddCreditor}
+            />
+          )}
         </main>
       </div>
 
