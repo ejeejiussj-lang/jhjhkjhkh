@@ -392,11 +392,13 @@ export default function App() {
     }
   };
 
-  const handleAddCommitment = (newCommitment: Omit<Commitment, 'id' | 'currentBalance'>) => {
+  const handleAddCommitment = (newCommitment: Omit<Commitment, 'id' | 'currentBalance' | 'balance'> & { balance?: number }) => {
+    const initialBalance = Number(newCommitment.value || 0);
     const commitment: Commitment = {
       ...newCommitment,
       id: `commitment-${Date.now()}`,
-      currentBalance: newCommitment.balance
+      balance: initialBalance,
+      currentBalance: initialBalance
     };
 
     setCommitments([commitment, ...commitments]);

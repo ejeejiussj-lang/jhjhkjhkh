@@ -18,7 +18,7 @@ export const PROGRAMS_BY_ALLOCATION: Record<string, string[]> = {
 
 interface CommitmentsViewProps {
   commitments: Commitment[];
-  onAddCommitment: (commitment: Omit<Commitment, 'id' | 'currentBalance'>) => void;
+  onAddCommitment: (commitment: Omit<Commitment, 'id' | 'currentBalance' | 'balance'>) => void;
   onDeleteCommitment: (id: string) => void;
 }
 
@@ -33,7 +33,6 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
   const [budgetAllocation, setBudgetAllocation] = useState('06.01');
   const [program, setProgram] = useState(PROGRAMS_BY_ALLOCATION['06.01'][0]);
   const [value, setValue] = useState('');
-  const [balance, setBalance] = useState('');
   const [description, setDescription] = useState('');
 
   const formatCurrency = (val: number) =>
@@ -51,7 +50,6 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
     setBudgetAllocation('06.01');
     setProgram(PROGRAMS_BY_ALLOCATION['06.01'][0]);
     setValue('');
-    setBalance('');
     setDescription('');
   };
 
@@ -63,14 +61,12 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     const commitmentValue = parseFloat(value) || 0;
-    const commitmentBalance = parseFloat(balance) || 0;
 
     onAddCommitment({
       number,
       budgetAllocation,
       program,
       value: commitmentValue,
-      balance: commitmentBalance,
       description
     });
     setShowModal(false);
@@ -183,7 +179,7 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
               <div>
                 <h3 className="text-sm font-bold text-slate-800">Cadastrar Empenho</h3>
-                <p className="text-[11px] text-slate-500">Informe dotação, programa, valor e saldo disponível</p>
+                <p className="text-[11px] text-slate-500">Informe dotacao, programa e valor. O saldo atual sera calculado automaticamente.</p>
               </div>
               <button
                 onClick={() => setShowModal(false)}
@@ -242,36 +238,22 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Valor do Empenho (R$) <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={value}
-                    onChange={(e) => setValue(e.target.value)}
-                    placeholder="0.00"
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Saldo Atual (R$) <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={balance}
-                    onChange={(e) => setBalance(e.target.value)}
-                    placeholder="0.00"
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold"
-                  />
-                </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Valor do Empenho (R$) <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  value={value}
+                  onChange={(e) => setValue(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold"
+                />
+                <p className="text-[10px] text-slate-500 mt-1">
+                  O saldo atual inicia igual ao valor do empenho e diminui quando uma nota fiscal for vinculada.
+                </p>
               </div>
 
               <div>

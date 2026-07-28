@@ -57,7 +57,7 @@ interface AiAssistantViewProps {
   creditors: Creditor[];
   commitments: Commitment[];
   onAddContract: (contract: Omit<Contract, 'id'>) => void;
-  onAddCommitment: (commitment: Omit<Commitment, 'id' | 'currentBalance'>) => void;
+  onAddCommitment: (commitment: Omit<Commitment, 'id' | 'currentBalance' | 'balance'>) => void;
   onAddNote: (note: ServiceNote) => void;
   onAddCreditor: (creditor: Creditor) => void;
 }
@@ -296,7 +296,6 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
             budgetAllocation: action.budgetAllocation,
             program: action.program,
             value,
-            balance: Number(action.balance) || value,
             description: action.description || 'Cadastrado pela IA'
           });
           executed.push(`Empenho cadastrado: ${action.number}`);
