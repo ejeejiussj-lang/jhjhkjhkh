@@ -265,6 +265,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
   });
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingText, setLoadingText] = useState('Preparando resposta...');
   const [lastActions, setLastActions] = useState<string[]>([]);
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
 
@@ -413,11 +414,27 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
     };
   };
 
-  const ensureProfessionalGreeting = (reply: string, auditReply: string) => {
+  const shouldRunSystemAudit = (promptText: string, fileCount: number) => {
+    const lower = promptText.toLowerCase();
+    return (
+      fileCount > 0 ||
+      lower.includes('analise') ||
+      lower.includes('análise') ||
+      lower.includes('alerta') ||
+      lower.includes('verificar sistema') ||
+      lower.includes('pendencia') ||
+      lower.includes('pendência') ||
+      lower.includes('saldo') ||
+      lower.includes('vencimento') ||
+      lower.includes('processo')
+    );
+  };
+
+  const ensureProfessionalGreeting = (reply: string, auditReply?: string) => {
     const cleaned = (reply || '').trim();
     const withGreeting = /^ol[aá]/i.test(cleaned) ? cleaned : `Olá! ${cleaned || 'Concluí a análise solicitada.'}`;
 
-    if (withGreeting.toLowerCase().includes('análise do sistema') || withGreeting.toLowerCase().includes('analise do sistema')) {
+    if (!auditReply || withGreeting.toLowerCase().includes('análise do sistema') || withGreeting.toLowerCase().includes('analise do sistema')) {
       return withGreeting;
     }
 
@@ -573,24 +590,31 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
     setAttachedFiles([]);
     setIsLoading(true);
     setLastActions([]);
+    const runAudit = shouldRunSystemAudit(finalPrompt, filesToSend.length);
+    const nextLoadingText = filesToSend.length > 0
+      ? 'Lendo PDFs e extraindo informações...'
+      : runAudit
+      ? 'Analisando o sistema e preparando resposta...'
+      : 'Preparando resposta...';
+    setLoadingText(nextLoadingText);
 
     try {
-      const audit = buildSystemAudit();
+      const audit = runAudit ? buildSystemAudit() : undefined;
       const { data, error } = await supabase.functions.invoke('openrouter-chat', {
-        body: { prompt: finalPrompt, systemContext, localAudit: audit.reply, files: filesToSend }
+        body: { prompt: finalPrompt, systemContext, localAudit: audit?.reply || '', files: filesToSend }
       });
 
       if (error || data?.error) {
         const fallback = createLocalResponse(finalPrompt);
-        const executed = executeActions([...(audit.actions || []), ...(fallback.actions || [])]);
-        const executedText = executed.length ? `\n\nAcoes executadas:\n${executed.map((item) => `- ${item}`).join('\n')}` : '';
+        const executed = executeActions([...(audit?.actions || []), ...(fallback.actions || [])]);
+        const executedText = executed.length ? `\n\nAções executadas:\n${executed.map((item) => `- ${item}`).join('\n')}` : '';
 
         setMessages((prev) => [
           ...prev,
           {
             id: `a-${Date.now()}`,
             role: 'assistant',
-            text: `${ensureProfessionalGreeting(fallback.reply, audit.reply)}\n\nOpenRouter nao respondeu agora, usei leitura rapida local.${executedText}`
+            text: `${ensureProfessionalGreeting(fallback.reply, audit?.reply)}\n\nOpenRouter não respondeu agora, usei leitura rápida local.${executedText}`
           }
         ]);
         return;
@@ -598,30 +622,30 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
 
       const text = data?.choices?.[0]?.message?.content || '';
       const aiResponse = parseJsonResponse(text);
-      const executed = executeActions([...(audit.actions || []), ...(aiResponse.actions || [])]);
-      const executedText = executed.length ? `\n\nAcoes executadas:\n${executed.map((item) => `- ${item}`).join('\n')}` : '';
+      const executed = executeActions([...(audit?.actions || []), ...(aiResponse.actions || [])]);
+      const executedText = executed.length ? `\n\nAções executadas:\n${executed.map((item) => `- ${item}`).join('\n')}` : '';
 
       setMessages((prev) => [
         ...prev,
         {
           id: `a-${Date.now()}`,
           role: 'assistant',
-          text: `${ensureProfessionalGreeting(aiResponse.reply || 'Pronto.', audit.reply)}${executedText}`
+          text: `${ensureProfessionalGreeting(aiResponse.reply || 'Pronto.', audit?.reply)}${executedText}`
         }
       ]);
     } catch (error) {
       console.error(error);
-      const audit = buildSystemAudit();
+      const audit = runAudit ? buildSystemAudit() : undefined;
       const fallback = createLocalResponse(finalPrompt);
-      const executed = executeActions([...(audit.actions || []), ...(fallback.actions || [])]);
-      const executedText = executed.length ? `\n\nAcoes executadas:\n${executed.map((item) => `- ${item}`).join('\n')}` : '';
+      const executed = executeActions([...(audit?.actions || []), ...(fallback.actions || [])]);
+      const executedText = executed.length ? `\n\nAções executadas:\n${executed.map((item) => `- ${item}`).join('\n')}` : '';
 
       setMessages((prev) => [
         ...prev,
         {
             id: `a-${Date.now()}`,
             role: 'assistant',
-            text: `${ensureProfessionalGreeting(fallback.reply, audit.reply)}\n\nNao consegui falar com o OpenRouter agora, usei leitura rapida local.${executedText}`
+            text: `${ensureProfessionalGreeting(fallback.reply, audit?.reply)}\n\nNão consegui falar com o OpenRouter agora, usei leitura rápida local.${executedText}`
           }
         ]);
     } finally {
@@ -667,7 +691,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
             <div className="flex justify-start">
               <div className="bg-white border border-slate-200 rounded-2xl rounded-bl-md px-4 py-3 text-sm text-slate-500 flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
-                <span>Analisando PDFs, textos e preparando cadastro...</span>
+                <span>{loadingText}</span>
               </div>
             </div>
           )}

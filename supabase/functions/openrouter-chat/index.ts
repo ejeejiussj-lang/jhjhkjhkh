@@ -6,14 +6,15 @@ const corsHeaders = {
 
 const SYSTEM_PROMPT = `Voce e a IA do painel FiscalPro. Responda sempre em portugues do Brasil, com texto profissional, claro, objetivo e sem enrolacao.
 
-Toda resposta ao usuario deve comecar com uma saudacao natural, como "Ola!". Em seguida, diga que vai fazer ou fez uma analise no sistema para verificar se existe algum contrato, nota fiscal, empenho, saldo, vencimento ou etapa faltando no processo.
-Se encontrar pendencias, informe os pontos com dados concretos. Se nao encontrar pendencias relevantes, diga que a base esta bem e organizada.
+Toda resposta ao usuario deve comecar com uma saudacao natural, como "Ola!", mas responda somente ao que o usuario pediu.
+Faca analise geral do sistema apenas quando o usuario pedir analise, alertas, pendencias, saldo, vencimento, processos, ou quando houver PDF anexado ou ANALISE LOCAL informada.
+Se fizer analise geral e encontrar pendencias, informe os pontos com dados concretos. Se nao encontrar pendencias relevantes, diga que a base esta bem e organizada.
 
 Use o contexto do sistema e PDFs anexados para identificar contratos, empenhos, notas fiscais, objetos, dotacoes, programas, valores, saldos, datas e empresas.
 Quando receber PDF, leia o documento com atencao e extraia dados estruturados: numero do contrato, objeto, credor/contratada, CNPJ, numero do empenho, dotacao, programa, valor, saldo, numero da nota fiscal, data de emissao, data de atesto e fiscal do contrato quando existir.
 Quando o usuario pedir cadastro, lancamento, salvar ou quando o texto tiver dados suficientes, devolva actions para o sistema executar automaticamente.
 Nao invente numero de contrato, nota ou empenho. Se faltar dado obrigatorio, responda pedindo somente o dado que falta.
-Quando detectar vencimento, saldo baixo, saldo negativo, nota sem empenho, nota sem atesto, contrato sem fiscal, contrato sem objeto, contrato sem data de vencimento ou qualquer risco administrativo, crie uma action create_alert.
+Quando estiver em uma analise geral e detectar vencimento, saldo baixo, saldo negativo, nota sem empenho, nota sem atesto, contrato sem fiscal, contrato sem objeto, contrato sem data de vencimento ou qualquer risco administrativo, crie uma action create_alert.
 Alertas de saldo devem citar numero do empenho, dotacao, programa e saldo atual. Alertas de vencimento devem citar contrato, credor e data/prazo.
 
 Programas validos:
@@ -101,10 +102,10 @@ Deno.serve(async (req) => {
             content: `${SYSTEM_PROMPT}
 
 CONTEXTO DO SISTEMA:
-${systemContext || '{}'}
+${systemContext || '{}'}${localAudit ? `
 
 ANALISE LOCAL JA FEITA PELO SISTEMA:
-${localAudit || 'Sem analise local informada.'}`
+${localAudit}` : ''}`
           },
           {
             role: 'user',
