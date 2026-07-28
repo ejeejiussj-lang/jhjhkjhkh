@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Bot, CheckCircle2, FileText, Loader2, Paperclip, Send, Sparkles, Wand2, X } from 'lucide-react';
 import { ActiveTab, Commitment, Contract, Creditor, ServiceNote } from '../types';
 import { PROGRAMS_BY_ALLOCATION } from './CommitmentsView';
+import { supabase } from '../lib/supabase';
 
 type ChatRole = 'assistant' | 'user';
 
@@ -423,13 +424,11 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
     setLastActions([]);
 
     try {
-      const response = await fetch('/api/openrouter-chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: finalPrompt, systemContext, files: filesToSend })
+      const { data, error } = await supabase.functions.invoke('openrouter-chat', {
+        body: { prompt: finalPrompt, systemContext, files: filesToSend }
       });
 
-      if (!response.ok) {
+      if (error || data?.error) {
         const fallback = createLocalResponse(finalPrompt);
         const executed = executeActions(fallback.actions || []);
         const executedText = executed.length ? `\n\nAcoes executadas:\n${executed.map((item) => `- ${item}`).join('\n')}` : '';
@@ -445,7 +444,6 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
         return;
       }
 
-      const data = await response.json();
       const text = data?.choices?.[0]?.message?.content || '';
       const aiResponse = parseJsonResponse(text);
       const executed = executeActions(aiResponse.actions || []);
