@@ -1,0 +1,6 @@
+{
+  "name": "SIGEC",
+  "description": "SIGEC - Sistema Integrado de Gestão de Contratos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
