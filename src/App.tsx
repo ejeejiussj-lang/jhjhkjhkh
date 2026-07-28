@@ -439,6 +439,11 @@ export default function App() {
     deleteCreditorFromSupabase(id);
   };
 
+  const handleUpdateCreditor = (creditor: Creditor) => {
+    setCreditors(creditors.map((item) => (item.id === creditor.id ? creditor : item)));
+    saveCreditorToSupabase(creditor);
+  };
+
   const handleAddNote = (note: ServiceNote) => {
     setNotes([note, ...notes]);
     saveNoteToSupabase(note);
@@ -478,8 +483,30 @@ export default function App() {
   };
 
   const handleUpdateNote = (note: ServiceNote) => {
+    const oldNote = notes.find((item) => item.id === note.id);
     setNotes(notes.map((item) => (item.id === note.id ? note : item)));
     saveNoteToSupabase(note);
+
+    if (oldNote?.commitmentId || note.commitmentId) {
+      setCommitments((prev) =>
+        prev.map((commitment) => {
+          let updatedBalance = commitment.currentBalance || 0;
+          if (oldNote?.commitmentId === commitment.id) {
+            updatedBalance += oldNote.value;
+          }
+          if (note.commitmentId === commitment.id) {
+            updatedBalance -= note.value;
+          }
+          if (updatedBalance === commitment.currentBalance) return commitment;
+          const updatedCommitment = {
+            ...commitment,
+            currentBalance: updatedBalance
+          };
+          saveCommitmentToSupabase(updatedCommitment);
+          return updatedCommitment;
+        })
+      );
+    }
   };
 
   const handleAddAiAlert = (alert: { title: string; desc: string; linkTab?: ActiveTab }) => {
@@ -512,6 +539,11 @@ export default function App() {
   const handleDeleteCommitment = (id: string) => {
     setCommitments(commitments.filter((commitment) => commitment.id !== id));
     deleteCommitmentFromSupabase(id);
+  };
+
+  const handleUpdateCommitment = (commitment: Commitment) => {
+    setCommitments(commitments.map((item) => (item.id === commitment.id ? commitment : item)));
+    saveCommitmentToSupabase(commitment);
   };
 
   const handleAddFiscal = (newFiscal: Omit<FiscalPortaria, 'id'>) => {
@@ -975,6 +1007,7 @@ export default function App() {
             <CreditorsView
               creditors={creditors}
               onAddCreditor={handleAddCreditor}
+              onUpdateCreditor={handleUpdateCreditor}
               onDeleteCreditor={handleDeleteCreditor}
             />
           )}
@@ -982,7 +1015,9 @@ export default function App() {
           {activeTab === 'empenhos' && (
             <CommitmentsView
               commitments={commitments}
+              notes={notes}
               onAddCommitment={handleAddCommitment}
+              onUpdateCommitment={handleUpdateCommitment}
               onDeleteCommitment={handleDeleteCommitment}
             />
           )}
@@ -994,6 +1029,7 @@ export default function App() {
               commitments={commitments}
               creditors={creditors}
               onAddNote={handleAddNote}
+              onUpdateNote={handleUpdateNote}
               onDeleteNote={handleDeleteNote}
             />
           )}

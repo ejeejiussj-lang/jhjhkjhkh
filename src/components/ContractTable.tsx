@@ -639,7 +639,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                         <div className="px-6 py-4 bg-slate-50/70 border-t border-slate-100 space-y-4 shadow-inner">
                           
                           {/* Fiscal & Portaria Info Header & Card */}
-                          <div className="p-3.5 bg-white border border-slate-200 rounded-xl shadow-2xs space-y-2">
+                          <div className="hidden">
                             <div className="flex items-center space-x-2 border-b border-slate-100 pb-2">
                               <UserCheck className="w-4 h-4 text-emerald-600" />
                               <span className="font-bold text-xs text-slate-900 uppercase tracking-wider">
@@ -697,7 +697,10 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                                     </span>
                                   </div>
                                   <div className="text-[10px] text-slate-500 font-medium">
-                                    Emitido em: <strong className="font-semibold text-slate-700">{note.issueDate}</strong>
+                                    Contrato: <strong className="font-semibold text-slate-700">{note.contractNum || c.contractNum}</strong>
+                                  </div>
+                                  <div className="text-[10px] text-slate-500 font-medium">
+                                    Atesto: <strong className="font-semibold text-slate-700">{note.attestationDate || '-'}</strong>
                                   </div>
                                   <div className="text-xs font-bold text-slate-900">
                                     R$ {note.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}

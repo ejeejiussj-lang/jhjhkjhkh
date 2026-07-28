@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Banknote, Plus, Search, Trash2, X, Check } from 'lucide-react';
-import { Commitment } from '../types';
+import { Banknote, Plus, Search, Trash2, X, Check, Eye, Edit3, Link2 } from 'lucide-react';
+import { Commitment, ServiceNote } from '../types';
 
 export const BUDGET_ALLOCATIONS = ['06.01', '06.06'];
 
@@ -18,16 +18,22 @@ export const PROGRAMS_BY_ALLOCATION: Record<string, string[]> = {
 
 interface CommitmentsViewProps {
   commitments: Commitment[];
+  notes?: ServiceNote[];
   onAddCommitment: (commitment: Omit<Commitment, 'id' | 'currentBalance' | 'balance'>) => void;
+  onUpdateCommitment?: (commitment: Commitment) => void;
   onDeleteCommitment: (id: string) => void;
 }
 
 export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
   commitments,
+  notes = [],
   onAddCommitment,
+  onUpdateCommitment,
   onDeleteCommitment
 }) => {
   const [showModal, setShowModal] = useState(false);
+  const [editingCommitment, setEditingCommitment] = useState<Commitment | null>(null);
+  const [selectedCommitment, setSelectedCommitment] = useState<Commitment | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [number, setNumber] = useState('');
   const [budgetAllocation, setBudgetAllocation] = useState('06.01');
@@ -46,6 +52,7 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
   };
 
   const resetForm = () => {
+    setEditingCommitment(null);
     setNumber('');
     setBudgetAllocation('06.01');
     setProgram(PROGRAMS_BY_ALLOCATION['06.01'][0]);
@@ -58,19 +65,46 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
     setShowModal(true);
   };
 
+  const handleEdit = (commitment: Commitment) => {
+    setEditingCommitment(commitment);
+    setNumber(commitment.number);
+    setBudgetAllocation(commitment.budgetAllocation);
+    setProgram(commitment.program);
+    setValue(String(commitment.value || ''));
+    setDescription(commitment.description || '');
+    setShowModal(true);
+  };
+
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     const commitmentValue = parseFloat(value) || 0;
 
-    onAddCommitment({
-      number,
-      budgetAllocation,
-      program,
-      value: commitmentValue,
-      description
-    });
+    if (editingCommitment && onUpdateCommitment) {
+      const delta = commitmentValue - editingCommitment.value;
+      onUpdateCommitment({
+        ...editingCommitment,
+        number,
+        budgetAllocation,
+        program,
+        value: commitmentValue,
+        balance: commitmentValue,
+        currentBalance: (editingCommitment.currentBalance || 0) + delta,
+        description
+      });
+    } else {
+      onAddCommitment({
+        number,
+        budgetAllocation,
+        program,
+        value: commitmentValue,
+        description
+      });
+    }
     setShowModal(false);
   };
+
+  const getLinkedNotes = (commitment: Commitment) =>
+    notes.filter((note) => note.commitmentId === commitment.id || note.commitmentNumber === commitment.number);
 
   const filteredCommitments = useMemo(() => {
     const term = searchTerm.toLowerCase();
@@ -158,6 +192,22 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
                     </td>
                     <td className="py-3.5 px-4 text-right">
                       <button
+                        onClick={() => setSelectedCommitment(item)}
+                        className="p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                        title="Ver informações e vínculos"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      {onUpdateCommitment && (
+                        <button
+                          onClick={() => handleEdit(item)}
+                          className="p-1.5 text-slate-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                          title="Editar Empenho"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                      )}
+                      <button
                         onClick={() => onDeleteCommitment(item.id)}
                         className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                         title="Excluir Empenho"
@@ -178,7 +228,7 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-xl overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
               <div>
-                <h3 className="text-sm font-bold text-slate-800">Cadastrar Empenho</h3>
+                <h3 className="text-sm font-bold text-slate-800">{editingCommitment ? 'Editar Empenho' : 'Cadastrar Empenho'}</h3>
                 <p className="text-[11px] text-slate-500">Informe dotacao, programa e valor. O saldo atual sera calculado automaticamente.</p>
               </div>
               <button
@@ -280,10 +330,76 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
                   className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-all cursor-pointer"
                 >
                   <Check className="w-4 h-4" />
-                  <span>Salvar Empenho</span>
+                  <span>{editingCommitment ? 'Atualizar Empenho' : 'Salvar Empenho'}</span>
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {selectedCommitment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Informações do Empenho</h3>
+                <p className="text-[11px] text-slate-500">Número {selectedCommitment.number}</p>
+              </div>
+              <button onClick={() => setSelectedCommitment(null)} className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <span className="block text-[10px] uppercase font-bold text-slate-400">Dotação</span>
+                  <span className="font-bold text-emerald-700">{selectedCommitment.budgetAllocation}</span>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 md:col-span-3">
+                  <span className="block text-[10px] uppercase font-bold text-slate-400">Programa</span>
+                  <span className="font-bold text-slate-900">{selectedCommitment.program}</span>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <span className="block text-[10px] uppercase font-bold text-slate-400">Valor</span>
+                  <span className="font-bold text-slate-900">{formatCurrency(selectedCommitment.value)}</span>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <span className="block text-[10px] uppercase font-bold text-slate-400">Saldo atual</span>
+                  <span className={`font-bold ${selectedCommitment.currentBalance < 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
+                    {formatCurrency(selectedCommitment.currentBalance)}
+                  </span>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 md:col-span-2">
+                  <span className="block text-[10px] uppercase font-bold text-slate-400">Observação</span>
+                  <span className="font-semibold text-slate-700">{selectedCommitment.description || '-'}</span>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-xs font-bold uppercase text-slate-500 flex items-center gap-2 mb-2">
+                  <Link2 className="w-3.5 h-3.5" />
+                  <span>Notas vinculadas ({getLinkedNotes(selectedCommitment).length})</span>
+                </h4>
+                <div className="space-y-2 max-h-56 overflow-y-auto">
+                  {getLinkedNotes(selectedCommitment).length === 0 ? (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-500 font-semibold">
+                      Nenhuma nota vinculada a este empenho.
+                    </div>
+                  ) : (
+                    getLinkedNotes(selectedCommitment).map((note) => (
+                      <div key={note.id} className="rounded-xl border border-slate-200 bg-white p-3 grid grid-cols-1 md:grid-cols-4 gap-2 text-xs">
+                        <span className="font-bold text-slate-900">{note.noteNumber}</span>
+                        <span className="text-slate-600">Contrato: {note.contractNum || '-'}</span>
+                        <span className="text-slate-600">Atesto: {note.attestationDate || '-'}</span>
+                        <span className="font-bold text-right text-slate-900">{formatCurrency(note.value)}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

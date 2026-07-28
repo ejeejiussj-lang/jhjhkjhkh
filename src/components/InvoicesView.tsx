@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Receipt, Plus, Link2, Link2Off, X, Search, Building2, Landmark, Trash2 } from 'lucide-react';
+import { Receipt, Plus, Link2, Link2Off, X, Search, Building2, Landmark, Trash2, Edit3 } from 'lucide-react';
 import { ServiceNote, Contract, Creditor, Commitment } from '../types';
 
 interface InvoicesViewProps {
@@ -8,6 +8,7 @@ interface InvoicesViewProps {
   commitments: Commitment[];
   creditors?: Creditor[];
   onAddNote: (note: ServiceNote) => void;
+  onUpdateNote?: (note: ServiceNote) => void;
   onDeleteNote: (note: ServiceNote) => void;
 }
 
@@ -17,6 +18,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
   commitments = [],
   creditors = [],
   onAddNote,
+  onUpdateNote,
   onDeleteNote
 }) => {
   const [showModal, setShowModal] = useState(false);
@@ -27,6 +29,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
   const [creditor, setCreditor] = useState('');
   const [value, setValue] = useState('');
   const [commitmentId, setCommitmentId] = useState('');
+  const [editingNote, setEditingNote] = useState<ServiceNote | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [contractFilter, setContractFilter] = useState('ALL');
   const [creditorFilter, setCreditorFilter] = useState('ALL');
@@ -62,6 +65,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 
   useEffect(() => {
     if (showModal) {
+      if (editingNote) return;
       setNoteNumber('');
       setIssueDate('');
       setAttestationDate('');
@@ -70,7 +74,19 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
       setValue('');
       setCommitmentId('');
     }
-  }, [showModal]);
+  }, [showModal, editingNote]);
+
+  const handleEdit = (note: ServiceNote) => {
+    setEditingNote(note);
+    setNoteNumber(note.noteNumber);
+    setIssueDate(note.issueDate || '');
+    setAttestationDate(note.attestationDate || '');
+    setContractNum(note.contractNum || '');
+    setCreditor(note.creditor || '');
+    setValue(String(note.value || ''));
+    setCommitmentId(note.commitmentId || commitments.find((item) => item.number === note.commitmentNumber)?.id || '');
+    setShowModal(true);
+  };
 
   const handleContractChange = (selectedContractNum: string) => {
     setContractNum(selectedContractNum);
@@ -84,11 +100,12 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
     e.preventDefault();
     const noteValue = parseFloat(value) || 0;
     const parsedCommitmentValue = selectedCommitment?.value || 0;
-    const parsedCommitmentBalance = selectedCommitment?.currentBalance ?? selectedCommitment?.balance ?? 0;
+    const sameCommitmentCredit = editingNote && editingNote.commitmentId === selectedCommitment?.id ? editingNote.value : 0;
+    const parsedCommitmentBalance = (selectedCommitment?.currentBalance ?? selectedCommitment?.balance ?? 0) + sameCommitmentCredit;
     const currentBalance = parsedCommitmentBalance - noteValue;
 
-    onAddNote({
-      id: `n-${Date.now()}`,
+    const nextNote = {
+      id: editingNote?.id || `n-${Date.now()}`,
       noteNumber,
       contractNum: contractNum || 'Contrato Não Selecionado',
       creditor: creditor || 'Credor Não Identificado',
@@ -104,13 +121,28 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
       commitmentBalance: parsedCommitmentBalance,
       currentBalance,
       commitmentId
-    });
+    };
 
+    if (editingNote && onUpdateNote) {
+      onUpdateNote(nextNote);
+    } else {
+      onAddNote(nextNote);
+    }
+
+    setEditingNote(null);
     setShowModal(false);
   };
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
+  };
+
+  const parseDateValue = (dateText?: string) => {
+    if (!dateText) return Number.MAX_SAFE_INTEGER;
+    const br = dateText.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (br) return new Date(Number(br[3]), Number(br[2]) - 1, Number(br[1])).getTime();
+    const parsed = new Date(dateText).getTime();
+    return Number.isNaN(parsed) ? Number.MAX_SAFE_INTEGER : parsed;
   };
 
   const previewCurrentBalance = (selectedCommitment?.currentBalance ?? selectedCommitment?.balance ?? 0) - (parseFloat(value) || 0);
@@ -131,7 +163,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
       const matchesCreditor = creditorFilter === 'ALL' || n.creditor === creditorFilter;
 
       return matchesSearch && matchesContract && matchesCreditor;
-    });
+    }).sort((a, b) => parseDateValue(a.attestationDate) - parseDateValue(b.attestationDate));
   }, [notes, searchTerm, contractFilter, creditorFilter]);
 
   return (
@@ -296,6 +328,16 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        {onUpdateNote && (
+                          <button
+                            onClick={() => handleEdit(n)}
+                            className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 mr-1.5 text-[11px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-100 rounded-lg transition-colors cursor-pointer"
+                            title="Editar nota"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                            <span>Editar</span>
+                          </button>
+                        )}
                         <button
                           onClick={() => {
                             if (window.confirm(`Deseja excluir a nota ${n.noteNumber}? O valor volta para o saldo do empenho vinculado.`)) {
@@ -323,11 +365,14 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 w-full max-w-2xl animate-fadeIn">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
-                <h3 className="text-base font-bold text-slate-900">Lançar Nota de Serviço</h3>
+                <h3 className="text-base font-bold text-slate-900">{editingNote ? 'Editar Nota de Serviço' : 'Lançar Nota de Serviço'}</h3>
                 <p className="text-[11px] text-slate-500">O empenho selecionado preenche dotação, programa e saldo.</p>
               </div>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => {
+                  setEditingNote(null);
+                  setShowModal(false);
+                }}
                 className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -501,7 +546,10 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
               <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
+                  onClick={() => {
+                    setEditingNote(null);
+                    setShowModal(false);
+                  }}
                   className="px-4 py-2 text-xs text-slate-600 hover:bg-slate-100 font-semibold rounded-lg cursor-pointer"
                 >
                   Cancelar
@@ -510,7 +558,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                   type="submit"
                   className="px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-xs transition-colors cursor-pointer"
                 >
-                  Confirmar Lançamento
+                  {editingNote ? 'Atualizar Nota' : 'Confirmar Lançamento'}
                 </button>
               </div>
             </form>
