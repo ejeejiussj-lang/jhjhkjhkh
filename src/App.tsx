@@ -1027,6 +1027,7 @@ export default function App() {
               contracts={contracts}
               creditors={creditors}
               commitments={commitments}
+              notes={notes}
               onAddContract={handleAddContract}
               onAddCommitment={handleAddCommitment}
               onAddNote={handleAddNote}

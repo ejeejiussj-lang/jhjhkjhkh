@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Bot, CheckCircle2, FileText, Loader2, Paperclip, Send, Sparkles, Wand2, X } from 'lucide-react';
 import { ActiveTab, Commitment, Contract, Creditor, ServiceNote } from '../types';
 import { PROGRAMS_BY_ALLOCATION } from './CommitmentsView';
@@ -70,6 +70,7 @@ interface AiAssistantViewProps {
   contracts: Contract[];
   creditors: Creditor[];
   commitments: Commitment[];
+  notes: ServiceNote[];
   onAddContract: (contract: Omit<Contract, 'id'>) => void;
   onAddCommitment: (commitment: Omit<Commitment, 'id' | 'currentBalance' | 'balance'>) => void;
   onAddNote: (note: ServiceNote) => void;
@@ -97,6 +98,34 @@ const parseJsonResponse = (text: string): AiResponse => {
 };
 
 const normalize = (value: string) => value.toLowerCase().trim();
+
+const parseDate = (value?: string) => {
+  if (!value) return null;
+  const trimmed = value.trim();
+  const br = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (br) {
+    const parsed = new Date(Number(br[3]), Number(br[2]) - 1, Number(br[1]));
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  const iso = trimmed.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (iso) {
+    const parsed = new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]));
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  const parsed = new Date(trimmed);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const daysUntil = (date?: string) => {
+  const parsed = parseDate(date);
+  if (!parsed) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  parsed.setHours(0, 0, 0, 0);
+  return Math.ceil((parsed.getTime() - today.getTime()) / 86400000);
+};
 
 const parseNumber = (value?: string) => {
   if (!value) return 0;
@@ -206,12 +235,14 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
   contracts,
   creditors,
   commitments,
+  notes,
   onAddContract,
   onAddCommitment,
   onAddNote,
   onAddCreditor,
   onAddAlert
 }) => {
+  const emittedAlertKeysRef = useRef<Set<string>>(new Set());
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     try {
       const saved = localStorage.getItem('fiscalpro_ai_messages');
@@ -228,7 +259,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
         id: 'welcome',
         role: 'assistant',
         text:
-          'Ola! Sou a IA do FiscalPro. Envie uma mensagem ou anexe PDFs de contrato, empenho e nota fiscal. Eu extraio as informacoes principais, escrevo textos profissionais, emito alertas e cadastro quando houver dados suficientes.'
+          'Olá! Sou a IA do FiscalPro. Vou analisar o sistema para verificar contratos, notas, empenhos, saldos, vencimentos e possíveis pendências nos processos. Se encontrar algo faltando, eu informo com objetividade e gero alertas; se estiver tudo certo, aviso que a base está em ordem. Você também pode anexar PDFs para eu ler e extrair contrato, empenho, nota fiscal, objeto, valores, datas e credor.'
       }
     ];
   });
@@ -259,6 +290,20 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
       saldoAtual: item.currentBalance
     }));
 
+    const compactNotes = notes.slice(0, 80).map((item) => ({
+      numero: item.noteNumber,
+      contrato: item.contractNum,
+      credor: item.creditor,
+      valor: item.value,
+      status: item.status,
+      empenho: item.commitmentNumber,
+      dotacao: item.budgetAllocation,
+      programa: item.program,
+      dataEmissao: item.issueDate,
+      dataAtesto: item.attestationDate,
+      fiscal: item.fiscalName
+    }));
+
     const compactCreditors = creditors.slice(0, 80).map((item) => ({
       nome: item.name,
       cnpj: item.cnpj,
@@ -269,13 +314,115 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
       hoje: new Date().toLocaleDateString('pt-BR'),
       contratos: compactContracts,
       empenhos: compactCommitments,
+      notas: compactNotes,
       credores: compactCreditors,
       dotacoes: {
         '06.01': PROGRAMS_BY_ALLOCATION['06.01'],
         '06.06': PROGRAMS_BY_ALLOCATION['06.06']
       }
     });
-  }, [contracts, creditors, commitments]);
+  }, [contracts, creditors, commitments, notes]);
+
+  const buildSystemAudit = (): AiResponse => {
+    const actions: AiAction[] = [];
+    const findings: string[] = [];
+
+    contracts.forEach((contract) => {
+      const missing = [
+        !contract.object ? 'objeto' : '',
+        !contract.endDate ? 'vencimento' : '',
+        !contract.fiscalName ? 'nome do fiscal' : ''
+      ].filter(Boolean);
+
+      if (missing.length > 0) {
+        findings.push(`Contrato ${contract.contractNum} (${contract.creditor}) com dados pendentes: ${missing.join(', ')}.`);
+        actions.push({
+          type: 'create_alert',
+          title: `Dados pendentes no contrato ${contract.contractNum}`,
+          desc: `Verificar e completar: ${missing.join(', ')}. Credor: ${contract.creditor}.`,
+          linkTab: 'contratos-lancados'
+        });
+      }
+
+      const remainingDays = daysUntil(contract.endDate);
+      if (remainingDays !== null && remainingDays <= 30) {
+        const statusText = remainingDays < 0 ? `vencido ha ${Math.abs(remainingDays)} dia(s)` : `vence em ${remainingDays} dia(s)`;
+        findings.push(`Contrato ${contract.contractNum} (${contract.creditor}) ${statusText}.`);
+        actions.push({
+          type: 'create_alert',
+          title: `Vencimento do contrato ${contract.contractNum}`,
+          desc: `O contrato ${contract.contractNum}, credor ${contract.creditor}, ${statusText}.`,
+          linkTab: 'contratos-lancados'
+        });
+      }
+    });
+
+    commitments.forEach((commitment) => {
+      const baseValue = Number(commitment.value || 0);
+      const currentBalance = Number(commitment.currentBalance || 0);
+      const lowByPercent = baseValue > 0 && currentBalance / baseValue <= 0.2;
+      const lowByAmount = currentBalance > 0 && currentBalance <= 1000;
+
+      if (currentBalance < 0 || lowByPercent || lowByAmount) {
+        const severity = currentBalance < 0 ? 'saldo negativo' : 'saldo baixo';
+        findings.push(`Empenho ${commitment.number} com ${severity}: ${formatCurrency(currentBalance)}.`);
+        actions.push({
+          type: 'create_alert',
+          title: `Alerta de saldo do empenho ${commitment.number}`,
+          desc: `Saldo atual: ${formatCurrency(currentBalance)}. Dotacao ${commitment.budgetAllocation}, programa ${commitment.program}.`,
+          linkTab: 'empenhos'
+        });
+      }
+    });
+
+    notes.forEach((note) => {
+      if (!note.commitmentNumber || !note.budgetAllocation || !note.program) {
+        findings.push(`Nota ${note.noteNumber} sem vinculo completo de empenho/dotacao/programa.`);
+        actions.push({
+          type: 'create_alert',
+          title: `Nota ${note.noteNumber} sem empenho completo`,
+          desc: `Vincule a nota ao empenho correto para puxar dotacao, programa e saldo.`,
+          linkTab: 'notas'
+        });
+      }
+
+      if (note.status === 'Pendente' && !note.attestationDate) {
+        findings.push(`Nota ${note.noteNumber} permanece pendente de atesto.`);
+        actions.push({
+          type: 'create_alert',
+          title: `Nota ${note.noteNumber} pendente de atesto`,
+          desc: `Informe a data de atesto para marcar a nota como concluida.`,
+          linkTab: 'notas'
+        });
+      }
+    });
+
+    if (findings.length === 0) {
+      return {
+        reply:
+          'Olá! Fiz uma análise do sistema e, no momento, não identifiquei contratos, notas, empenhos ou saldos com pendência crítica. A base está bem organizada.'
+      };
+    }
+
+    return {
+      reply: `Olá! Fiz uma análise do sistema e encontrei estes pontos que precisam de atenção:\n${findings
+        .slice(0, 8)
+        .map((item) => `- ${item}`)
+        .join('\n')}`,
+      actions
+    };
+  };
+
+  const ensureProfessionalGreeting = (reply: string, auditReply: string) => {
+    const cleaned = (reply || '').trim();
+    const withGreeting = /^ol[aá]/i.test(cleaned) ? cleaned : `Olá! ${cleaned || 'Concluí a análise solicitada.'}`;
+
+    if (withGreeting.toLowerCase().includes('análise do sistema') || withGreeting.toLowerCase().includes('analise do sistema')) {
+      return withGreeting;
+    }
+
+    return `${withGreeting}\n\n${auditReply}`;
+  };
 
   const executeActions = (actions: AiAction[] = []) => {
     const executed: string[] = [];
@@ -366,6 +513,10 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
       }
 
       if (action.type === 'create_alert' && action.title) {
+        const key = `${normalize(action.title)}|${normalize(action.desc || '')}`;
+        if (emittedAlertKeysRef.current.has(key)) return;
+        emittedAlertKeysRef.current.add(key);
+
         onAddAlert({
           title: action.title,
           desc: action.desc || 'Alerta emitido pela IA FiscalPro.',
@@ -424,13 +575,14 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
     setLastActions([]);
 
     try {
+      const audit = buildSystemAudit();
       const { data, error } = await supabase.functions.invoke('openrouter-chat', {
-        body: { prompt: finalPrompt, systemContext, files: filesToSend }
+        body: { prompt: finalPrompt, systemContext, localAudit: audit.reply, files: filesToSend }
       });
 
       if (error || data?.error) {
         const fallback = createLocalResponse(finalPrompt);
-        const executed = executeActions(fallback.actions || []);
+        const executed = executeActions([...(audit.actions || []), ...(fallback.actions || [])]);
         const executedText = executed.length ? `\n\nAcoes executadas:\n${executed.map((item) => `- ${item}`).join('\n')}` : '';
 
         setMessages((prev) => [
@@ -438,7 +590,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
           {
             id: `a-${Date.now()}`,
             role: 'assistant',
-            text: `${fallback.reply}\n\nOpenRouter nao respondeu agora, usei leitura rapida local.${executedText}`
+            text: `${ensureProfessionalGreeting(fallback.reply, audit.reply)}\n\nOpenRouter nao respondeu agora, usei leitura rapida local.${executedText}`
           }
         ]);
         return;
@@ -446,7 +598,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
 
       const text = data?.choices?.[0]?.message?.content || '';
       const aiResponse = parseJsonResponse(text);
-      const executed = executeActions(aiResponse.actions || []);
+      const executed = executeActions([...(audit.actions || []), ...(aiResponse.actions || [])]);
       const executedText = executed.length ? `\n\nAcoes executadas:\n${executed.map((item) => `- ${item}`).join('\n')}` : '';
 
       setMessages((prev) => [
@@ -454,23 +606,24 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
         {
           id: `a-${Date.now()}`,
           role: 'assistant',
-          text: `${aiResponse.reply || 'Pronto.'}${executedText}`
+          text: `${ensureProfessionalGreeting(aiResponse.reply || 'Pronto.', audit.reply)}${executedText}`
         }
       ]);
     } catch (error) {
       console.error(error);
+      const audit = buildSystemAudit();
       const fallback = createLocalResponse(finalPrompt);
-      const executed = executeActions(fallback.actions || []);
+      const executed = executeActions([...(audit.actions || []), ...(fallback.actions || [])]);
       const executedText = executed.length ? `\n\nAcoes executadas:\n${executed.map((item) => `- ${item}`).join('\n')}` : '';
 
       setMessages((prev) => [
         ...prev,
         {
-          id: `a-${Date.now()}`,
-          role: 'assistant',
-          text: `${fallback.reply}\n\nNao consegui falar com o OpenRouter agora, usei leitura rapida local.${executedText}`
-        }
-      ]);
+            id: `a-${Date.now()}`,
+            role: 'assistant',
+            text: `${ensureProfessionalGreeting(fallback.reply, audit.reply)}\n\nNao consegui falar com o OpenRouter agora, usei leitura rapida local.${executedText}`
+          }
+        ]);
     } finally {
       setIsLoading(false);
     }
