@@ -30,6 +30,7 @@ import { ReportsView } from './components/ReportsView';
 import { AlertsView } from './components/AlertsView';
 import { FiscaisView } from './components/FiscaisView';
 import { AmendmentsView } from './components/AmendmentsView';
+import { CommitmentsView } from './components/CommitmentsView';
 import { AuthModal } from './components/AuthModal';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { supabase } from './lib/supabase';
@@ -43,6 +44,9 @@ import {
   deleteCreditorFromSupabase,
   fetchNotesFromSupabase,
   saveNoteToSupabase,
+  fetchCommitmentsFromSupabase,
+  saveCommitmentToSupabase,
+  deleteCommitmentFromSupabase,
   fetchFiscaisFromSupabase,
   saveFiscalToSupabase,
   deleteFiscalFromSupabase,
@@ -51,7 +55,7 @@ import {
   deleteAmendmentFromSupabase
 } from './lib/supabaseService';
 
-import { Contract, ActiveTab, Creditor, ServiceNote, FiscalPortaria, ContractAmendment, SystemNotification } from './types';
+import { Contract, ActiveTab, Creditor, ServiceNote, FiscalPortaria, ContractAmendment, SystemNotification, Commitment } from './types';
 
 const DEFAULT_CATEGORIES = [
   'Secretaria Municipal de Saúde',
@@ -129,6 +133,12 @@ export default function App() {
       }
     });
 
+    fetchCommitmentsFromSupabase().then((remoteCommitments) => {
+      if (remoteCommitments) {
+        setCommitments(remoteCommitments);
+      }
+    });
+
     fetchFiscaisFromSupabase().then((remoteFiscais) => {
       if (remoteFiscais) {
         setFiscais(remoteFiscais);
@@ -203,6 +213,19 @@ export default function App() {
     return [];
   });
 
+  const [commitments, setCommitments] = useState<Commitment[]>(() => {
+    try {
+      const saved = localStorage.getItem('fiscalpro_commitments');
+      if (saved !== null) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return [];
+  });
+
   const [fiscais, setFiscais] = useState<FiscalPortaria[]>(() => {
     try {
       const saved = localStorage.getItem('fiscalpro_fiscais');
@@ -241,6 +264,10 @@ export default function App() {
   }, [notes]);
 
   useEffect(() => {
+    localStorage.setItem('fiscalpro_commitments', JSON.stringify(commitments));
+  }, [commitments]);
+
+  useEffect(() => {
     localStorage.setItem('fiscalpro_fiscais', JSON.stringify(fiscais));
   }, [fiscais]);
 
@@ -266,12 +293,14 @@ export default function App() {
       setActivities([]);
       setCreditors([]);
       setNotes([]);
+      setCommitments([]);
       setFiscais([]);
       setAmendments([]);
       localStorage.removeItem('fiscalpro_contracts');
       localStorage.removeItem('fiscalpro_activities');
       localStorage.removeItem('fiscalpro_creditors');
       localStorage.removeItem('fiscalpro_notes');
+      localStorage.removeItem('fiscalpro_commitments');
       localStorage.removeItem('fiscalpro_fiscais');
       localStorage.removeItem('fiscalpro_amendments');
     }
@@ -346,6 +375,36 @@ export default function App() {
   const handleAddNote = (note: ServiceNote) => {
     setNotes([note, ...notes]);
     saveNoteToSupabase(note);
+
+    if (note.commitmentId) {
+      setCommitments((prev) =>
+        prev.map((commitment) => {
+          if (commitment.id !== note.commitmentId) return commitment;
+          const updatedCommitment = {
+            ...commitment,
+            currentBalance: note.currentBalance ?? Math.max(0, commitment.currentBalance - note.value)
+          };
+          saveCommitmentToSupabase(updatedCommitment);
+          return updatedCommitment;
+        })
+      );
+    }
+  };
+
+  const handleAddCommitment = (newCommitment: Omit<Commitment, 'id' | 'currentBalance'>) => {
+    const commitment: Commitment = {
+      ...newCommitment,
+      id: `commitment-${Date.now()}`,
+      currentBalance: newCommitment.balance
+    };
+
+    setCommitments([commitment, ...commitments]);
+    saveCommitmentToSupabase(commitment);
+  };
+
+  const handleDeleteCommitment = (id: string) => {
+    setCommitments(commitments.filter((commitment) => commitment.id !== id));
+    deleteCommitmentFromSupabase(id);
   };
 
   const handleAddFiscal = (newFiscal: Omit<FiscalPortaria, 'id'>) => {
@@ -809,10 +868,19 @@ export default function App() {
             />
           )}
 
+          {activeTab === 'empenhos' && (
+            <CommitmentsView
+              commitments={commitments}
+              onAddCommitment={handleAddCommitment}
+              onDeleteCommitment={handleDeleteCommitment}
+            />
+          )}
+
           {activeTab === 'notas' && (
             <InvoicesView
               notes={notes}
               contracts={contracts}
+              commitments={commitments}
               creditors={creditors}
               onAddNote={handleAddNote}
             />

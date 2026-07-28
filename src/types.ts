@@ -58,6 +58,19 @@ export interface ServiceNote {
   commitmentValue?: number;
   commitmentBalance?: number;
   currentBalance?: number;
+  commitmentId?: string;
+}
+
+export interface Commitment {
+  id: string;
+  number: string;
+  budgetAllocation: '06.01' | '06.06' | string;
+  program: string;
+  value: number;
+  balance: number;
+  currentBalance: number;
+  description?: string;
+  createdAt?: string;
 }
 
 export interface FiscalPortaria {
@@ -89,6 +102,7 @@ export type ActiveTab =
   | 'lancar-contrato'
   | 'fiscais'
   | 'credores'
+  | 'empenhos'
   | 'notas'
   | 'aditivos'
   | 'relatorios'

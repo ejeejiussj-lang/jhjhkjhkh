@@ -1,19 +1,13 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
 import { Receipt, Plus, FileText, CheckCircle2, Clock, Link2, Link2Off, Eye, Info, HelpCircle, X, Search, Building2, Landmark, Filter } from 'lucide-react';
-import { ServiceNote, Contract, Creditor } from '../types';
+import { ServiceNote, Contract, Creditor, Commitment } from '../types';
 
 const BUDGET_ALLOCATIONS = ['06.01', '06.06'];
-
-const NOTE_PROGRAMS = [
-  'MANUTENÃ‡ÃƒO DO BLOCO DE MÃ‰DIA E ALTA COMPLEXIDADE AMBULATORIAL E HOSPITALAR',
-  'ATENÃ‡ÃƒO BÃSICA',
-  'MANUTENÃ‡ÃƒO DO BLOCO DE VIGILÃ‚NCIA EM SAÃšDE',
-  'CASA DE APOIO SECRETARIA DE SAÃšDE'
-];
 
 interface InvoicesViewProps {
   notes: ServiceNote[];
   contracts: Contract[];
+  commitments: Commitment[];
   creditors?: Creditor[];
   onAddNote: (note: ServiceNote) => void;
 }
@@ -21,6 +15,7 @@ interface InvoicesViewProps {
 export const InvoicesView: React.FC<InvoicesViewProps> = ({
   notes,
   contracts = [],
+  commitments = [],
   creditors = [],
   onAddNote
 }) => {
@@ -30,10 +25,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
   const [creditor, setCreditor] = useState('');
   const [value, setValue] = useState('');
   const [budgetAllocation, setBudgetAllocation] = useState('06.01');
-  const [program, setProgram] = useState(NOTE_PROGRAMS[0]);
-  const [commitmentNumber, setCommitmentNumber] = useState('');
-  const [commitmentValue, setCommitmentValue] = useState('');
-  const [commitmentBalance, setCommitmentBalance] = useState('');
+  const [commitmentId, setCommitmentId] = useState('');
 
   // Search & Filter state for notes table
   const [searchTerm, setSearchTerm] = useState('');
@@ -68,6 +60,12 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
     return registeredCompanies.map((c) => c.name).sort();
   }, [registeredCompanies]);
 
+  const availableCommitments = useMemo(() => {
+    return commitments.filter((commitment) => commitment.budgetAllocation === budgetAllocation);
+  }, [commitments, budgetAllocation]);
+
+  const selectedCommitment = commitments.find((commitment) => commitment.id === commitmentId);
+
   // Reset form to empty values when modal opens
   useEffect(() => {
     if (showModal) {
@@ -76,10 +74,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
       setCreditor('');
       setValue('');
       setBudgetAllocation('06.01');
-      setProgram(NOTE_PROGRAMS[0]);
-      setCommitmentNumber('');
-      setCommitmentValue('');
-      setCommitmentBalance('');
+      setCommitmentId('');
     }
   }, [showModal]);
 
@@ -94,8 +89,8 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     const noteValue = parseFloat(value) || 0;
-    const parsedCommitmentValue = parseFloat(commitmentValue) || 0;
-    const parsedCommitmentBalance = parseFloat(commitmentBalance) || 0;
+    const parsedCommitmentValue = selectedCommitment?.value || 0;
+    const parsedCommitmentBalance = selectedCommitment?.currentBalance ?? selectedCommitment?.balance ?? 0;
     const currentBalance = parsedCommitmentBalance - noteValue;
 
     onAddNote({
@@ -107,11 +102,12 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
       value: noteValue,
       status: 'Pendente',
       budgetAllocation,
-      program,
-      commitmentNumber,
+      program: selectedCommitment?.program || '',
+      commitmentNumber: selectedCommitment?.number || '',
       commitmentValue: parsedCommitmentValue,
       commitmentBalance: parsedCommitmentBalance,
-      currentBalance
+      currentBalance,
+      commitmentId
     });
 
     setShowModal(false);
@@ -121,7 +117,12 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
   };
 
-  const previewCurrentBalance = (parseFloat(commitmentBalance) || 0) - (parseFloat(value) || 0);
+  const handleBudgetAllocationChange = (allocation: string) => {
+    setBudgetAllocation(allocation);
+    setCommitmentId('');
+  };
+
+  const previewCurrentBalance = (selectedCommitment?.currentBalance ?? selectedCommitment?.balance ?? 0) - (parseFloat(value) || 0);
 
   // Filter notes
   const filteredNotes = useMemo(() => {
@@ -147,9 +148,9 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
       {/* Header section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-900">Notas de ServiÃ§o</h2>
+          <h2 className="text-xl font-bold text-slate-900">Notas de Serviço</h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            LanÃ§amento, liquidaÃ§Ã£o e acompanhamento de notas de serviÃ§o, vinculaÃ§Ã£o a contratos e empresas.
+            Lançamento, liquidação e acompanhamento de notas de serviço, vinculação a contratos e empresas.
           </p>
         </div>
         <button
@@ -157,7 +158,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
           className="flex items-center space-x-2 px-4 py-2.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-colors cursor-pointer self-start sm:self-center"
         >
           <Plus className="w-4 h-4" />
-          <span>LanÃ§ar Nota de ServiÃ§o</span>
+          <span>Lançar Nota de Serviço</span>
         </button>
       </div>
 
@@ -189,7 +190,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                   {c.contractNum}
                 </option>
               ))}
-              <option value="SEM VÃNCULO">Sem VÃ­nculo (Avulsas)</option>
+              <option value="SEM VÍNCULO">Sem Vínculo (Avulsas)</option>
             </select>
           </div>
 
@@ -218,11 +219,11 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider">
-                <th className="py-3 px-4">NÃºmero da Nota</th>
+                <th className="py-3 px-4">Número da Nota</th>
                 <th className="py-3 px-4">Contrato Vinculado</th>
-                <th className="py-3 px-4">VÃ­nculo de Sistema</th>
+                <th className="py-3 px-4">Vínculo de Sistema</th>
                 <th className="py-3 px-4">Credor / Empresa</th>
-                <th className="py-3 px-4">Data EmissÃ£o</th>
+                <th className="py-3 px-4">Data Emissão</th>
                 <th className="py-3 px-4">Dotação</th>
                 <th className="py-3 px-4">Programa</th>
                 <th className="py-3 px-4">Empenho</th>
@@ -259,7 +260,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                         {n.contractNum}
                       </td>
 
-                      {/* VÃ­nculo Status Badge */}
+                      {/* Vínculo Status Badge */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         {isLinked ? (
                           <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
@@ -348,8 +349,8 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 w-full max-w-2xl animate-fadeIn">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
-                <h3 className="text-base font-bold text-slate-900">LanÃ§ar Nota de ServiÃ§o</h3>
-                <p className="text-[11px] text-slate-500">Selecione o contrato e a empresa credora responsÃ¡vel</p>
+                <h3 className="text-base font-bold text-slate-900">Lançar Nota de Serviço</h3>
+                <p className="text-[11px] text-slate-500">Selecione o contrato e a empresa credora responsável</p>
               </div>
               <button
                 onClick={() => setShowModal(false)}
@@ -363,7 +364,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
               {/* Note Number input */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  NÃºmero da Nota Fiscal (NF) <span className="text-rose-500">*</span>
+                  Número da Nota Fiscal (NF) <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -390,7 +391,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                   {contracts && contracts.length > 0 ? (
                     contracts.map((c) => (
                       <option key={c.id} value={c.contractNum}>
-                        {c.contractNum} â€” {c.creditor} ({c.category})
+                        {c.contractNum} - {c.creditor} ({c.category})
                       </option>
                     ))
                   ) : (
@@ -418,7 +419,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                   {registeredCompanies.length > 0 ? (
                     registeredCompanies.map((c) => (
                       <option key={c.id} value={c.name}>
-                        {c.name} {c.cnpj ? `â€” CNPJ: ${c.cnpj}` : ''}
+                        {c.name} {c.cnpj ? `- CNPJ: ${c.cnpj}` : ''}
                       </option>
                     ))
                   ) : (
@@ -430,7 +431,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
                     Dotação <span className="text-rose-500">*</span>
@@ -438,7 +439,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                   <select
                     required
                     value={budgetAllocation}
-                    onChange={(e) => setBudgetAllocation(e.target.value)}
+                    onChange={(e) => handleBudgetAllocationChange(e.target.value)}
                     className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-bold text-slate-800 cursor-pointer"
                   >
                     {BUDGET_ALLOCATIONS.map((item) => (
@@ -451,68 +452,50 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Número do Empenho <span className="text-rose-500">*</span>
+                    Empenho <span className="text-rose-500">*</span>
                   </label>
-                  <input
-                    type="text"
+                  <select
                     required
-                    value={commitmentNumber}
-                    onChange={(e) => setCommitmentNumber(e.target.value)}
-                    placeholder="Ex: 000123"
-                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-bold text-slate-800"
-                  />
+                    value={commitmentId}
+                    onChange={(e) => setCommitmentId(e.target.value)}
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-bold text-slate-800 cursor-pointer"
+                  >
+                    <option value="">-- Selecione o empenho --</option>
+                    {availableCommitments.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.number} - saldo {formatCurrency(item.currentBalance)}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Programa da Nota Fiscal <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  required
-                  value={program}
-                  onChange={(e) => setProgram(e.target.value)}
-                  className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-semibold text-slate-800 cursor-pointer"
-                >
-                  {NOTE_PROGRAMS.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Valor do Empenho (R$) <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={commitmentValue}
-                    onChange={(e) => setCommitmentValue(e.target.value)}
-                    placeholder="0.00"
-                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-bold text-slate-800"
-                  />
+              {selectedCommitment ? (
+                <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 text-xs grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="md:col-span-3">
+                    <span className="block text-[10px] font-bold uppercase text-emerald-700">Programa</span>
+                    <span className="font-bold text-slate-900">{selectedCommitment.program}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] font-bold uppercase text-emerald-700">Valor do empenho</span>
+                    <span className="font-bold text-slate-900">{formatCurrency(selectedCommitment.value)}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] font-bold uppercase text-emerald-700">Saldo antes da nota</span>
+                    <span className="font-bold text-slate-900">{formatCurrency(selectedCommitment.currentBalance)}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] font-bold uppercase text-emerald-700">Saldo após desconto</span>
+                    <span className={`font-bold ${previewCurrentBalance < 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
+                      {formatCurrency(previewCurrentBalance)}
+                    </span>
+                  </div>
                 </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Saldo do Empenho (R$) <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={commitmentBalance}
-                    onChange={(e) => setCommitmentBalance(e.target.value)}
-                    placeholder="0.00"
-                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-bold text-slate-800"
-                  />
+              ) : (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 font-semibold">
+                  Selecione um empenho cadastrado para puxar programa, valor e saldo automaticamente.
                 </div>
-              </div>
+              )}
 
               {/* Value input */}
               <div>
@@ -556,7 +539,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                   type="submit"
                   className="px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-xs transition-colors cursor-pointer"
                 >
-                  Confirmar LanÃ§amento
+                  Confirmar Lançamento
                 </button>
               </div>
             </form>

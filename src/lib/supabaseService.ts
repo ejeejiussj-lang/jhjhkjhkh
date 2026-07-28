@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { Contract, Creditor, ServiceNote, FiscalPortaria, ContractAmendment } from '../types';
+import { Contract, Creditor, ServiceNote, FiscalPortaria, ContractAmendment, Commitment } from '../types';
 
 export interface UserProfile {
   id: string;
@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS public.service_notes (
   commitment_value NUMERIC DEFAULT 0,
   commitment_balance NUMERIC DEFAULT 0,
   current_balance NUMERIC DEFAULT 0,
+  commitment_id TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
@@ -91,9 +92,26 @@ ALTER TABLE public.service_notes ADD COLUMN IF NOT EXISTS commitment_number TEXT
 ALTER TABLE public.service_notes ADD COLUMN IF NOT EXISTS commitment_value NUMERIC DEFAULT 0;
 ALTER TABLE public.service_notes ADD COLUMN IF NOT EXISTS commitment_balance NUMERIC DEFAULT 0;
 ALTER TABLE public.service_notes ADD COLUMN IF NOT EXISTS current_balance NUMERIC DEFAULT 0;
+ALTER TABLE public.service_notes ADD COLUMN IF NOT EXISTS commitment_id TEXT;
 
 ALTER TABLE public.service_notes ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Permitir tudo em service_notes" ON public.service_notes FOR ALL USING (true);
+
+-- 4.1. Tabela de Empenhos (commitments)
+CREATE TABLE IF NOT EXISTS public.commitments (
+  id TEXT PRIMARY KEY,
+  number TEXT NOT NULL,
+  budget_allocation TEXT NOT NULL,
+  program TEXT NOT NULL,
+  value NUMERIC DEFAULT 0,
+  balance NUMERIC DEFAULT 0,
+  current_balance NUMERIC DEFAULT 0,
+  description TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+ALTER TABLE public.commitments ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Permitir tudo em commitments" ON public.commitments FOR ALL USING (true);
 
 -- 5. Tabela de Fiscais e Portarias (fiscais)
 CREATE TABLE IF NOT EXISTS public.fiscais (
@@ -250,6 +268,7 @@ export async function fetchNotesFromSupabase(): Promise<ServiceNote[] | null> {
       commitmentValue: Number(item.commitment_value || 0),
       commitmentBalance: Number(item.commitment_balance || 0),
       currentBalance: Number(item.current_balance || 0),
+      commitmentId: item.commitment_id || '',
     }));
   } catch (err) {
     console.error('Erro ao buscar notas no Supabase:', err);
@@ -273,9 +292,57 @@ export async function saveNoteToSupabase(note: ServiceNote) {
       commitment_value: note.commitmentValue || 0,
       commitment_balance: note.commitmentBalance || 0,
       current_balance: note.currentBalance || 0,
+      commitment_id: note.commitmentId,
     });
   } catch (err) {
     console.error('Erro ao salvar nota no Supabase:', err);
+  }
+}
+
+export async function fetchCommitmentsFromSupabase(): Promise<Commitment[] | null> {
+  try {
+    const { data, error } = await supabase.from('commitments').select('*');
+    if (error || !data) return null;
+    return data.map((item) => ({
+      id: item.id,
+      number: item.number,
+      budgetAllocation: item.budget_allocation || '',
+      program: item.program || '',
+      value: Number(item.value || 0),
+      balance: Number(item.balance || 0),
+      currentBalance: Number(item.current_balance || 0),
+      description: item.description || '',
+      createdAt: item.created_at || '',
+    }));
+  } catch (err) {
+    console.error('Erro ao buscar empenhos no Supabase:', err);
+    return null;
+  }
+}
+
+export async function saveCommitmentToSupabase(commitment: Commitment) {
+  try {
+    const { error } = await supabase.from('commitments').upsert({
+      id: commitment.id,
+      number: commitment.number,
+      budget_allocation: commitment.budgetAllocation,
+      program: commitment.program,
+      value: commitment.value,
+      balance: commitment.balance,
+      current_balance: commitment.currentBalance,
+      description: commitment.description,
+    });
+    if (error) throw error;
+  } catch (err) {
+    console.error('Erro ao salvar empenho no Supabase:', err);
+  }
+}
+
+export async function deleteCommitmentFromSupabase(id: string) {
+  try {
+    await supabase.from('commitments').delete().eq('id', id);
+  } catch (err) {
+    console.error('Erro ao deletar empenho no Supabase:', err);
   }
 }
 

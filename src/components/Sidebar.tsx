@@ -1,9 +1,10 @@
-import React from 'react';
+﻿import React from 'react';
 import {
   LayoutDashboard,
   FilePlus,
   Users,
   Receipt,
+  Banknote,
   Layers,
   BarChart3,
   BellRing,
@@ -38,6 +39,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'contratos-lancados', label: 'Contratos Lançados', icon: FileText },
     { id: 'fiscais', label: 'Cadastrar Fiscais / Portarias', icon: UserCheck },
     { id: 'credores', label: 'Credores', icon: Users },
+    { id: 'empenhos', label: 'Empenhos', icon: Banknote },
     { id: 'notas', label: 'Notas de Serviços', icon: Receipt },
     { id: 'aditivos', label: 'Aditivos', icon: Layers }
   ];
