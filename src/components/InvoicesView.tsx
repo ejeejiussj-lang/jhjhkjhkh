@@ -1,6 +1,15 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { Receipt, Plus, FileText, CheckCircle2, Clock, Link2, Link2Off, Eye, Info, HelpCircle, X, Search, Building2, Landmark, Filter } from 'lucide-react';
 import { ServiceNote, Contract, Creditor } from '../types';
+
+const BUDGET_ALLOCATIONS = ['06.01', '06.06'];
+
+const NOTE_PROGRAMS = [
+  'MANUTENÃ‡ÃƒO DO BLOCO DE MÃ‰DIA E ALTA COMPLEXIDADE AMBULATORIAL E HOSPITALAR',
+  'ATENÃ‡ÃƒO BÃSICA',
+  'MANUTENÃ‡ÃƒO DO BLOCO DE VIGILÃ‚NCIA EM SAÃšDE',
+  'CASA DE APOIO SECRETARIA DE SAÃšDE'
+];
 
 interface InvoicesViewProps {
   notes: ServiceNote[];
@@ -20,6 +29,11 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
   const [contractNum, setContractNum] = useState('');
   const [creditor, setCreditor] = useState('');
   const [value, setValue] = useState('');
+  const [budgetAllocation, setBudgetAllocation] = useState('06.01');
+  const [program, setProgram] = useState(NOTE_PROGRAMS[0]);
+  const [commitmentNumber, setCommitmentNumber] = useState('');
+  const [commitmentValue, setCommitmentValue] = useState('');
+  const [commitmentBalance, setCommitmentBalance] = useState('');
 
   // Search & Filter state for notes table
   const [searchTerm, setSearchTerm] = useState('');
@@ -61,6 +75,11 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
       setContractNum('');
       setCreditor('');
       setValue('');
+      setBudgetAllocation('06.01');
+      setProgram(NOTE_PROGRAMS[0]);
+      setCommitmentNumber('');
+      setCommitmentValue('');
+      setCommitmentBalance('');
     }
   }, [showModal]);
 
@@ -74,6 +93,10 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
+    const noteValue = parseFloat(value) || 0;
+    const parsedCommitmentValue = parseFloat(commitmentValue) || 0;
+    const parsedCommitmentBalance = parseFloat(commitmentBalance) || 0;
+    const currentBalance = parsedCommitmentBalance - noteValue;
 
     onAddNote({
       id: `n-${Date.now()}`,
@@ -81,8 +104,14 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
       contractNum: contractNum || 'Contrato Não Selecionado',
       creditor: creditor || 'Credor Não Identificado',
       issueDate: new Date().toLocaleDateString('pt-BR'),
-      value: parseFloat(value) || 0,
-      status: 'Pendente'
+      value: noteValue,
+      status: 'Pendente',
+      budgetAllocation,
+      program,
+      commitmentNumber,
+      commitmentValue: parsedCommitmentValue,
+      commitmentBalance: parsedCommitmentBalance,
+      currentBalance
     });
 
     setShowModal(false);
@@ -92,6 +121,8 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
   };
 
+  const previewCurrentBalance = (parseFloat(commitmentBalance) || 0) - (parseFloat(value) || 0);
+
   // Filter notes
   const filteredNotes = useMemo(() => {
     return notes.filter((n) => {
@@ -99,7 +130,10 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
       const matchesSearch =
         n.noteNumber.toLowerCase().includes(term) ||
         n.contractNum.toLowerCase().includes(term) ||
-        n.creditor.toLowerCase().includes(term);
+        n.creditor.toLowerCase().includes(term) ||
+        (n.budgetAllocation || '').toLowerCase().includes(term) ||
+        (n.program || '').toLowerCase().includes(term) ||
+        (n.commitmentNumber || '').toLowerCase().includes(term);
 
       const matchesContract = contractFilter === 'ALL' || n.contractNum === contractFilter;
       const matchesCreditor = creditorFilter === 'ALL' || n.creditor === creditorFilter;
@@ -113,9 +147,9 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
       {/* Header section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-900">Notas de Serviço</h2>
+          <h2 className="text-xl font-bold text-slate-900">Notas de ServiÃ§o</h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Lançamento, liquidação e acompanhamento de notas de serviço, vinculação a contratos e empresas.
+            LanÃ§amento, liquidaÃ§Ã£o e acompanhamento de notas de serviÃ§o, vinculaÃ§Ã£o a contratos e empresas.
           </p>
         </div>
         <button
@@ -123,7 +157,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
           className="flex items-center space-x-2 px-4 py-2.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-colors cursor-pointer self-start sm:self-center"
         >
           <Plus className="w-4 h-4" />
-          <span>Lançar Nota de Serviço</span>
+          <span>LanÃ§ar Nota de ServiÃ§o</span>
         </button>
       </div>
 
@@ -155,7 +189,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                   {c.contractNum}
                 </option>
               ))}
-              <option value="SEM VÍNCULO">Sem Vínculo (Avulsas)</option>
+              <option value="SEM VÃNCULO">Sem VÃ­nculo (Avulsas)</option>
             </select>
           </div>
 
@@ -184,19 +218,23 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider">
-                <th className="py-3 px-4">Número da Nota</th>
+                <th className="py-3 px-4">NÃºmero da Nota</th>
                 <th className="py-3 px-4">Contrato Vinculado</th>
-                <th className="py-3 px-4">Vínculo de Sistema</th>
+                <th className="py-3 px-4">VÃ­nculo de Sistema</th>
                 <th className="py-3 px-4">Credor / Empresa</th>
-                <th className="py-3 px-4">Data Emissão</th>
+                <th className="py-3 px-4">Data EmissÃ£o</th>
+                <th className="py-3 px-4">Dotação</th>
+                <th className="py-3 px-4">Programa</th>
+                <th className="py-3 px-4">Empenho</th>
                 <th className="py-3 px-4">Valor Líquido</th>
+                <th className="py-3 px-4">Saldo Atual</th>
                 <th className="py-3 px-4">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredNotes.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-8 text-slate-400 italic">
+                  <td colSpan={11} className="text-center py-8 text-slate-400 italic">
                     Nenhuma nota fiscal encontrada para os filtros selecionados.
                   </td>
                 </tr>
@@ -221,7 +259,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                         {n.contractNum}
                       </td>
 
-                      {/* Vínculo Status Badge */}
+                      {/* VÃ­nculo Status Badge */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         {isLinked ? (
                           <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
@@ -246,9 +284,39 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                         {n.issueDate}
                       </td>
 
+                      <td className="py-3.5 px-4 font-bold text-slate-700 whitespace-nowrap">
+                        {n.budgetAllocation || '-'}
+                      </td>
+
+                      <td className="py-3.5 px-4 text-slate-700 min-w-64">
+                        <p className="line-clamp-2" title={n.program || ''}>
+                          {n.program || '-'}
+                        </p>
+                      </td>
+
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <div className="space-y-0.5">
+                          <p className="font-bold text-slate-800">{n.commitmentNumber || '-'}</p>
+                          <p className="text-[10px] text-slate-500">
+                            Empenho: {formatCurrency(n.commitmentValue || 0)}
+                          </p>
+                        </div>
+                      </td>
+
                       {/* Value */}
                       <td className="py-3.5 px-4 font-semibold text-slate-900 whitespace-nowrap">
                         {formatCurrency(n.value)}
+                      </td>
+
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <div className="space-y-0.5 text-right">
+                          <p className="text-[10px] text-slate-500">
+                            Antes: {formatCurrency(n.commitmentBalance || 0)}
+                          </p>
+                          <p className={`font-bold ${(n.currentBalance || 0) < 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
+                            {formatCurrency(n.currentBalance || 0)}
+                          </p>
+                        </div>
                       </td>
 
                       {/* Status */}
@@ -277,11 +345,11 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
       {/* Launch Note Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 w-full max-w-md animate-fadeIn">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 w-full max-w-2xl animate-fadeIn">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
-                <h3 className="text-base font-bold text-slate-900">Lançar Nota de Serviço</h3>
-                <p className="text-[11px] text-slate-500">Selecione o contrato e a empresa credora responsável</p>
+                <h3 className="text-base font-bold text-slate-900">LanÃ§ar Nota de ServiÃ§o</h3>
+                <p className="text-[11px] text-slate-500">Selecione o contrato e a empresa credora responsÃ¡vel</p>
               </div>
               <button
                 onClick={() => setShowModal(false)}
@@ -295,7 +363,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
               {/* Note Number input */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Número da Nota Fiscal (NF) <span className="text-rose-500">*</span>
+                  NÃºmero da Nota Fiscal (NF) <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -322,7 +390,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                   {contracts && contracts.length > 0 ? (
                     contracts.map((c) => (
                       <option key={c.id} value={c.contractNum}>
-                        {c.contractNum} — {c.creditor} ({c.category})
+                        {c.contractNum} â€” {c.creditor} ({c.category})
                       </option>
                     ))
                   ) : (
@@ -350,7 +418,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                   {registeredCompanies.length > 0 ? (
                     registeredCompanies.map((c) => (
                       <option key={c.id} value={c.name}>
-                        {c.name} {c.cnpj ? `— CNPJ: ${c.cnpj}` : ''}
+                        {c.name} {c.cnpj ? `â€” CNPJ: ${c.cnpj}` : ''}
                       </option>
                     ))
                   ) : (
@@ -360,6 +428,90 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                 <p className="text-[10px] text-slate-500 mt-1">
                   Exibe apenas as empresas e credores cadastrados.
                 </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Dotação <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    required
+                    value={budgetAllocation}
+                    onChange={(e) => setBudgetAllocation(e.target.value)}
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-bold text-slate-800 cursor-pointer"
+                  >
+                    {BUDGET_ALLOCATIONS.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Número do Empenho <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={commitmentNumber}
+                    onChange={(e) => setCommitmentNumber(e.target.value)}
+                    placeholder="Ex: 000123"
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-bold text-slate-800"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Programa da Nota Fiscal <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  required
+                  value={program}
+                  onChange={(e) => setProgram(e.target.value)}
+                  className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-semibold text-slate-800 cursor-pointer"
+                >
+                  {NOTE_PROGRAMS.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Valor do Empenho (R$) <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={commitmentValue}
+                    onChange={(e) => setCommitmentValue(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-bold text-slate-800"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Saldo do Empenho (R$) <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={commitmentBalance}
+                    onChange={(e) => setCommitmentBalance(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-bold text-slate-800"
+                  />
+                </div>
               </div>
 
               {/* Value input */}
@@ -378,6 +530,19 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs">
+                <div>
+                  <span className="block text-[10px] font-bold uppercase text-slate-400">Desconto da nota</span>
+                  <span className="font-bold text-slate-900">{formatCurrency(parseFloat(value) || 0)}</span>
+                </div>
+                <div className="text-right">
+                  <span className="block text-[10px] font-bold uppercase text-slate-400">Saldo atual</span>
+                  <span className={`font-bold ${previewCurrentBalance < 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
+                    {formatCurrency(previewCurrentBalance)}
+                  </span>
+                </div>
+              </div>
+
               {/* Modal Buttons */}
               <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
                 <button
@@ -391,7 +556,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                   type="submit"
                   className="px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-xs transition-colors cursor-pointer"
                 >
-                  Confirmar Lançamento
+                  Confirmar LanÃ§amento
                 </button>
               </div>
             </form>

@@ -52,6 +52,12 @@ export interface ServiceNote {
   issueDate: string;
   value: number;
   status: 'Emitida' | 'Paga' | 'Pendente';
+  budgetAllocation?: '06.01' | '06.06' | string;
+  program?: string;
+  commitmentNumber?: string;
+  commitmentValue?: number;
+  commitmentBalance?: number;
+  currentBalance?: number;
 }
 
 export interface FiscalPortaria {

@@ -76,8 +76,21 @@ CREATE TABLE IF NOT EXISTS public.service_notes (
   issue_date TEXT,
   value NUMERIC DEFAULT 0,
   status TEXT DEFAULT 'Pendente',
+  budget_allocation TEXT,
+  program TEXT,
+  commitment_number TEXT,
+  commitment_value NUMERIC DEFAULT 0,
+  commitment_balance NUMERIC DEFAULT 0,
+  current_balance NUMERIC DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+
+ALTER TABLE public.service_notes ADD COLUMN IF NOT EXISTS budget_allocation TEXT;
+ALTER TABLE public.service_notes ADD COLUMN IF NOT EXISTS program TEXT;
+ALTER TABLE public.service_notes ADD COLUMN IF NOT EXISTS commitment_number TEXT;
+ALTER TABLE public.service_notes ADD COLUMN IF NOT EXISTS commitment_value NUMERIC DEFAULT 0;
+ALTER TABLE public.service_notes ADD COLUMN IF NOT EXISTS commitment_balance NUMERIC DEFAULT 0;
+ALTER TABLE public.service_notes ADD COLUMN IF NOT EXISTS current_balance NUMERIC DEFAULT 0;
 
 ALTER TABLE public.service_notes ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Permitir tudo em service_notes" ON public.service_notes FOR ALL USING (true);
@@ -231,6 +244,12 @@ export async function fetchNotesFromSupabase(): Promise<ServiceNote[] | null> {
       issueDate: item.issue_date || '',
       value: Number(item.value || 0),
       status: item.status || 'Pendente',
+      budgetAllocation: item.budget_allocation || '',
+      program: item.program || '',
+      commitmentNumber: item.commitment_number || '',
+      commitmentValue: Number(item.commitment_value || 0),
+      commitmentBalance: Number(item.commitment_balance || 0),
+      currentBalance: Number(item.current_balance || 0),
     }));
   } catch (err) {
     console.error('Erro ao buscar notas no Supabase:', err);
@@ -248,6 +267,12 @@ export async function saveNoteToSupabase(note: ServiceNote) {
       issue_date: note.issueDate,
       value: note.value,
       status: note.status,
+      budget_allocation: note.budgetAllocation,
+      program: note.program,
+      commitment_number: note.commitmentNumber,
+      commitment_value: note.commitmentValue || 0,
+      commitment_balance: note.commitmentBalance || 0,
+      current_balance: note.currentBalance || 0,
     });
   } catch (err) {
     console.error('Erro ao salvar nota no Supabase:', err);
