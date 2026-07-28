@@ -10,6 +10,7 @@ import {
   Search,
   Download,
   Filter,
+  Pencil,
   CheckCircle2,
   AlertTriangle,
   Clock,
@@ -24,6 +25,7 @@ interface ContractTableProps {
   notes?: ServiceNote[];
   onOpenNewContractModal: () => void;
   onViewContractDetails?: (contract: Contract) => void;
+  onEditContract?: (contract: Contract) => void;
   onDeleteContract?: (id: string) => void;
   onViewAllContracts?: () => void;
 }
@@ -33,6 +35,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
   notes = [],
   onOpenNewContractModal,
   onViewContractDetails,
+  onEditContract,
   onDeleteContract
 }) => {
   const [activeActionId, setActiveActionId] = useState<string | null>(null);
@@ -484,6 +487,19 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                             <Eye className="w-3.5 h-3.5 text-emerald-600" />
                             <span>Ver Detalhes</span>
                           </button>
+
+                          {onEditContract && (
+                            <button
+                              onClick={() => {
+                                setActiveActionId(null);
+                                onEditContract(c);
+                              }}
+                              className="w-full flex items-center space-x-2 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                            >
+                              <Pencil className="w-3.5 h-3.5 text-blue-600" />
+                              <span>Editar Contrato</span>
+                            </button>
+                          )}
 
                           <button
                             onClick={() => {

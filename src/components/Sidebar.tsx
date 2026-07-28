@@ -12,7 +12,6 @@ import {
   FileCheck2,
   FileText,
   UserCheck,
-  HelpCircle,
   ChevronRight,
   X
 } from 'lucide-react';
@@ -190,25 +189,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Sidebar Footer */}
       <div className="p-3 border-t border-slate-100 bg-slate-50/55 space-y-3">
-        {!collapsed && (
-          <div className="p-3 bg-white rounded-xl border border-slate-200/80 shadow-2xs space-y-2">
-            <div className="flex items-center space-x-2">
-              <div className="w-7 h-7 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center shrink-0">
-                <HelpCircle className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="text-[11px] font-bold text-slate-800">Precisa de ajuda?</p>
-                <p className="text-[10px] text-slate-400 leading-tight">Nossa equipe está pronta</p>
-              </div>
-            </div>
-            <button
-              onClick={() => alert('Suporte SIGEC: atendimento via central de chamados ou e-mail fiscal@sigec.gov.br')}
-              className="w-full py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-[11px] rounded-lg transition-colors cursor-pointer block text-center"
-            >
-              Abrir chamado
-            </button>
-          </div>
-        )}
 
         {onToggleSidebar && (
           <button

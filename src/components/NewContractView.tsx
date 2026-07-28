@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
-import { FilePlus, Check, ArrowLeft, RotateCcw, UserCheck, ShieldCheck, FileCheck, Landmark, Users, Plus, Tag } from 'lucide-react';
-import { Contract, ContractStatus, FiscalPortaria, Creditor } from '../types';
-import { saveContractToSupabase } from '../lib/supabaseService';
+import { FilePlus, Check, ArrowLeft, RotateCcw, UserCheck, ShieldCheck, FileCheck, Landmark, Users, Plus, Tag, Trash2 } from 'lucide-react';
+import { Contract, ContractItem, ContractStatus, FiscalPortaria, Creditor } from '../types';
 
 
 interface NewContractViewProps {
   fiscais?: FiscalPortaria[];
   creditors?: Creditor[];
   categories?: string[];
+  editingContract?: Contract | null;
   onAddCategory?: (category: string) => void;
   onAddContract: (contract: Omit<Contract, 'id'>) => void;
+  onUpdateContract?: (contract: Contract) => void;
   onCancel: () => void;
 }
 
@@ -17,25 +18,36 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
   fiscais = [],
   creditors = [],
   categories = [],
+  editingContract = null,
   onAddCategory,
   onAddContract,
+  onUpdateContract,
   onCancel
 }) => {
-  const [contractNum, setContractNum] = useState('');
-  const [creditor, setCreditor] = useState('');
-  const [object, setObject] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [totalValue, setTotalValue] = useState('');
-  const [status, setStatus] = useState<ContractStatus>('Ativo');
-  const [category, setCategory] = useState('Secretaria Municipal de Saúde');
+  const isEditing = Boolean(editingContract);
+  const [contractNum, setContractNum] = useState(editingContract?.contractNum || '');
+  const [creditor, setCreditor] = useState(editingContract?.creditor || '');
+  const [object, setObject] = useState(editingContract?.object || '');
+  const [startDate, setStartDate] = useState(editingContract?.startDate || '');
+  const [endDate, setEndDate] = useState(editingContract?.endDate || '');
+  const [totalValue, setTotalValue] = useState(editingContract ? String(editingContract.totalValue) : '');
+  const [status, setStatus] = useState<ContractStatus>(editingContract?.status || 'Ativo');
+  const [category, setCategory] = useState(editingContract?.category || 'Secretaria Municipal de Saúde');
 
   // Fiscal and Portaria fields
-  const [selectedFiscalId, setSelectedFiscalId] = useState('');
-  const [fiscalName, setFiscalName] = useState('');
-  const [fiscalPortaria, setFiscalPortaria] = useState('');
-  const [fiscalPortariaPublicationDate, setFiscalPortariaPublicationDate] = useState('');
-  const [fiscalPortariaValidity, setFiscalPortariaValidity] = useState('');
+  const [selectedFiscalId, setSelectedFiscalId] = useState(() => {
+    if (!editingContract) return '';
+    return fiscais.find((f) => f.name === editingContract.fiscalName && f.portaria === editingContract.fiscalPortaria)?.id || '';
+  });
+  const [fiscalName, setFiscalName] = useState(editingContract?.fiscalName || '');
+  const [fiscalPortaria, setFiscalPortaria] = useState(editingContract?.fiscalPortaria || '');
+  const [fiscalPortariaPublicationDate, setFiscalPortariaPublicationDate] = useState(editingContract?.fiscalPortariaPublicationDate || '');
+  const [fiscalPortariaValidity, setFiscalPortariaValidity] = useState(editingContract?.fiscalPortariaValidity || '');
+  const [items, setItems] = useState<ContractItem[]>(editingContract?.items || []);
+  const [itemDescription, setItemDescription] = useState('');
+  const [itemUnit, setItemUnit] = useState('UN');
+  const [itemQuantity, setItemQuantity] = useState('');
+  const [itemUnitValue, setItemUnitValue] = useState('');
 
   const [successMessage, setSuccessMessage] = useState(false);
 
@@ -67,33 +79,72 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
     }
   };
 
+  const contractItemsTotal = items.reduce((sum, item) => sum + item.quantity * item.unitValue, 0);
+  const currentItemTotal = (parseFloat(itemQuantity) || 0) * (parseFloat(itemUnitValue) || 0);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  const handleAddItem = () => {
+    const description = itemDescription.trim();
+    const quantity = parseFloat(itemQuantity) || 0;
+    const unitValue = parseFloat(itemUnitValue) || 0;
+
+    if (!description || quantity <= 0 || unitValue < 0) return;
+
+    setItems((prev) => [
+      ...prev,
+      {
+        id: `item-${Date.now()}`,
+        description,
+        unit: itemUnit.trim() || 'UN',
+        quantity,
+        unitValue
+      }
+    ]);
+    setItemDescription('');
+    setItemUnit('UN');
+    setItemQuantity('');
+    setItemUnitValue('');
+  };
+
+  const handleRemoveItem = (id: string) => {
+    setItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!contractNum || !creditor || !object) return;
 
-    const newContractData = {
+    const contractData = {
       contractNum,
       creditor,
       object,
       startDate,
       endDate,
       totalValue: parseFloat(totalValue) || 0,
-      usedValue: 0,
+      usedValue: editingContract?.usedValue || 0,
       status,
       category,
       fiscalName,
       fiscalPortaria,
       fiscalPortariaPublicationDate,
-      fiscalPortariaValidity
+      fiscalPortariaValidity,
+      items
     };
 
-    onAddContract(newContractData);
-
-    // Save asynchronously to Supabase
-    saveContractToSupabase({
-      id: `ct-${Date.now()}`,
-      ...newContractData
-    });
+    if (editingContract && onUpdateContract) {
+      onUpdateContract({
+        ...editingContract,
+        ...contractData
+      });
+    } else {
+      onAddContract(contractData);
+    }
 
     setSuccessMessage(true);
     setTimeout(() => {
@@ -111,12 +162,17 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
     setEndDate('');
     setTotalValue('');
     setStatus('Ativo');
-    setCategory('Secretaria de Saúde');
+    setCategory('Secretaria Municipal de Saúde');
     setSelectedFiscalId('');
     setFiscalName('');
     setFiscalPortaria('');
     setFiscalPortariaPublicationDate('');
     setFiscalPortariaValidity('');
+    setItems([]);
+    setItemDescription('');
+    setItemUnit('UN');
+    setItemQuantity('');
+    setItemUnitValue('');
   };
 
   return (
@@ -132,10 +188,12 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
             <span>Voltar ao Dashboard</span>
           </button>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            <span>Lançar Novo Contrato</span>
+            <span>{isEditing ? 'Editar Contrato' : 'Lançar Novo Contrato'}</span>
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Preencha os dados do contrato, vigência, valores e os dados da portaria do fiscal responsável.
+            {isEditing
+              ? 'Atualize os dados do contrato, vigência, valores e os dados da portaria do fiscal responsável.'
+              : 'Preencha os dados do contrato, vigência, valores e os dados da portaria do fiscal responsável.'}
           </p>
         </div>
       </div>
@@ -143,14 +201,16 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
       {successMessage && (
         <div className="bg-emerald-600 text-white p-4 rounded-xl text-xs font-semibold flex items-center space-x-2 animate-fadeIn shadow-xs">
           <Check className="w-4 h-4 text-emerald-200 shrink-0" />
-          <span>Contrato cadastrado com sucesso! Redirecionando...</span>
+          <span>{isEditing ? 'Contrato atualizado com sucesso! Redirecionando...' : 'Contrato cadastrado com sucesso! Redirecionando...'}</span>
         </div>
       )}
 
       {/* Main Form Container */}
       <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-          <h3 className="text-sm font-bold text-slate-900">Formulário de Lançamento de Contrato</h3>
+          <h3 className="text-sm font-bold text-slate-900">
+            {isEditing ? 'Formulário de Edição de Contrato' : 'Formulário de Lançamento de Contrato'}
+          </h3>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-7">
@@ -305,12 +365,149 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
             </div>
           </div>
 
+          <div className="space-y-4 pt-2">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <div className="flex items-center space-x-2 text-xs font-bold text-slate-800 uppercase tracking-wider">
+                <FilePlus className="w-4 h-4 text-emerald-600" />
+                <span>3. Itens do Contrato</span>
+              </div>
+              <span className="text-[11px] font-bold text-emerald-700">
+                Total dos itens: {formatCurrency(contractItemsTotal)}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_90px_110px_130px_130px_auto] gap-3 items-end">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Descrição do Item
+                </label>
+                <input
+                  type="text"
+                  value={itemDescription}
+                  onChange={(e) => setItemDescription(e.target.value)}
+                  placeholder="Ex: Medicamento, material ou serviço"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Unidade
+                </label>
+                <input
+                  type="text"
+                  value={itemUnit}
+                  onChange={(e) => setItemUnit(e.target.value)}
+                  placeholder="UN"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-900 font-semibold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Quantidade
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={itemQuantity}
+                  onChange={(e) => setItemQuantity(e.target.value)}
+                  placeholder="0"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-900 font-semibold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Valor Unitário
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={itemUnitValue}
+                  onChange={(e) => setItemUnitValue(e.target.value)}
+                  placeholder="0,00"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-900 font-semibold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Total do Item
+                </label>
+                <div className="w-full px-3.5 py-2.5 text-xs bg-slate-100 border border-slate-200 rounded-xl text-slate-900 font-bold">
+                  {formatCurrency(currentItemTotal)}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleAddItem}
+                className="h-10 px-4 inline-flex items-center justify-center gap-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Adicionar</span>
+              </button>
+            </div>
+
+            {items.length > 0 && (
+              <div className="border border-slate-200 rounded-xl overflow-hidden">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500 font-bold">
+                    <tr>
+                      <th className="px-3 py-2.5">Item</th>
+                      <th className="px-3 py-2.5 text-center">Un.</th>
+                      <th className="px-3 py-2.5 text-right">Qtd.</th>
+                      <th className="px-3 py-2.5 text-right">Valor Unit.</th>
+                      <th className="px-3 py-2.5 text-right">Total</th>
+                      <th className="px-3 py-2.5 text-right">Ação</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {items.map((item) => (
+                      <tr key={item.id} className="bg-white">
+                        <td className="px-3 py-2.5 font-semibold text-slate-800">{item.description}</td>
+                        <td className="px-3 py-2.5 text-center text-slate-600">{item.unit}</td>
+                        <td className="px-3 py-2.5 text-right text-slate-700">{item.quantity.toLocaleString('pt-BR')}</td>
+                        <td className="px-3 py-2.5 text-right text-slate-700">{formatCurrency(item.unitValue)}</td>
+                        <td className="px-3 py-2.5 text-right font-bold text-slate-900">{formatCurrency(item.quantity * item.unitValue)}</td>
+                        <td className="px-3 py-2.5 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveItem(item.id)}
+                            className="inline-flex items-center justify-end gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                            title="Remover item"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Remover</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {items.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setTotalValue(String(contractItemsTotal))}
+                className="inline-flex items-center px-3 py-2 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors cursor-pointer"
+              >
+                Usar total dos itens como valor do contrato
+              </button>
+            )}
+          </div>
+
           {/* SECTION 3: Dados do Fiscal e Portaria */}
           <div className="space-y-4 pt-2">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <div className="flex items-center space-x-2 text-xs font-bold text-slate-800 uppercase tracking-wider">
                 <UserCheck className="w-4 h-4 text-emerald-600" />
-                <span>3. Fiscalização do Contrato & Portaria</span>
+                <span>4. Fiscalização do Contrato & Portaria</span>
               </div>
             </div>
 
@@ -369,7 +566,7 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
               className="flex items-center space-x-1 px-4 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 rounded-xl hover:bg-slate-50 transition-all cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Limpar Campos</span>
+              <span>{isEditing ? 'Limpar edição' : 'Limpar Campos'}</span>
             </button>
 
             <div className="flex items-center space-x-2.5">
@@ -385,7 +582,7 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
                 className="flex items-center space-x-1.5 px-6 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-all cursor-pointer"
               >
                 <Check className="w-4 h-4" />
-                <span>Salvar e Gravar Contrato</span>
+                <span>{isEditing ? 'Salvar Alterações' : 'Salvar e Gravar Contrato'}</span>
               </button>
             </div>
           </div>
@@ -394,4 +591,5 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
     </div>
   );
 };
+
 

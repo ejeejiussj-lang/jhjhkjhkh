@@ -101,7 +101,19 @@ export default function App() {
 
     fetchContractsFromSupabase().then((remoteContracts) => {
       if (remoteContracts) {
-        setContracts(remoteContracts);
+        setContracts((currentContracts) =>
+          remoteContracts.map((remoteContract) => {
+            const localContract = currentContracts.find(
+              (contract) =>
+                contract.id === remoteContract.id ||
+                contract.contractNum.toLowerCase().trim() === remoteContract.contractNum.toLowerCase().trim()
+            );
+            return {
+              ...remoteContract,
+              items: localContract?.items || remoteContract.items || []
+            };
+          })
+        );
       }
     });
 
@@ -268,9 +280,13 @@ export default function App() {
   // Modals
   const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
   const [selectedContractDetail, setSelectedContractDetail] = useState<Contract | null>(null);
+  const [editingContract, setEditingContract] = useState<Contract | null>(null);
 
   // Handle Tab Switch
   const handleTabChange = (tab: ActiveTab) => {
+    if (tab === 'lancar-contrato') {
+      setEditingContract(null);
+    }
     setActiveTab(tab);
   };
 
@@ -305,6 +321,13 @@ export default function App() {
     ]);
   };
 
+  const handleUpdateContract = (updatedContract: Contract) => {
+    setContracts(contracts.map((c) => (c.id === updatedContract.id ? updatedContract : c)));
+    saveContractToSupabase(updatedContract);
+    setEditingContract(null);
+    setActiveTab('contratos-lancados');
+  };
+
   const handleDeleteContract = (id: string) => {
     setContracts(contracts.filter((c) => c.id !== id));
     deleteContractFromSupabase(id);
@@ -325,7 +348,12 @@ export default function App() {
     saveNoteToSupabase(note);
   };
 
-  const handleAddFiscal = (fiscal: FiscalPortaria) => {
+  const handleAddFiscal = (newFiscal: Omit<FiscalPortaria, 'id'>) => {
+    const fiscal: FiscalPortaria = {
+      ...newFiscal,
+      id: `fiscal-${Date.now()}`
+    };
+
     setFiscais([fiscal, ...fiscais]);
     saveFiscalToSupabase(fiscal);
   };
@@ -732,8 +760,15 @@ export default function App() {
                 <ContractTable
                   contracts={filteredContracts}
                   notes={notes}
-                  onOpenNewContractModal={() => setActiveTab('lancar-contrato')}
+                  onOpenNewContractModal={() => {
+                    setEditingContract(null);
+                    setActiveTab('lancar-contrato');
+                  }}
                   onViewContractDetails={(contract) => setSelectedContractDetail(contract)}
+                  onEditContract={(contract) => {
+                    setEditingContract(contract);
+                    setActiveTab('lancar-contrato');
+                  }}
                   onDeleteContract={handleDeleteContract}
                   onViewAllContracts={() => setActiveTab('contratos-lancados')}
                 />
@@ -743,8 +778,13 @@ export default function App() {
 
           {activeTab === 'lancar-contrato' && (
             <NewContractView
+              editingContract={editingContract}
               onAddContract={handleAddContract}
-              onCancel={() => setActiveTab('dashboard')}
+              onUpdateContract={handleUpdateContract}
+              onCancel={() => {
+                setEditingContract(null);
+                setActiveTab('dashboard');
+              }}
               fiscais={fiscais}
               creditors={creditors}
               categories={categories}
@@ -821,6 +861,8 @@ export default function App() {
         const linkedAmendments = amendments.filter(
           (a) => a.contractNum.toLowerCase().trim() === selectedContractDetail.contractNum.toLowerCase().trim()
         );
+        const contractItems = selectedContractDetail.items || [];
+        const contractItemsTotal = contractItems.reduce((sum, item) => sum + item.quantity * item.unitValue, 0);
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
             <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-xl p-6 flex flex-col max-h-[90vh]">
@@ -883,6 +925,44 @@ export default function App() {
                       {linkedNotes.length} {linkedNotes.length === 1 ? 'Nota' : 'Notas'}
                     </p>
                   </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-100 space-y-2">
+                  <span className="text-slate-500 font-bold text-xs uppercase tracking-wider flex items-center justify-between">
+                    <span>Itens do Contrato</span>
+                    <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                      {contractItems.length} {contractItems.length === 1 ? 'Item' : 'Itens'}
+                    </span>
+                  </span>
+                  {contractItems.length === 0 ? (
+                    <p className="text-[11px] text-slate-400 italic bg-slate-50 p-3 rounded-lg border border-slate-100">
+                      Nenhum item cadastrado para este contrato.
+                    </p>
+                  ) : (
+                    <div className="border border-slate-200/60 rounded-xl overflow-hidden bg-slate-50/50">
+                      <div className="max-h-[180px] overflow-y-auto divide-y divide-slate-100">
+                        {contractItems.map((item) => (
+                          <div key={item.id} className="p-2.5 flex items-center justify-between gap-3 text-xs bg-white">
+                            <div className="min-w-0">
+                              <p className="font-bold text-slate-800 truncate">{item.description}</p>
+                              <p className="text-[10px] text-slate-500">
+                                {item.quantity.toLocaleString('pt-BR')} {item.unit} x {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.unitValue)}
+                              </p>
+                            </div>
+                            <span className="font-bold text-slate-900 whitespace-nowrap">
+                              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.quantity * item.unitValue)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="px-3 py-2 bg-slate-50 border-t border-slate-100 flex justify-between text-xs font-bold">
+                        <span className="text-slate-500">Total dos itens</span>
+                        <span className="text-emerald-700">
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(contractItemsTotal)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Linked Service Notes Section */}
@@ -987,4 +1067,3 @@ export default function App() {
     </div>
   );
 }
-

@@ -15,6 +15,15 @@ export interface Contract {
   fiscalPortaria?: string;
   fiscalPortariaPublicationDate?: string;
   fiscalPortariaValidity?: string;
+  items?: ContractItem[];
+}
+
+export interface ContractItem {
+  id: string;
+  description: string;
+  unit: string;
+  quantity: number;
+  unitValue: number;
 }
 
 export interface ActivityItem {

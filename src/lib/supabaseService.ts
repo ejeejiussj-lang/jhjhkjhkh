@@ -43,8 +43,11 @@ CREATE TABLE IF NOT EXISTS public.contracts (
   fiscal_portaria TEXT,
   fiscal_portaria_publication_date TEXT,
   fiscal_portaria_validity TEXT,
+  items JSONB DEFAULT '[]'::jsonb,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+
+ALTER TABLE public.contracts ADD COLUMN IF NOT EXISTS items JSONB DEFAULT '[]'::jsonb;
 
 ALTER TABLE public.contracts ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Permitir tudo em contracts" ON public.contracts FOR ALL USING (true);
@@ -133,6 +136,7 @@ export async function fetchContractsFromSupabase(): Promise<Contract[] | null> {
       fiscalPortaria: item.fiscal_portaria || '',
       fiscalPortariaPublicationDate: item.fiscal_portaria_publication_date || '',
       fiscalPortariaValidity: item.fiscal_portaria_validity || '',
+      items: Array.isArray(item.items) ? item.items : [],
     }));
   } catch (err) {
     console.error('Erro ao buscar contratos no Supabase:', err);
@@ -157,6 +161,7 @@ export async function saveContractToSupabase(contract: Contract) {
       fiscal_portaria: contract.fiscalPortaria,
       fiscal_portaria_publication_date: contract.fiscalPortariaPublicationDate,
       fiscal_portaria_validity: contract.fiscalPortariaValidity,
+      items: contract.items || [],
     });
   } catch (err) {
     console.error('Erro ao salvar contrato no Supabase:', err);
@@ -269,7 +274,7 @@ export async function fetchFiscaisFromSupabase(): Promise<FiscalPortaria[] | nul
 
 export async function saveFiscalToSupabase(fiscal: FiscalPortaria) {
   try {
-    await supabase.from('fiscais').upsert({
+    const { error } = await supabase.from('fiscais').upsert({
       id: fiscal.id,
       name: fiscal.name,
       portaria: fiscal.portaria,
@@ -277,6 +282,7 @@ export async function saveFiscalToSupabase(fiscal: FiscalPortaria) {
       validity: fiscal.validity,
       organ: fiscal.organ,
     });
+    if (error) throw error;
   } catch (err) {
     console.error('Erro ao salvar fiscal no Supabase:', err);
   }
@@ -340,4 +346,3 @@ export async function deleteAmendmentFromSupabase(id: string) {
     console.error('Erro ao deletar aditivo no Supabase:', err);
   }
 }
-
