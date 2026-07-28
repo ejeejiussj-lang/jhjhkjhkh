@@ -84,6 +84,26 @@ const getDaysUntilDate = (endDate: string) => {
   return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 };
 
+const ACTIVE_TABS: ActiveTab[] = [
+  'dashboard',
+  'contratos-lancados',
+  'lancar-contrato',
+  'fiscais',
+  'credores',
+  'empenhos',
+  'notas',
+  'aditivos',
+  'relatorios',
+  'alertas',
+  'ia'
+];
+
+const normalizeAlertTab = (tab?: string): ActiveTab => {
+  if (tab && (ACTIVE_TABS as string[]).includes(tab)) return tab as ActiveTab;
+  if (tab === 'contratos') return 'contratos-lancados';
+  return 'ia';
+};
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
@@ -209,6 +229,19 @@ export default function App() {
     return [];
   });
 
+  const [aiAlerts, setAiAlerts] = useState<SystemNotification[]>(() => {
+    try {
+      const saved = localStorage.getItem('fiscalpro_ai_alerts');
+      if (saved !== null) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return [];
+  });
+
   const [creditors, setCreditors] = useState<Creditor[]>(() => {
     try {
       const saved = localStorage.getItem('fiscalpro_creditors');
@@ -278,6 +311,10 @@ export default function App() {
   }, [activities]);
 
   useEffect(() => {
+    localStorage.setItem('fiscalpro_ai_alerts', JSON.stringify(aiAlerts));
+  }, [aiAlerts]);
+
+  useEffect(() => {
     localStorage.setItem('fiscalpro_creditors', JSON.stringify(creditors));
   }, [creditors]);
 
@@ -313,6 +350,7 @@ export default function App() {
     if (window.confirm('Deseja realmente apagar todos os dados do LocalStorage? A base ficará zerada.')) {
       setContracts([]);
       setActivities([]);
+      setAiAlerts([]);
       setCreditors([]);
       setNotes([]);
       setCommitments([]);
@@ -320,6 +358,7 @@ export default function App() {
       setAmendments([]);
       localStorage.removeItem('fiscalpro_contracts');
       localStorage.removeItem('fiscalpro_activities');
+      localStorage.removeItem('fiscalpro_ai_alerts');
       localStorage.removeItem('fiscalpro_creditors');
       localStorage.removeItem('fiscalpro_notes');
       localStorage.removeItem('fiscalpro_commitments');
@@ -438,6 +477,20 @@ export default function App() {
     }
   };
 
+  const handleAddAiAlert = (alert: { title: string; desc: string; linkTab?: ActiveTab }) => {
+    const notification: SystemNotification = {
+      id: `ai-alert-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      title: alert.title,
+      desc: alert.desc,
+      time: 'Agora',
+      type: 'info',
+      read: false,
+      linkTab: normalizeAlertTab(alert.linkTab)
+    };
+
+    setAiAlerts((prev) => [notification, ...prev].slice(0, 30));
+  };
+
   const handleAddCommitment = (newCommitment: Omit<Commitment, 'id' | 'currentBalance' | 'balance'> & { balance?: number }) => {
     const initialBalance = Number(newCommitment.value || 0);
     const commitment: Commitment = {
@@ -545,6 +598,13 @@ export default function App() {
   const realNotifications = React.useMemo(() => {
     const items: SystemNotification[] = [];
 
+    aiAlerts.forEach((alert) => {
+      items.push({
+        ...alert,
+        read: readNotificationIds.includes(alert.id) || alert.read
+      });
+    });
+
     // 1. Contratos com status 'A Vencer' ou próximos do vencimento
     contracts.forEach((c) => {
       if (c.status === 'A Vencer') {
@@ -604,7 +664,7 @@ export default function App() {
     });
 
     return items;
-  }, [contracts, notes, amendments, activities, readNotificationIds]);
+  }, [contracts, notes, amendments, activities, aiAlerts, readNotificationIds]);
 
   const unreadNotificationsCount = realNotifications.filter((n) => !n.read).length;
 
@@ -966,6 +1026,7 @@ export default function App() {
               onAddCommitment={handleAddCommitment}
               onAddNote={handleAddNote}
               onAddCreditor={handleAddCreditor}
+              onAddAlert={handleAddAiAlert}
             />
           )}
         </main>

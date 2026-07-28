@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
-import { Bot, CheckCircle2, Loader2, Send, Sparkles, Wand2 } from 'lucide-react';
-import { Commitment, Contract, Creditor, ServiceNote } from '../types';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Bot, CheckCircle2, FileText, Loader2, Paperclip, Send, Sparkles, Wand2, X } from 'lucide-react';
+import { ActiveTab, Commitment, Contract, Creditor, ServiceNote } from '../types';
 import { PROGRAMS_BY_ALLOCATION } from './CommitmentsView';
 
 type ChatRole = 'assistant' | 'user';
@@ -9,6 +9,13 @@ interface ChatMessage {
   id: string;
   role: ChatRole;
   text: string;
+}
+
+interface AttachedFile {
+  id: string;
+  filename: string;
+  fileData: string;
+  size: number;
 }
 
 type AiAction =
@@ -45,6 +52,12 @@ type AiAction =
       name: string;
       cnpj?: string;
       category?: string;
+    }
+  | {
+      type: 'create_alert';
+      title: string;
+      desc: string;
+      linkTab?: ActiveTab;
     };
 
 interface AiResponse {
@@ -60,6 +73,7 @@ interface AiAssistantViewProps {
   onAddCommitment: (commitment: Omit<Commitment, 'id' | 'currentBalance' | 'balance'>) => void;
   onAddNote: (note: ServiceNote) => void;
   onAddCreditor: (creditor: Creditor) => void;
+  onAddAlert: (alert: { title: string; desc: string; linkTab?: ActiveTab }) => void;
 }
 
 const formatCurrency = (value: number) =>
@@ -194,19 +208,37 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
   onAddContract,
   onAddCommitment,
   onAddNote,
-  onAddCreditor
+  onAddCreditor,
+  onAddAlert
 }) => {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'welcome',
-      role: 'assistant',
-      text:
-        'Ola! Sou a IA do painel. Cole aqui um texto de contrato, empenho ou nota fiscal que eu identifico objeto, numero, credor, dotacao, programa, valores e ja cadastro quando tiver dados suficientes.'
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    try {
+      const saved = localStorage.getItem('fiscalpro_ai_messages');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (error) {
+      console.error(error);
     }
-  ]);
+
+    return [
+      {
+        id: 'welcome',
+        role: 'assistant',
+        text:
+          'Ola! Sou a IA do FiscalPro. Envie uma mensagem ou anexe PDFs de contrato, empenho e nota fiscal. Eu extraio as informacoes principais, escrevo textos profissionais, emito alertas e cadastro quando houver dados suficientes.'
+      }
+    ];
+  });
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [lastActions, setLastActions] = useState<string[]>([]);
+  const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
+
+  useEffect(() => {
+    localStorage.setItem('fiscalpro_ai_messages', JSON.stringify(messages.slice(-40)));
+  }, [messages]);
 
   const systemContext = useMemo(() => {
     const compactContracts = contracts.slice(0, 80).map((item) => ({
@@ -331,19 +363,62 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
           executed.push(`Nota cadastrada: ${action.noteNumber} (${formatCurrency(noteValue)})`);
         }
       }
+
+      if (action.type === 'create_alert' && action.title) {
+        onAddAlert({
+          title: action.title,
+          desc: action.desc || 'Alerta emitido pela IA FiscalPro.',
+          linkTab: action.linkTab
+        });
+        executed.push(`Alerta emitido: ${action.title}`);
+      }
     });
 
     setLastActions(executed);
     return executed;
   };
 
+  const handleAttachFiles = async (files: FileList | null) => {
+    if (!files) return;
+    const pdfFiles = Array.from(files).filter((file) => file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf'));
+    const converted = await Promise.all(
+      pdfFiles.map(
+        (file) =>
+          new Promise<AttachedFile>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              resolve({
+                id: `pdf-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                filename: file.name,
+                fileData: String(reader.result),
+                size: file.size
+              });
+            };
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(file);
+          })
+      )
+    );
+
+    setAttachedFiles((prev) => [...prev, ...converted]);
+  };
+
   const sendMessage = async () => {
     const prompt = input.trim();
-    if (!prompt || isLoading) return;
+    if ((!prompt && attachedFiles.length === 0) || isLoading) return;
 
-    const userMessage: ChatMessage = { id: `u-${Date.now()}`, role: 'user', text: prompt };
+    const fileSummary = attachedFiles.length
+      ? `\n\nArquivos anexados:\n${attachedFiles.map((file) => `- ${file.filename}`).join('\n')}`
+      : '';
+    const finalPrompt =
+      prompt ||
+      'Analise os PDFs anexados, extraia dados de contrato, empenho e nota fiscal, emita alertas relevantes e cadastre o que tiver dados suficientes.';
+
+    const userMessage: ChatMessage = { id: `u-${Date.now()}`, role: 'user', text: `${finalPrompt}${fileSummary}` };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
+    const filesToSend = attachedFiles;
+    setAttachedFiles([]);
     setIsLoading(true);
     setLastActions([]);
 
@@ -351,11 +426,11 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
       const response = await fetch('/api/openrouter-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, systemContext })
+        body: JSON.stringify({ prompt: finalPrompt, systemContext, files: filesToSend })
       });
 
       if (!response.ok) {
-        const fallback = createLocalResponse(prompt);
+        const fallback = createLocalResponse(finalPrompt);
         const executed = executeActions(fallback.actions || []);
         const executedText = executed.length ? `\n\nAcoes executadas:\n${executed.map((item) => `- ${item}`).join('\n')}` : '';
 
@@ -386,7 +461,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
       ]);
     } catch (error) {
       console.error(error);
-      const fallback = createLocalResponse(prompt);
+      const fallback = createLocalResponse(finalPrompt);
       const executed = executeActions(fallback.actions || []);
       const executedText = executed.length ? `\n\nAcoes executadas:\n${executed.map((item) => `- ${item}`).join('\n')}` : '';
 
@@ -441,14 +516,47 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
             <div className="flex justify-start">
               <div className="bg-white border border-slate-200 rounded-2xl rounded-bl-md px-4 py-3 text-sm text-slate-500 flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
-                <span>Analisando e preparando cadastro...</span>
+                <span>Analisando PDFs, textos e preparando cadastro...</span>
               </div>
             </div>
           )}
         </div>
 
         <div className="p-4 border-t border-slate-100 bg-white">
+          {attachedFiles.length > 0 && (
+            <div className="mb-3 flex flex-wrap gap-2">
+              {attachedFiles.map((file) => (
+                <div key={file.id} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-700">
+                  <FileText className="w-3.5 h-3.5 text-rose-500" />
+                  <span className="font-semibold max-w-[220px] truncate">{file.filename}</span>
+                  <button
+                    onClick={() => setAttachedFiles((prev) => prev.filter((item) => item.id !== file.id))}
+                    className="p-0.5 text-slate-400 hover:text-rose-600 rounded cursor-pointer"
+                    title="Remover PDF"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="flex gap-2">
+            <label
+              className="w-12 h-12 self-end inline-flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors cursor-pointer"
+              title="Anexar PDF"
+            >
+              <Paperclip className="w-5 h-5" />
+              <input
+                type="file"
+                accept="application/pdf,.pdf"
+                multiple
+                className="hidden"
+                onChange={(event) => {
+                  handleAttachFiles(event.target.files);
+                  event.target.value = '';
+                }}
+              />
+            </label>
             <textarea
               value={input}
               onChange={(event) => setInput(event.target.value)}
@@ -459,12 +567,12 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
                 }
               }}
               rows={2}
-              placeholder="Digite ou cole dados: contrato 012/2026, objeto, empenho, dotacao, valor da nota..."
+              placeholder="Digite uma orientacao ou anexe PDFs para extrair contrato, empenho, nota fiscal, alertas e cadastros..."
               className="flex-1 resize-none px-3.5 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
             />
             <button
               onClick={sendMessage}
-              disabled={isLoading || !input.trim()}
+              disabled={isLoading || (!input.trim() && attachedFiles.length === 0)}
               className="w-12 h-12 self-end inline-flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white rounded-xl transition-colors cursor-pointer disabled:cursor-not-allowed"
               title="Enviar"
             >
@@ -482,8 +590,11 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
           </h2>
           <div className="mt-3 space-y-2 text-xs text-slate-600">
             <p>Identifica objeto, numero de contrato, credor, empenho, dotacao, programa e valores.</p>
+            <p>Le PDFs anexados e extrai informacoes de contratos, empenhos e notas fiscais.</p>
             <p>Cadastra contrato, empenho, credor e nota quando os dados estiverem completos.</p>
+            <p>Emite alertas administrativos para o usuario quando detectar risco ou pendencia.</p>
             <p>Ao lancar nota, desconta do saldo do empenho pelo fluxo normal do sistema.</p>
+            <p>Remove PDFs anexados antes do envio pelo botao ao lado do arquivo.</p>
           </div>
         </div>
 
