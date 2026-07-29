@@ -125,6 +125,117 @@ const cleanAiText = (value: string) =>
     .replaceAll('Analisando PDFs, textos e preparando cadastro', 'Preparando resposta')
     .replace(/(?:Preparando resposta\.{0,3}\s*){2,}/g, 'Preparando resposta...');
 
+const coerceActionType = (value: string) => {
+  const normalized = (value || '').toLowerCase().trim().replace(/[\s-]+/g, '_');
+  const aliases: Record<string, AiAction['type']> = {
+    creditor: 'create_creditor',
+    credor: 'create_creditor',
+    empresa: 'create_creditor',
+    create_creditor: 'create_creditor',
+    contract: 'create_contract',
+    contrato: 'create_contract',
+    create_contract: 'create_contract',
+    commitment: 'create_commitment',
+    empenho: 'create_commitment',
+    create_commitment: 'create_commitment',
+    note: 'create_note',
+    nota: 'create_note',
+    nota_fiscal: 'create_note',
+    nota_servico: 'create_note',
+    nota_de_servico: 'create_note',
+    create_note: 'create_note',
+    alert: 'create_alert',
+    alerta: 'create_alert',
+    create_alert: 'create_alert'
+  };
+  return aliases[normalized] || value;
+};
+
+const normalizeAction = (raw: any): AiAction | null => {
+  if (!raw || typeof raw !== 'object') return null;
+  const type = coerceActionType(String(raw.type || raw.tipo || raw.action || raw.acao || raw.cadastro || ''));
+
+  if (type === 'create_creditor') {
+    const name = raw.name || raw.nome || raw.empresa || raw.creditor || raw.credor || raw.razaoSocial || raw.razao_social;
+    if (!name) return null;
+    return { type, name: String(name), cnpj: raw.cnpj || '', category: raw.category || raw.categoria || 'Saúde' };
+  }
+
+  if (type === 'create_contract') {
+    return {
+      type,
+      contractNum: String(raw.contractNum || raw.contract_num || raw.numeroContrato || raw.numero_contrato || raw.numero || raw.contrato || ''),
+      creditor: String(raw.creditor || raw.credor || raw.empresa || raw.contratada || ''),
+      object: String(raw.object || raw.objeto || raw.descricao || raw.descrição || ''),
+      startDate: raw.startDate || raw.start_date || raw.inicio || raw.dataInicio || raw.data_inicio || '',
+      endDate: raw.endDate || raw.end_date || raw.vencimento || raw.fim || raw.dataFim || raw.data_fim || '',
+      totalValue: Number(raw.totalValue || raw.total_value || raw.valorTotal || raw.valor_total || raw.valor || 0),
+      category: raw.category || raw.categoria || raw.secretaria || 'Secretaria Municipal de Saúde'
+    };
+  }
+
+  if (type === 'create_commitment') {
+    return {
+      type,
+      number: String(raw.number || raw.numero || raw.numeroEmpenho || raw.numero_empenho || raw.empenho || ''),
+      budgetAllocation: String(raw.budgetAllocation || raw.budget_allocation || raw.dotacao || raw.dotação || ''),
+      program: String(raw.program || raw.programa || ''),
+      value: Number(raw.value || raw.valor || raw.valorEmpenho || raw.valor_empenho || 0),
+      balance: Number(raw.balance || raw.saldo || 0),
+      description: raw.description || raw.descricao || raw.descrição || ''
+    };
+  }
+
+  if (type === 'create_note') {
+    return {
+      type,
+      noteNumber: String(raw.noteNumber || raw.note_number || raw.numeroNota || raw.numero_nota || raw.numero || raw.nota || ''),
+      contractNum: raw.contractNum || raw.contract_num || raw.numeroContrato || raw.numero_contrato || raw.contrato || '',
+      creditor: raw.creditor || raw.credor || raw.empresa || raw.contratada || '',
+      value: Number(raw.value || raw.valor || raw.valorNota || raw.valor_nota || raw.valorLiquido || raw.valor_liquido || 0),
+      commitmentNumber: raw.commitmentNumber || raw.commitment_number || raw.numeroEmpenho || raw.numero_empenho || raw.empenho || '',
+      budgetAllocation: raw.budgetAllocation || raw.budget_allocation || raw.dotacao || raw.dotação || ''
+    };
+  }
+
+  if (type === 'create_alert') {
+    return {
+      type,
+      title: String(raw.title || raw.titulo || raw.título || ''),
+      desc: String(raw.desc || raw.descricao || raw.descrição || raw.mensagem || ''),
+      linkTab: raw.linkTab || raw.link_tab
+    };
+  }
+
+  return null;
+};
+
+const collectActions = (parsed: any): AiAction[] => {
+  if (Array.isArray(parsed)) return parsed.map(normalizeAction).filter(Boolean) as AiAction[];
+  if (!parsed || typeof parsed !== 'object') return [];
+
+  const buckets = [
+    parsed.actions,
+    parsed.acoes,
+    parsed.ações,
+    parsed.cadastros,
+    parsed.registros,
+    parsed.notas,
+    parsed.notasFiscais,
+    parsed.notas_fiscais,
+    parsed.contratos,
+    parsed.empenhos,
+    parsed.credores,
+    parsed.alertas
+  ];
+
+  const actions = buckets.flatMap((bucket) => (Array.isArray(bucket) ? bucket : []));
+  if (actions.length) return actions.map(normalizeAction).filter(Boolean) as AiAction[];
+
+  const single = normalizeAction(parsed);
+  return single ? [single] : [];
+};
+
 const parseJsonResponse = (text: string): AiResponse => {
   const cleaned = text
     .replace(/```json/gi, '')
@@ -138,9 +249,11 @@ const parseJsonResponse = (text: string): AiResponse => {
 
   try {
     const parsed = JSON.parse(jsonText);
+    const actions = collectActions(parsed);
     return {
       ...parsed,
-      reply: cleanAiText(parsed.reply || '')
+      reply: cleanAiText(parsed.reply || parsed.resposta || parsed.mensagem || (actions.length ? 'Processando cadastros identificados.' : '')),
+      actions
     };
   } catch {
     return { reply: cleanAiText(cleaned) || 'Consegui analisar, mas não consegui montar uma ação automática.' };
