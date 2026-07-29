@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Printer, Calendar, Search, Building2, Receipt } from 'lucide-react';
+import { Building2, Calendar, ChevronLeft, ChevronRight, Printer, Receipt, Search } from 'lucide-react';
 import { Contract, ServiceNote } from '../types';
 
 interface ReportsViewProps {
@@ -14,6 +14,7 @@ type EnrichedNote = ServiceNote & {
   competencyDate: Date | null;
   competencyKey: string;
   competencyLabel: string;
+  dayKey: string;
 };
 
 const monthNames = [
@@ -30,6 +31,8 @@ const monthNames = [
   'Novembro',
   'Dezembro'
 ];
+
+const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 const parseBRDate = (dateStr?: string): Date | null => {
   if (!dateStr) return null;
@@ -53,6 +56,11 @@ const getCompetencyKey = (date: Date | null) => {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 };
 
+const getDayKey = (date: Date | null) => {
+  if (!date) return 'sem-data';
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+};
+
 const getCompetencyLabel = (date: Date | null) => {
   if (!date) return 'Sem competência';
   return `${monthNames[date.getMonth()]} / ${date.getFullYear()}`;
@@ -64,13 +72,15 @@ const formatCurrency = (value: number) =>
     currency: 'BRL'
   });
 
-export const ReportsView: React.FC<ReportsViewProps> = ({
-  contracts,
-  notes
-}) => {
+export const ReportsView: React.FC<ReportsViewProps> = ({ contracts, notes }) => {
   const [selectedMonth, setSelectedMonth] = useState<string>('all');
   const [selectedSecretaria, setSelectedSecretaria] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [calendarDate, setCalendarDate] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+  const [selectedDayKey, setSelectedDayKey] = useState<string>(getDayKey(new Date()));
 
   const enrichedNotes = useMemo<EnrichedNote[]>(() => {
     return notes.map((note) => {
@@ -85,7 +95,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
         secretaria: contract?.category || 'Secretaria Municipal de Saúde',
         competencyDate,
         competencyKey: getCompetencyKey(competencyDate),
-        competencyLabel: getCompetencyLabel(competencyDate)
+        competencyLabel: getCompetencyLabel(competencyDate),
+        dayKey: getDayKey(competencyDate)
       };
     });
   }, [contracts, notes]);
@@ -151,11 +162,61 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
     return [...groups.values()].sort((a, b) => a.time - b.time);
   }, [filteredNotes]);
 
+  const notesByDay = useMemo(() => {
+    const map = new Map<string, { notes: EnrichedNote[]; total: number }>();
+
+    filteredNotes.forEach((note) => {
+      if (!map.has(note.dayKey)) {
+        map.set(note.dayKey, { notes: [], total: 0 });
+      }
+      const day = map.get(note.dayKey)!;
+      day.notes.push(note);
+      day.total += note.value;
+    });
+
+    return map;
+  }, [filteredNotes]);
+
+  const calendarDays = useMemo(() => {
+    const firstDay = new Date(calendarDate.getFullYear(), calendarDate.getMonth(), 1);
+    const lastDay = new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 0);
+    const days: Array<{ date: Date | null; key: string }> = [];
+
+    for (let i = 0; i < firstDay.getDay(); i += 1) {
+      days.push({ date: null, key: `empty-${i}` });
+    }
+
+    for (let day = 1; day <= lastDay.getDate(); day += 1) {
+      const date = new Date(calendarDate.getFullYear(), calendarDate.getMonth(), day);
+      days.push({ date, key: getDayKey(date) });
+    }
+
+    return days;
+  }, [calendarDate]);
+
+  const selectedDayNotes = notesByDay.get(selectedDayKey)?.notes || [];
+  const selectedDayTotal = notesByDay.get(selectedDayKey)?.total || 0;
   const totalFilteredValue = filteredNotes.reduce((acc, curr) => acc + curr.value, 0);
   const selectedMonthLabel =
     selectedMonth === 'all'
       ? 'Todos os meses'
       : realMonthsList.find((m) => m.value === selectedMonth)?.label || 'Mês selecionado';
+  const selectedDayLabel = selectedDayKey === 'sem-data'
+    ? 'Sem data'
+    : selectedDayKey.split('-').reverse().join('/');
+
+  const handleMonthChange = (value: string) => {
+    setSelectedMonth(value);
+    if (value !== 'all') {
+      const [year, month] = value.split('-').map(Number);
+      setCalendarDate(new Date(year, month - 1, 1));
+      setSelectedDayKey(getDayKey(new Date(year, month - 1, 1)));
+    }
+  };
+
+  const moveCalendarMonth = (offset: number) => {
+    setCalendarDate((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1));
+  };
 
   const handlePrintReport = () => {
     window.print();
@@ -167,7 +228,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
         <div>
           <h2 className="text-xl font-medium text-slate-800">Relatório Mensal de Notas de Serviço</h2>
           <p className="text-xs text-slate-500 mt-1">
-            Consolidação mensal por competência real, nota, contrato, empresa e secretaria ou fundo municipal de saúde.
+            Calendário financeiro por competência real, nota, contrato, empresa e secretaria ou fundo municipal de saúde.
           </p>
         </div>
         <button
@@ -187,7 +248,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               <span className="text-[11px] font-medium text-slate-700">Mês:</span>
               <select
                 value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
+                onChange={(e) => handleMonthChange(e.target.value)}
                 className="bg-transparent text-slate-900 text-xs font-medium outline-none cursor-pointer"
               >
                 <option value="all">Todos os Meses</option>
@@ -237,6 +298,124 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           </span>
         </div>
       </div>
+
+      <section className="print:hidden grid grid-cols-1 xl:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)] gap-5">
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-slate-800">
+                Calendário de Notas - {monthNames[calendarDate.getMonth()]} / {calendarDate.getFullYear()}
+              </h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">Selecione um dia para visualizar os lançamentos.</p>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => moveCalendarMonth(-1)}
+                className="p-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer"
+                title="Mês anterior"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => moveCalendarMonth(1)}
+                className="p-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer"
+                title="Próximo mês"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="p-4">
+            <div className="grid grid-cols-7 gap-2 text-center text-[10px] uppercase tracking-wider text-slate-400 mb-2">
+              {weekDays.map((day) => (
+                <span key={day}>{day}</span>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-2">
+              {calendarDays.map(({ date, key }) => {
+                const dayInfo = notesByDay.get(key);
+                const isSelected = selectedDayKey === key;
+                const hasNotes = !!dayInfo && dayInfo.notes.length > 0;
+
+                if (!date) {
+                  return <div key={key} className="aspect-square rounded-lg bg-slate-50/50" />;
+                }
+
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setSelectedDayKey(key)}
+                    className={`aspect-square rounded-lg border p-2 text-left transition-all cursor-pointer ${
+                      isSelected
+                        ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-500/15'
+                        : hasNotes
+                        ? 'border-emerald-100 bg-white hover:border-emerald-300 hover:bg-emerald-50/50'
+                        : 'border-slate-100 bg-white hover:bg-slate-50'
+                    }`}
+                  >
+                    <span className={`text-xs font-medium ${isSelected ? 'text-emerald-800' : 'text-slate-700'}`}>
+                      {date.getDate()}
+                    </span>
+                    {hasNotes && (
+                      <div className="mt-1 space-y-1">
+                        <span className="block w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        <span className="block text-[10px] text-slate-500 leading-tight">
+                          {dayInfo.notes.length} nota(s)
+                        </span>
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <aside className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/50">
+            <p className="text-[11px] text-slate-500">Dia selecionado</p>
+            <div className="flex items-center justify-between mt-1">
+              <h3 className="text-sm font-medium text-slate-800">{selectedDayLabel}</h3>
+              <span className="text-xs text-emerald-700">{formatCurrency(selectedDayTotal)}</span>
+            </div>
+          </div>
+
+          {selectedDayNotes.length === 0 ? (
+            <div className="p-8 text-center text-xs text-slate-400">
+              Nenhuma nota encontrada para o dia selecionado.
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100 max-h-[520px] overflow-y-auto">
+              {selectedDayNotes.map((note) => (
+                <div key={note.id} className="p-4 space-y-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-medium text-slate-900">Nota {note.noteNumber}</p>
+                      <p className="text-[11px] text-slate-500 mt-0.5">{note.creditor}</p>
+                    </div>
+                    <span className="text-xs font-medium text-slate-800">{formatCurrency(note.value)}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-[11px]">
+                    <div className="rounded-lg bg-slate-50 border border-slate-100 px-2.5 py-2">
+                      <span className="block text-slate-400">Contrato</span>
+                      <span className="text-slate-700 font-mono">{note.contractNum || '-'}</span>
+                    </div>
+                    <div className="rounded-lg bg-slate-50 border border-slate-100 px-2.5 py-2">
+                      <span className="block text-slate-400">Secretaria</span>
+                      <span className="text-slate-700">{note.secretaria}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-slate-500">
+                    <span>Atesto: {note.attestationDate || '-'}</span>
+                    <span>Status: {note.status}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </aside>
+      </section>
 
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden print:hidden">
         <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
@@ -311,34 +490,6 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             ))}
           </div>
         )}
-      </div>
-
-      <div className="print:hidden grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
-          <h4 className="text-xs font-medium text-slate-800 uppercase tracking-wider flex items-center space-x-1.5">
-            <Building2 className="w-4 h-4 text-emerald-600" />
-            <span>Resumo por Secretaria Municipal de Saúde</span>
-          </h4>
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between text-xs">
-            <span className="font-medium text-slate-700">Total Notas (SMS)</span>
-            <span className="font-medium text-slate-900">
-              {formatCurrency(filteredNotes.filter(n => n.secretaria.toLowerCase().includes('secretaria')).reduce((sum, n) => sum + n.value, 0))}
-            </span>
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
-          <h4 className="text-xs font-medium text-slate-800 uppercase tracking-wider flex items-center space-x-1.5">
-            <Building2 className="w-4 h-4 text-blue-600" />
-            <span>Resumo por Fundo Municipal de Saúde</span>
-          </h4>
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between text-xs">
-            <span className="font-medium text-slate-700">Total Notas (FMS)</span>
-            <span className="font-medium text-slate-900">
-              {formatCurrency(filteredNotes.filter(n => n.secretaria.toLowerCase().includes('fundo')).reduce((sum, n) => sum + n.value, 0))}
-            </span>
-          </div>
-        </div>
       </div>
 
       <section className="hidden print:block text-slate-900">
