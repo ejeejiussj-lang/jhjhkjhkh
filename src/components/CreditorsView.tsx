@@ -14,7 +14,7 @@ export const CreditorsView: React.FC<CreditorsViewProps> = ({ creditors, onAddCr
   const [showAddModal, setShowAddModal] = useState(false);
   const [name, setName] = useState('');
   const [cnpj, setCnpj] = useState('');
-  const [category, setCategory] = useState('Tecnologia e Serviços');
+  const [category, setCategory] = useState('Credor');
   const [status, setStatus] = useState('Ativo');
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingCreditor, setEditingCreditor] = useState<Creditor | null>(null);
@@ -22,8 +22,7 @@ export const CreditorsView: React.FC<CreditorsViewProps> = ({ creditors, onAddCr
   const filtered = creditors.filter(
     (c) =>
       c.name.toLowerCase().includes(filterText.toLowerCase()) ||
-      c.cnpj.includes(filterText) ||
-      c.category.toLowerCase().includes(filterText.toLowerCase())
+      c.cnpj.includes(filterText)
   );
 
   const handleCreate = (e: React.FormEvent) => {
@@ -52,7 +51,7 @@ export const CreditorsView: React.FC<CreditorsViewProps> = ({ creditors, onAddCr
 
     setName('');
     setCnpj('');
-    setCategory('Tecnologia e Serviços');
+    setCategory('Credor');
     setStatus('Ativo');
     setEditingCreditor(null);
     setShowAddModal(false);
@@ -62,7 +61,7 @@ export const CreditorsView: React.FC<CreditorsViewProps> = ({ creditors, onAddCr
     setEditingCreditor(null);
     setName('');
     setCnpj('');
-    setCategory('Tecnologia e Serviços');
+    setCategory('Credor');
     setStatus('Ativo');
     setShowAddModal(true);
   };
@@ -71,7 +70,7 @@ export const CreditorsView: React.FC<CreditorsViewProps> = ({ creditors, onAddCr
     setEditingCreditor(cred);
     setName(cred.name);
     setCnpj(cred.cnpj);
-    setCategory(cred.category);
+    setCategory(cred.category || 'Credor');
     setStatus(cred.status);
     setShowAddModal(true);
   };
@@ -106,7 +105,7 @@ export const CreditorsView: React.FC<CreditorsViewProps> = ({ creditors, onAddCr
               type="text"
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
-              placeholder="Buscar por Razão Social, CNPJ ou Categoria..."
+              placeholder="Buscar por Razão Social ou CNPJ..."
               className="w-full pl-10 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
             />
           </div>
@@ -118,7 +117,6 @@ export const CreditorsView: React.FC<CreditorsViewProps> = ({ creditors, onAddCr
               <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-medium">
                 <th className="py-3 px-4">Razão Social</th>
                 <th className="py-3 px-4">CNPJ</th>
-                <th className="py-3 px-4">Categoria</th>
                 <th className="py-3 px-4">Contratos Ativos</th>
                 <th className="py-3 px-4">Valor Acumulado</th>
                 <th className="py-3 px-4">Status</th>
@@ -128,7 +126,7 @@ export const CreditorsView: React.FC<CreditorsViewProps> = ({ creditors, onAddCr
             <tbody className="divide-y divide-slate-100">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-8 text-slate-400 italic">
+                  <td colSpan={6} className="text-center py-8 text-slate-400 italic">
                     Nenhum credor ou fornecedor cadastrado no momento.
                   </td>
                 </tr>
@@ -139,7 +137,6 @@ export const CreditorsView: React.FC<CreditorsViewProps> = ({ creditors, onAddCr
                       <span>{cred.name}</span>
                     </td>
                     <td className="py-3.5 px-4 text-slate-600 font-medium font-mono">{cred.cnpj}</td>
-                    <td className="py-3.5 px-4 text-slate-600">{cred.category}</td>
                     <td className="py-3.5 px-4 font-medium text-slate-800">
                       {cred.activeContractsCount} contratos
                     </td>
@@ -253,17 +250,6 @@ export const CreditorsView: React.FC<CreditorsViewProps> = ({ creditors, onAddCr
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Digite a razão social..."
                   className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg font-medium"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Categoria / Atividade</label>
-                <input
-                  type="text"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  placeholder="Ex: Tecnologia, Obras, Consultoria..."
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg"
                 />
               </div>
 

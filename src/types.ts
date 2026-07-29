@@ -112,6 +112,7 @@ export interface ContractAmendment {
 export type ActiveTab =
   | 'dashboard'
   | 'contratos-lancados'
+  | 'controle-contratos'
   | 'lancar-contrato'
   | 'fiscais'
   | 'credores'

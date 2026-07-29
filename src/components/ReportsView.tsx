@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { FileText, Printer, Download, Calendar, Filter, Search, Building2, Receipt, ArrowUpDown } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Printer, Calendar, Search, Building2, Receipt } from 'lucide-react';
 import { Contract, ServiceNote } from '../types';
 
 interface ReportsViewProps {
@@ -8,115 +8,190 @@ interface ReportsViewProps {
   onNavigateTab: (tab: any) => void;
 }
 
+type EnrichedNote = ServiceNote & {
+  contractObj?: Contract;
+  secretaria: string;
+  competencyDate: Date | null;
+  competencyKey: string;
+  competencyLabel: string;
+};
+
+const monthNames = [
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro'
+];
+
+const parseBRDate = (dateStr?: string): Date | null => {
+  if (!dateStr) return null;
+  const parts = dateStr.split('/');
+  if (parts.length !== 3) return null;
+
+  const day = Number(parts[0]);
+  const month = Number(parts[1]) - 1;
+  const year = Number(parts[2]);
+  const date = new Date(year, month, day);
+
+  if (Number.isNaN(date.getTime())) return null;
+  date.setHours(0, 0, 0, 0);
+  return date;
+};
+
+const getCompetencyDate = (note: ServiceNote) => parseBRDate(note.attestationDate) || parseBRDate(note.issueDate);
+
+const getCompetencyKey = (date: Date | null) => {
+  if (!date) return 'sem-data';
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+};
+
+const getCompetencyLabel = (date: Date | null) => {
+  if (!date) return 'Sem competência';
+  return `${monthNames[date.getMonth()]} / ${date.getFullYear()}`;
+};
+
+const formatCurrency = (value: number) =>
+  value.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  });
+
 export const ReportsView: React.FC<ReportsViewProps> = ({
   contracts,
-  notes,
-  onNavigateTab
+  notes
 }) => {
-  const [selectedMonth, setSelectedMonth] = useState<number | 'all'>('all');
+  const [selectedMonth, setSelectedMonth] = useState<string>('all');
   const [selectedSecretaria, setSelectedSecretaria] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
-  // Helper to parse DD/MM/YYYY date
-  const parseBRDate = (dateStr: string): Date | null => {
-    if (!dateStr) return null;
-    const parts = dateStr.split('/');
-    if (parts.length !== 3) return null;
-    const day = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1;
-    const year = parseInt(parts[2], 10);
-    const d = new Date(year, month, day);
-    return isNaN(d.getTime()) ? null : d;
-  };
+  const enrichedNotes = useMemo<EnrichedNote[]>(() => {
+    return notes.map((note) => {
+      const contract = contracts.find(
+        (c) => c.contractNum.toLowerCase().trim() === note.contractNum.toLowerCase().trim()
+      );
+      const competencyDate = getCompetencyDate(note);
 
-  // Map notes with corresponding contract info (secretaria/category)
-  const enrichedNotes = notes.map((note) => {
-    const contract = contracts.find(
-      (c) => c.contractNum.toLowerCase().trim() === note.contractNum.toLowerCase().trim()
-    );
-    return {
-      ...note,
-      contractObj: contract,
-      secretaria: contract?.category || 'Secretaria Municipal de Saúde'
-    };
-  });
+      return {
+        ...note,
+        contractObj: contract,
+        secretaria: contract?.category || 'Secretaria Municipal de Saúde',
+        competencyDate,
+        competencyKey: getCompetencyKey(competencyDate),
+        competencyLabel: getCompetencyLabel(competencyDate)
+      };
+    });
+  }, [contracts, notes]);
 
-  // Filter notes by competency: Data de Atesto
-  const filteredNotes = enrichedNotes.filter((note) => {
-    const d = parseBRDate(note.attestationDate || '');
-    const monthMatch = selectedMonth === 'all' || (d && d.getMonth() + 1 === selectedMonth);
-    const secretariaMatch =
-      selectedSecretaria === 'all' || note.secretaria.toLowerCase() === selectedSecretaria.toLowerCase();
-    const searchMatch =
-      !searchTerm ||
-      note.noteNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      note.creditor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      note.contractNum.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      note.secretaria.toLowerCase().includes(searchTerm.toLowerCase());
+  const realMonthsList = useMemo(() => {
+    const unique = new Map<string, { value: string; label: string; time: number }>();
 
-    return monthMatch && secretariaMatch && searchMatch;
-  }).sort((a, b) => {
-    const aDate = parseBRDate(a.attestationDate || '')?.getTime() ?? Number.MAX_SAFE_INTEGER;
-    const bDate = parseBRDate(b.attestationDate || '')?.getTime() ?? Number.MAX_SAFE_INTEGER;
-    return aDate - bDate;
-  });
+    enrichedNotes.forEach((note) => {
+      if (!unique.has(note.competencyKey)) {
+        unique.set(note.competencyKey, {
+          value: note.competencyKey,
+          label: note.competencyLabel,
+          time: note.competencyDate?.getTime() ?? Number.MAX_SAFE_INTEGER
+        });
+      }
+    });
+
+    return [...unique.values()].sort((a, b) => a.time - b.time);
+  }, [enrichedNotes]);
+
+  const filteredNotes = useMemo(() => {
+    return enrichedNotes
+      .filter((note) => {
+        const monthMatch = selectedMonth === 'all' || note.competencyKey === selectedMonth;
+        const secretariaMatch =
+          selectedSecretaria === 'all' || note.secretaria.toLowerCase() === selectedSecretaria.toLowerCase();
+        const term = searchTerm.toLowerCase().trim();
+        const searchMatch =
+          !term ||
+          note.noteNumber.toLowerCase().includes(term) ||
+          note.creditor.toLowerCase().includes(term) ||
+          note.contractNum.toLowerCase().includes(term) ||
+          note.secretaria.toLowerCase().includes(term);
+
+        return monthMatch && secretariaMatch && searchMatch;
+      })
+      .sort((a, b) => {
+        const aDate = a.competencyDate?.getTime() ?? Number.MAX_SAFE_INTEGER;
+        const bDate = b.competencyDate?.getTime() ?? Number.MAX_SAFE_INTEGER;
+        if (aDate !== bDate) return aDate - bDate;
+        return a.noteNumber.localeCompare(b.noteNumber, 'pt-BR', { numeric: true });
+      });
+  }, [enrichedNotes, searchTerm, selectedMonth, selectedSecretaria]);
+
+  const groupedNotes = useMemo(() => {
+    const groups = new Map<string, { label: string; notes: EnrichedNote[]; total: number; time: number }>();
+
+    filteredNotes.forEach((note) => {
+      if (!groups.has(note.competencyKey)) {
+        groups.set(note.competencyKey, {
+          label: note.competencyLabel,
+          notes: [],
+          total: 0,
+          time: note.competencyDate?.getTime() ?? Number.MAX_SAFE_INTEGER
+        });
+      }
+
+      const group = groups.get(note.competencyKey)!;
+      group.notes.push(note);
+      group.total += note.value;
+    });
+
+    return [...groups.values()].sort((a, b) => a.time - b.time);
+  }, [filteredNotes]);
 
   const totalFilteredValue = filteredNotes.reduce((acc, curr) => acc + curr.value, 0);
+  const selectedMonthLabel =
+    selectedMonth === 'all'
+      ? 'Todos os meses'
+      : realMonthsList.find((m) => m.value === selectedMonth)?.label || 'Mês selecionado';
 
   const handlePrintReport = () => {
     window.print();
   };
 
-  const monthsList = [
-    { value: 1, label: 'Janeiro' },
-    { value: 2, label: 'Fevereiro' },
-    { value: 3, label: 'Março' },
-    { value: 4, label: 'Abril' },
-    { value: 5, label: 'Maio' },
-    { value: 6, label: 'Junho' },
-    { value: 7, label: 'Julho' },
-    { value: 8, label: 'Agosto' },
-    { value: 9, label: 'Setembro' },
-    { value: 10, label: 'Outubro' },
-    { value: 11, label: 'Novembro' },
-    { value: 12, label: 'Dezembro' }
-  ];
-
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="print:hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-medium text-slate-800">Relatório Mensal de Notas de Serviço</h2>
           <p className="text-xs text-slate-500 mt-1">
-            Consolidação mensal detalhada por número da nota, data, credor e secretaria ou fundo municipal de saúde.
+            Consolidação mensal por competência real, nota, contrato, empresa e secretaria ou fundo municipal de saúde.
           </p>
         </div>
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={handlePrintReport}
-            className="flex items-center space-x-1.5 px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium rounded-xl shadow-2xs transition-all cursor-pointer"
-          >
-            <Printer className="w-3.5 h-3.5 text-slate-500" />
-            <span>Imprimir / PDF</span>
-          </button>
-        </div>
+        <button
+          onClick={handlePrintReport}
+          className="flex items-center space-x-1.5 px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium rounded-xl shadow-2xs transition-all cursor-pointer self-start sm:self-auto"
+        >
+          <Printer className="w-3.5 h-3.5 text-slate-500" />
+          <span>Imprimir / PDF</span>
+        </button>
       </div>
 
-      {/* Filtros e Busca do Relatório */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
+      <div className="print:hidden bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2.5 flex-1">
-            {/* Filtro de Mês */}
             <div className="flex items-center space-x-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
               <Calendar className="w-3.5 h-3.5 text-slate-500" />
               <span className="text-[11px] font-medium text-slate-700">Mês:</span>
               <select
                 value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+                onChange={(e) => setSelectedMonth(e.target.value)}
                 className="bg-transparent text-slate-900 text-xs font-medium outline-none cursor-pointer"
               >
                 <option value="all">Todos os Meses</option>
-                {monthsList.map((m) => (
+                {realMonthsList.map((m) => (
                   <option key={m.value} value={m.value}>
                     {m.label}
                   </option>
@@ -124,7 +199,6 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               </select>
             </div>
 
-            {/* Filtro de Secretaria / Fundo */}
             <div className="flex items-center space-x-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
               <Building2 className="w-3.5 h-3.5 text-emerald-600" />
               <span className="text-[11px] font-medium text-slate-700">Órgão:</span>
@@ -140,7 +214,6 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             </div>
           </div>
 
-          {/* Busca */}
           <div className="relative w-full md:w-72">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
@@ -153,21 +226,19 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           </div>
         </div>
 
-        {/* Resumo Rápido da Filtragem */}
         <div className="flex flex-wrap items-center justify-between pt-3 border-t border-slate-100 text-xs">
           <div className="flex items-center space-x-3 text-slate-500 font-medium">
             <span>Notas encontradas: <strong className="text-slate-900">{filteredNotes.length}</strong></span>
             <span>•</span>
-            <span>Valor Total Consolidado: <strong className="text-emerald-700">R$ {totalFilteredValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></span>
+            <span>Valor Total Consolidado: <strong className="text-emerald-700">{formatCurrency(totalFilteredValue)}</strong></span>
           </div>
           <span className="text-[11px] font-medium text-slate-400">
-            {selectedMonth === 'all' ? 'Exibindo todo o período' : `Mês selecionado: ${monthsList.find(m => m.value === selectedMonth)?.label}`}
+            {selectedMonth === 'all' ? 'Exibindo todo o período' : `Mês selecionado: ${selectedMonthLabel}`}
           </span>
         </div>
       </div>
 
-      {/* Tabela de Notas de Serviço do Relatório */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden print:hidden">
         <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Receipt className="w-4 h-4 text-emerald-600" />
@@ -185,7 +256,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             </div>
             <p className="text-sm font-medium text-slate-700">Nenhuma nota de serviço encontrada</p>
             <p className="text-xs text-slate-400 max-w-sm mx-auto">
-              Não há notas fiscais/serviço cadastradas para os filtros selecionados (mês, secretaria ou termo de busca).
+              Não há notas fiscais/serviço cadastradas para os filtros selecionados.
             </p>
             <button
               onClick={() => { setSelectedMonth('all'); setSelectedSecretaria('all'); setSearchTerm(''); }}
@@ -195,65 +266,54 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-slate-50/80 text-slate-500 font-medium uppercase tracking-wider border-b border-slate-200/60 text-[10px]">
-                  <th className="py-3 px-4">Nº da Nota</th>
-                  <th className="py-3 px-4">Competência / Atesto</th>
-                  <th className="py-3 px-4">Data de Emissão</th>
-                  <th className="py-3 px-4">Credor / Empresa</th>
-                  <th className="py-3 px-4">Contrato</th>
-                  <th className="py-3 px-4">Secretaria / Fundo</th>
-                  <th className="py-3 px-4 text-right">Valor (R$)</th>
-                  <th className="py-3 px-4 text-center">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredNotes.map((note) => (
-                  <tr key={note.id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="py-3 px-4 font-medium text-slate-900 font-mono">
-                      {note.noteNumber}
-                    </td>
-                    <td className="py-3 px-4 font-medium text-slate-700">{note.attestationDate || '-'}</td>
-                    <td className="py-3 px-4 font-medium text-slate-700">{note.issueDate || '-'}</td>
-                    <td className="py-3 px-4 font-medium text-slate-800">
-                      {note.creditor}
-                    </td>
-                    <td className="py-3 px-4 font-mono font-medium text-slate-600">
-                      {note.contractNum}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${
-                        note.secretaria.toLowerCase().includes('fundo')
-                          ? 'bg-blue-50 text-blue-700 border border-blue-100'
-                          : 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-                      }`}>
-                        {note.secretaria}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right font-medium text-emerald-700">
-                      R$ {note.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${
-                        note.status === 'Paga'
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                          : 'bg-amber-100 text-amber-800 border-amber-200'
-                      }`}>
-                        {note.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="divide-y divide-slate-100">
+            {groupedNotes.map((group) => (
+              <div key={group.label}>
+                <div className="px-6 py-3 bg-slate-50/80 flex items-center justify-between text-xs text-slate-700">
+                  <span className="font-medium">{group.label}</span>
+                  <span>{group.notes.length} nota(s) • {formatCurrency(group.total)}</span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-white text-slate-500 font-medium uppercase tracking-wider border-b border-slate-200/60 text-[10px]">
+                        <th className="py-3 px-4">Nº da Nota</th>
+                        <th className="py-3 px-4">Competência / Atesto</th>
+                        <th className="py-3 px-4">Data de Emissão</th>
+                        <th className="py-3 px-4">Credor / Empresa</th>
+                        <th className="py-3 px-4">Contrato</th>
+                        <th className="py-3 px-4">Secretaria / Fundo</th>
+                        <th className="py-3 px-4 text-right">Valor</th>
+                        <th className="py-3 px-4 text-center">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {group.notes.map((note) => (
+                        <tr key={note.id} className="hover:bg-slate-50/70 transition-colors">
+                          <td className="py-3 px-4 font-medium text-slate-900 font-mono">{note.noteNumber}</td>
+                          <td className="py-3 px-4 font-medium text-slate-700">{note.attestationDate || '-'}</td>
+                          <td className="py-3 px-4 font-medium text-slate-700">{note.issueDate || '-'}</td>
+                          <td className="py-3 px-4 font-medium text-slate-800">{note.creditor}</td>
+                          <td className="py-3 px-4 font-mono font-medium text-slate-600">{note.contractNum || '-'}</td>
+                          <td className="py-3 px-4">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                              {note.secretaria}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-right font-medium text-slate-800">{formatCurrency(note.value)}</td>
+                          <td className="py-3 px-4 text-center text-slate-600">{note.status}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
 
-      {/* Resumo Adicional por Órgão */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div className="print:hidden grid grid-cols-1 md:grid-cols-2 gap-5">
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
           <h4 className="text-xs font-medium text-slate-800 uppercase tracking-wider flex items-center space-x-1.5">
             <Building2 className="w-4 h-4 text-emerald-600" />
@@ -262,7 +322,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between text-xs">
             <span className="font-medium text-slate-700">Total Notas (SMS)</span>
             <span className="font-medium text-slate-900">
-              R$ {filteredNotes.filter(n => n.secretaria.toLowerCase().includes('secretaria')).reduce((sum, n) => sum + n.value, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              {formatCurrency(filteredNotes.filter(n => n.secretaria.toLowerCase().includes('secretaria')).reduce((sum, n) => sum + n.value, 0))}
             </span>
           </div>
         </div>
@@ -275,11 +335,70 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between text-xs">
             <span className="font-medium text-slate-700">Total Notas (FMS)</span>
             <span className="font-medium text-slate-900">
-              R$ {filteredNotes.filter(n => n.secretaria.toLowerCase().includes('fundo')).reduce((sum, n) => sum + n.value, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              {formatCurrency(filteredNotes.filter(n => n.secretaria.toLowerCase().includes('fundo')).reduce((sum, n) => sum + n.value, 0))}
             </span>
           </div>
         </div>
       </div>
+
+      <section className="hidden print:block text-slate-900">
+        <div className="border-b border-slate-300 pb-4 mb-4">
+          <h1 className="text-xl font-medium">Relatório Mensal de Notas de Serviço</h1>
+          <p className="text-xs mt-1">Período: {selectedMonthLabel}</p>
+          <p className="text-xs">Órgão: {selectedSecretaria === 'all' ? 'Secretaria & Fundo (Todos)' : selectedSecretaria}</p>
+          <div className="grid grid-cols-3 gap-3 mt-4 text-xs">
+            <div className="border border-slate-300 rounded p-2">
+              <span className="block text-slate-500">Notas</span>
+              <span className="text-base font-medium">{filteredNotes.length}</span>
+            </div>
+            <div className="border border-slate-300 rounded p-2">
+              <span className="block text-slate-500">Valor consolidado</span>
+              <span className="text-base font-medium">{formatCurrency(totalFilteredValue)}</span>
+            </div>
+            <div className="border border-slate-300 rounded p-2">
+              <span className="block text-slate-500">Meses no relatório</span>
+              <span className="text-base font-medium">{groupedNotes.length}</span>
+            </div>
+          </div>
+        </div>
+
+        {groupedNotes.map((group) => (
+          <div key={`print-${group.label}`} className="mb-6 break-inside-avoid">
+            <div className="flex items-center justify-between border-b border-slate-300 pb-2 mb-2">
+              <h2 className="text-sm font-medium">{group.label}</h2>
+              <span className="text-xs">{group.notes.length} nota(s) • Total {formatCurrency(group.total)}</span>
+            </div>
+            <table className="w-full text-left border-collapse text-[10px]">
+              <thead>
+                <tr>
+                  <th className="border border-slate-300 p-1.5">Nº Nota</th>
+                  <th className="border border-slate-300 p-1.5">Contrato</th>
+                  <th className="border border-slate-300 p-1.5">Secretaria / Fundo</th>
+                  <th className="border border-slate-300 p-1.5">Empresa</th>
+                  <th className="border border-slate-300 p-1.5">Atesto</th>
+                  <th className="border border-slate-300 p-1.5">Emissão</th>
+                  <th className="border border-slate-300 p-1.5 text-right">Valor</th>
+                  <th className="border border-slate-300 p-1.5">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {group.notes.map((note) => (
+                  <tr key={`print-${note.id}`}>
+                    <td className="border border-slate-300 p-1.5">{note.noteNumber}</td>
+                    <td className="border border-slate-300 p-1.5">{note.contractNum || '-'}</td>
+                    <td className="border border-slate-300 p-1.5">{note.secretaria}</td>
+                    <td className="border border-slate-300 p-1.5">{note.creditor}</td>
+                    <td className="border border-slate-300 p-1.5">{note.attestationDate || '-'}</td>
+                    <td className="border border-slate-300 p-1.5">{note.issueDate || '-'}</td>
+                    <td className="border border-slate-300 p-1.5 text-right">{formatCurrency(note.value)}</td>
+                    <td className="border border-slate-300 p-1.5">{note.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
+      </section>
     </div>
   );
 };

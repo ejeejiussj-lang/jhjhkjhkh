@@ -49,6 +49,15 @@ export const Header: React.FC<HeaderProps> = ({
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const today = new Date();
+  const currentMonth = today.toLocaleDateString('pt-BR', { month: 'long' });
+  const currentYear = today.getFullYear();
+  const dateOptions = [
+    today.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
+    `Este Mês (${currentMonth})`,
+    'Últimos 30 Dias',
+    `Ano ${currentYear}`
+  ];
 
 
   return (
@@ -101,7 +110,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {showDatePicker && (
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-40 text-xs">
-              {['07 de Julho, 2025', 'Este Mês (Julho)', 'Últimos 30 Dias', 'Ano 2025'].map((option) => (
+              {dateOptions.map((option) => (
                 <button
                   key={option}
                   onClick={() => {

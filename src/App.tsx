@@ -22,6 +22,7 @@ import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { MetricCard } from './components/MetricCard';
 import { ContractTable } from './components/ContractTable';
+import { ContractControlView } from './components/ContractControlView';
 import { NewContractView } from './components/NewContractView';
 import { SecurityModal } from './components/SecurityModal';
 import { CreditorsView } from './components/CreditorsView';
@@ -113,6 +114,7 @@ const matchesSearch = (term: string, values: unknown[]) => {
 const ACTIVE_TABS: ActiveTab[] = [
   'dashboard',
   'contratos-lancados',
+  'controle-contratos',
   'lancar-contrato',
   'fiscais',
   'credores',
@@ -134,7 +136,13 @@ export default function App() {
   const balanceSyncSignatureRef = useRef('');
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedDate, setSelectedDate] = useState('07 de Julho, 2025');
+  const [selectedDate, setSelectedDate] = useState(() =>
+    new Date().toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    })
+  );
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   // User Auth State
@@ -810,7 +818,7 @@ export default function App() {
           time: 'Atenção Vigência',
           type: 'contract',
           read: readNotificationIds.includes(`contract-exp-${c.id}`),
-          linkTab: 'contratos-lancados'
+          linkTab: 'controle-contratos'
         });
       }
     });
@@ -959,7 +967,7 @@ export default function App() {
                   value={String(expiringContractsCount)}
                   icon={Clock}
                   variant="amber"
-                  onClick={() => setActiveTab('contratos-lancados')}
+                  onClick={() => setActiveTab('controle-contratos')}
                 />
               </div>
 
@@ -987,7 +995,11 @@ export default function App() {
                     {expiringContracts60Days.map((c) => {
                       const daysRemaining = getDaysUntilDate(c.endDate);
                       return (
-                        <div key={c.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                        <button
+                          key={c.id}
+                          onClick={() => setActiveTab('controle-contratos')}
+                          className="w-full py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-left hover:bg-slate-50 transition-colors cursor-pointer"
+                        >
                           <div className="min-w-0">
                             <p className="text-xs font-medium text-slate-800 truncate" title={c.creditor}>
                               {c.creditor}
@@ -999,7 +1011,7 @@ export default function App() {
                           <span className="text-[11px] font-medium text-rose-600 shrink-0">
                             Vence em {daysRemaining}d
                           </span>
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
@@ -1160,6 +1172,13 @@ export default function App() {
                 />
               </div>
             </>
+          )}
+
+          {activeTab === 'controle-contratos' && (
+            <ContractControlView
+              contracts={filteredContracts}
+              notes={notes}
+            />
           )}
 
           {activeTab === 'lancar-contrato' && (

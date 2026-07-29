@@ -13,6 +13,7 @@ import {
   FileCheck2,
   FileText,
   UserCheck,
+  ClipboardList,
   ChevronRight,
   X
 } from 'lucide-react';
@@ -44,6 +45,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   const gestaoItems = [
+    { id: 'controle-contratos', label: 'Controle de Contratos', icon: ClipboardList },
     { id: 'relatorios', label: 'Relatórios', icon: BarChart3 },
     { id: 'alertas', label: 'Alertas', icon: BellRing },
     { id: 'ia', label: 'IA', icon: Bot }
