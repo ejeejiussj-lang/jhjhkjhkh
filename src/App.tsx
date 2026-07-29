@@ -98,6 +98,18 @@ const isNoteLinkedToCommitment = (note: ServiceNote, commitment: Commitment) =>
 const getNoteUniqueKey = (note: ServiceNote) =>
   `${note.noteNumber || ''}|${note.contractNum || ''}`.toLowerCase().trim();
 
+const normalizeSearchValue = (value: unknown) =>
+  String(value ?? '')
+    .toLocaleLowerCase('pt-BR')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+const matchesSearch = (term: string, values: unknown[]) => {
+  const needle = normalizeSearchValue(term);
+  if (!needle) return true;
+  return values.some((value) => normalizeSearchValue(value).includes(needle));
+};
+
 const ACTIVE_TABS: ActiveTab[] = [
   'dashboard',
   'contratos-lancados',
@@ -480,13 +492,48 @@ export default function App() {
     setActiveTab(tab);
   };
 
-  // Filtered Contracts
-  const filteredContracts = contracts.filter(
-    (c) =>
-      c.contractNum.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.creditor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.object.toLowerCase().includes(searchTerm.toLowerCase())
+  const globalSearchTerm = searchTerm.trim();
+
+  // Global search filters
+  const filteredContracts = contracts.filter((c) =>
+    matchesSearch(globalSearchTerm, [c.contractNum, c.creditor, c.object, c.category, c.status])
   );
+  const filteredCreditors = creditors.filter((c) =>
+    matchesSearch(globalSearchTerm, [c.name, c.cnpj, c.category, c.status])
+  );
+  const filteredNotes = notes.filter((n) =>
+    matchesSearch(globalSearchTerm, [n.noteNumber, n.contractNum, n.creditor, n.status, n.issueDate, n.attestationDate])
+  );
+  const filteredCommitments = commitments.filter((c) =>
+    matchesSearch(globalSearchTerm, [c.number, c.budgetAllocation, c.program, c.description])
+  );
+  const filteredFiscais = fiscais.filter((f) =>
+    matchesSearch(globalSearchTerm, [f.name, f.portaria, f.organ, f.publicationDate, f.validity])
+  );
+  const filteredAmendments = amendments.filter((a) =>
+    matchesSearch(globalSearchTerm, [a.amendmentNum, a.contractNum, a.creditor, a.type, a.status, a.justification])
+  );
+
+  const handleHeaderSearch = (term: string) => {
+    setSearchTerm(term);
+
+    const q = term.trim();
+    if (!q) return;
+
+    if (contracts.some((c) => matchesSearch(q, [c.contractNum, c.creditor, c.object, c.category, c.status]))) {
+      setActiveTab('contratos-lancados');
+    } else if (notes.some((n) => matchesSearch(q, [n.noteNumber, n.contractNum, n.creditor, n.status]))) {
+      setActiveTab('notas');
+    } else if (creditors.some((c) => matchesSearch(q, [c.name, c.cnpj, c.category, c.status]))) {
+      setActiveTab('credores');
+    } else if (fiscais.some((f) => matchesSearch(q, [f.name, f.portaria, f.organ]))) {
+      setActiveTab('fiscais');
+    } else if (commitments.some((c) => matchesSearch(q, [c.number, c.budgetAllocation, c.program, c.description]))) {
+      setActiveTab('empenhos');
+    } else if (amendments.some((a) => matchesSearch(q, [a.amendmentNum, a.contractNum, a.creditor, a.type, a.status]))) {
+      setActiveTab('aditivos');
+    }
+  };
 
   const dashboardContracts = [...contracts].sort((a, b) => {
     const aDate = parseContractEndDate(a.endDate)?.getTime() ?? Number.MAX_SAFE_INTEGER;
@@ -867,7 +914,7 @@ export default function App() {
         {/* Top Header */}
         <Header
           searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
+          setSearchTerm={handleHeaderSearch}
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
           onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -1133,7 +1180,7 @@ export default function App() {
 
           {activeTab === 'fiscais' && (
             <FiscaisView
-              fiscais={fiscais}
+              fiscais={filteredFiscais}
               onAddFiscal={handleAddFiscal}
               onUpdateFiscal={handleUpdateFiscal}
               onDeleteFiscal={handleDeleteFiscal}
@@ -1142,7 +1189,7 @@ export default function App() {
 
           {activeTab === 'credores' && (
             <CreditorsView
-              creditors={creditors}
+              creditors={filteredCreditors}
               onAddCreditor={handleAddCreditor}
               onUpdateCreditor={handleUpdateCreditor}
               onDeleteCreditor={handleDeleteCreditor}
@@ -1151,7 +1198,7 @@ export default function App() {
 
           {activeTab === 'empenhos' && (
             <CommitmentsView
-              commitments={commitments}
+              commitments={filteredCommitments}
               notes={notes}
               onAddCommitment={handleAddCommitment}
               onUpdateCommitment={handleUpdateCommitment}
@@ -1161,7 +1208,7 @@ export default function App() {
 
           {activeTab === 'notas' && (
             <InvoicesView
-              notes={notes}
+              notes={filteredNotes}
               contracts={contracts}
               commitments={commitments}
               creditors={creditors}
@@ -1173,7 +1220,7 @@ export default function App() {
 
           {activeTab === 'aditivos' && (
             <AmendmentsView
-              amendments={amendments}
+              amendments={filteredAmendments}
               contracts={contracts}
               onAddAmendment={handleAddAmendment}
               onUpdateAmendment={handleUpdateAmendment}
@@ -1184,7 +1231,7 @@ export default function App() {
           {activeTab === 'relatorios' && (
             <ReportsView
               contracts={contracts}
-              notes={notes}
+              notes={filteredNotes}
               onNavigateTab={(tab) => setActiveTab(tab)}
             />
           )}
