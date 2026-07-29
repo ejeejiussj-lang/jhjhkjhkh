@@ -386,38 +386,38 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ contracts, notes }) =>
               Nenhuma nota encontrada para o dia selecionado.
             </div>
           ) : (
-            <div className="divide-y divide-slate-100 max-h-[520px] overflow-y-auto">
-              {selectedDayNotes.map((note) => (
-                <div key={note.id} className="p-4 space-y-2">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-medium text-slate-900">Nota {note.noteNumber}</p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">{note.creditor}</p>
-                    </div>
-                    <span className="text-xs font-medium text-slate-800">{formatCurrency(note.value)}</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-[11px]">
-                    <div className="rounded-lg bg-slate-50 border border-slate-100 px-2.5 py-2">
-                      <span className="block text-slate-400">Contrato</span>
-                      <span className="text-slate-700 font-mono">{note.contractNum || '-'}</span>
-                    </div>
-                    <div className="rounded-lg bg-slate-50 border border-slate-100 px-2.5 py-2">
-                      <span className="block text-slate-400">Secretaria</span>
-                      <span className="text-slate-700">{note.secretaria}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between text-[11px] text-slate-500">
-                    <span>Atesto: {note.attestationDate || '-'}</span>
-                    <span>Status: {note.status}</span>
-                  </div>
-                </div>
-              ))}
+            <div className="max-h-[520px] overflow-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="sticky top-0 bg-white border-b border-slate-100 text-[10px] uppercase tracking-wider text-slate-500">
+                  <tr>
+                    <th className="py-3 px-4">Nota</th>
+                    <th className="py-3 px-4">Contrato</th>
+                    <th className="py-3 px-4">Secretaria</th>
+                    <th className="py-3 px-4 text-right">Valor</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {selectedDayNotes.map((note) => (
+                    <tr key={note.id} className="hover:bg-slate-50/80">
+                      <td className="py-3 px-4">
+                        <span className="block font-medium text-slate-900">Nota {note.noteNumber}</span>
+                        <span className="block text-[11px] text-slate-500 truncate max-w-[180px]" title={note.creditor}>
+                          {note.creditor}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 font-mono text-slate-700">{note.contractNum || '-'}</td>
+                      <td className="py-3 px-4 text-slate-700">{note.secretaria}</td>
+                      <td className="py-3 px-4 text-right font-medium text-slate-900">{formatCurrency(note.value)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </aside>
       </section>
 
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden print:hidden">
+      <div className="hidden">
         <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Receipt className="w-4 h-4 text-emerald-600" />

@@ -971,44 +971,44 @@ export default function App() {
                 />
               </div>
 
-              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <div className="bg-rose-50 rounded-2xl border border-rose-200 shadow-2xs p-5 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-rose-100 pb-3">
                   <div>
-                    <h3 className="text-sm font-medium text-slate-800">
+                    <h3 className="text-sm font-medium text-rose-800">
                       Contratos a Vencer
                     </h3>
-                    <p className="text-xs text-slate-500 mt-0.5">
+                    <p className="text-xs text-rose-700/80 mt-0.5">
                       Monitoramento dos contratos nos ultimos 60 dias de vigencia
                     </p>
                   </div>
-                  <span className="text-xs font-medium text-slate-600">
+                  <span className="text-xs font-medium text-rose-700 bg-white/70 border border-rose-100 px-2 py-0.5 rounded-full">
                     {expiringContracts60Days.length} contrato(s)
                   </span>
                 </div>
 
                 {expiringContracts60Days.length === 0 ? (
-                  <div className="py-5 text-center text-slate-400">
-                    <p className="font-medium text-slate-700 text-xs">Nenhum contrato nos ultimos 60 dias de vigencia</p>
+                  <div className="py-5 text-center">
+                    <p className="font-medium text-rose-700 text-xs">Nenhum contrato nos ultimos 60 dias de vigencia</p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-slate-100">
+                  <div className="divide-y divide-rose-100">
                     {expiringContracts60Days.map((c) => {
                       const daysRemaining = getDaysUntilDate(c.endDate);
                       return (
                         <button
                           key={c.id}
                           onClick={() => setActiveTab('controle-contratos')}
-                          className="w-full py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-left hover:bg-slate-50 transition-colors cursor-pointer"
+                          className="w-full py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-left hover:bg-rose-100/60 rounded-lg px-2 -mx-2 transition-colors cursor-pointer"
                         >
                           <div className="min-w-0">
-                            <p className="text-xs font-medium text-slate-800 truncate" title={c.creditor}>
+                            <p className="text-xs font-medium text-rose-950 truncate" title={c.creditor}>
                               {c.creditor}
                             </p>
-                            <p className="text-xs text-slate-600 font-mono truncate" title={c.contractNum}>
+                            <p className="text-xs text-rose-800/80 font-mono truncate" title={c.contractNum}>
                               Contrato {c.contractNum}
                             </p>
                           </div>
-                          <span className="text-[11px] font-medium text-rose-600 shrink-0">
+                          <span className="text-[11px] font-medium text-rose-700 bg-white/75 border border-rose-100 px-2 py-0.5 rounded-full shrink-0">
                             Vence em {daysRemaining}d
                           </span>
                         </button>
