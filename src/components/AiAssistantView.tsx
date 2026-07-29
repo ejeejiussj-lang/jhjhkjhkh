@@ -55,6 +55,15 @@ type AiAction =
       category?: string;
     }
   | {
+      type: 'create_note';
+      noteNumber: string;
+      contractNum?: string;
+      creditor?: string;
+      value: number;
+      commitmentNumber?: string;
+      budgetAllocation?: string;
+    }
+  | {
       type: 'create_alert';
       title: string;
       desc: string;
@@ -148,6 +157,68 @@ const parseJsonResponse = (text: string): AiResponse => {
 };
 
 const normalize = (value: string) => value.toLowerCase().trim();
+
+const isAllowedRegistrationAction = (action: AiAction) =>
+  action.type === 'create_creditor' || action.type === 'create_contract' || action.type === 'create_commitment';
+
+const filterAllowedActions = (actions: AiAction[] = []) => actions.filter(isAllowedRegistrationAction);
+
+const isConfirmationText = (value: string) =>
+  /^(confirmar|confirmo|pode|pode salvar|salvar|cadastrar|confirmar cadastro|sim)$/i.test(value.trim());
+
+const describeAction = (action: AiAction) => {
+  if (action.type === 'create_creditor') {
+    return `Credor: ${action.name || 'nome pendente'}${action.cnpj ? ` | CNPJ: ${action.cnpj}` : ''}`;
+  }
+
+  if (action.type === 'create_contract') {
+    const missing = [
+      !action.contractNum ? 'número do contrato' : '',
+      !action.creditor ? 'empresa' : '',
+      !action.object ? 'objeto do contrato' : '',
+      !action.totalValue ? 'valor' : '',
+      !action.startDate ? 'início da vigência' : '',
+      !action.endDate ? 'vencimento' : ''
+    ].filter(Boolean);
+
+    return [
+      `Contrato: ${action.contractNum || 'número pendente'}`,
+      `Empresa: ${action.creditor || 'pendente'}`,
+      `Objeto: ${action.object || 'pendente'}`,
+      `Valor: ${formatCurrency(Number(action.totalValue) || 0)}`,
+      action.startDate || action.endDate ? `Vigência: ${action.startDate || '-'} até ${action.endDate || '-'}` : '',
+      missing.length ? `Confirmar/completar: ${missing.join(', ')}` : ''
+    ]
+      .filter(Boolean)
+      .join('\n');
+  }
+
+  if (action.type === 'create_commitment') {
+    const missing = [
+      !action.number ? 'número do empenho' : '',
+      !action.budgetAllocation ? 'dotação' : '',
+      !action.program ? 'programa' : '',
+      !action.value ? 'valor' : ''
+    ].filter(Boolean);
+
+    return [
+      `Empenho: ${action.number || 'número pendente'}`,
+      `Dotação: ${action.budgetAllocation || 'pendente'}`,
+      `Programa: ${action.program || 'pendente'}`,
+      `Valor: ${formatCurrency(Number(action.value) || 0)}`,
+      missing.length ? `Confirmar/completar: ${missing.join(', ')}` : ''
+    ]
+      .filter(Boolean)
+      .join('\n');
+  }
+
+  return '';
+};
+
+const buildConfirmationText = (actions: AiAction[]) =>
+  `Preparei estes cadastros, mas ainda não salvei. Confira principalmente o objeto do contrato, empresa, número, vigência, valor, dotação e programa.\n\n${actions
+    .map((action, index) => `${index + 1}. ${describeAction(action)}`)
+    .join('\n\n')}\n\nPara salvar, clique em Confirmar ou responda "confirmar". Para corrigir, envie os dados certos na mensagem.`;
 
 const parseDate = (value?: string) => {
   if (!value) return null;
@@ -314,7 +385,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
         id: 'welcome',
         role: 'assistant',
         text:
-          'Olá! Sou a IA do FiscalPro. Vou analisar o sistema para verificar contratos, notas, empenhos, saldos, vencimentos e possíveis pendências nos processos. Se encontrar algo faltando, eu informo com objetividade e gero alertas; se estiver tudo certo, aviso que a base está em ordem. Você também pode anexar PDFs para eu ler e extrair contrato, empenho, nota fiscal, objeto, valores, datas e credor.'
+          'Olá! Sou a IA do FiscalPro. Posso ajudar somente a preparar cadastro de credores, contratos e empenhos. Você pode anexar PDF ou escrever os dados; eu extraio as informações, destaco pontos para conferir, principalmente o objeto do contrato, e só salvo depois da sua confirmação.'
       }
     ];
   });
@@ -323,6 +394,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
   const [loadingText, setLoadingText] = useState('Preparando resposta...');
   const [lastActions, setLastActions] = useState<string[]>([]);
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
+  const [pendingActions, setPendingActions] = useState<AiAction[]>([]);
 
   useEffect(() => {
     const cleanMessages = messages.slice(-40).map((message) => ({
@@ -500,10 +572,16 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
     return `${withGreeting}\n\n${auditReply}`;
   };
 
-  const executeActions = (actions: AiAction[] = []) => {
+  const executeActions = (actions: AiAction[] = [], confirmed = false) => {
     const executed: string[] = [];
+    const allowedActions = filterAllowedActions(actions);
 
-    actions.forEach((action) => {
+    if (!confirmed) {
+      setPendingActions(allowedActions);
+      return allowedActions.length ? ['Cadastros aguardando confirmação do usuário'] : [];
+    }
+
+    allowedActions.forEach((action) => {
       if (action.type === 'create_creditor' && action.name) {
         const alreadyExists = creditors.some((item) => normalize(item.name) === normalize(action.name));
         if (!alreadyExists) {
@@ -606,6 +684,24 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
     return executed;
   };
 
+  const confirmPendingActions = () => {
+    if (pendingActions.length === 0) return;
+    const executed = executeActions(pendingActions, true);
+    const executedText = executed.length
+      ? `Cadastros salvos:\n${executed.map((item) => `- ${item}`).join('\n')}`
+      : 'Nenhum cadastro novo foi salvo. Pode ser que os registros já existam ou ainda faltem dados obrigatórios.';
+
+    setPendingActions([]);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `a-${Date.now()}`,
+        role: 'assistant',
+        text: executedText
+      }
+    ]);
+  };
+
   const handleAttachFiles = async (files: FileList | null) => {
     if (!files) return;
     const pdfFiles = Array.from(files).filter((file) => file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf'));
@@ -635,12 +731,32 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
     const prompt = input.trim();
     if ((!prompt && attachedFiles.length === 0) || isLoading) return;
 
+    if (isConfirmationText(prompt) && pendingActions.length > 0 && attachedFiles.length === 0) {
+      const userMessage: ChatMessage = { id: `u-${Date.now()}`, role: 'user', text: prompt };
+      setMessages((prev) => [...prev, userMessage]);
+      setInput('');
+      confirmPendingActions();
+      return;
+    }
+
     const fileSummary = attachedFiles.length
       ? `\n\nArquivos anexados:\n${attachedFiles.map((file) => `- ${file.filename}`).join('\n')}`
       : '';
     const finalPrompt =
       prompt ||
-      'Analise os PDFs anexados, extraia dados de contrato, empenho e nota fiscal, emita alertas relevantes e cadastre o que tiver dados suficientes.';
+      'Analise os PDFs anexados e extraia somente dados para cadastro de credor, contrato e empenho. Não cadastre automaticamente; monte rascunhos para confirmação do usuário.';
+
+    const restrictedPrompt = `REGRAS DA IA FISCALPRO:
+- Responda em JSON com "reply" e "actions".
+- A IA só pode preparar cadastros de credores, contratos e empenhos.
+- Nunca crie nota fiscal, alerta, relatório, fiscal, portaria ou aditivo.
+- Nunca salve automaticamente. Extraia os dados e peça confirmação do usuário.
+- Em contratos, destaque para o usuário confirmar o objeto do contrato, empresa, número, vigência, valor, secretaria/fundo e fiscal quando houver.
+- Se vier PDF, leia e extraia os dados prováveis, mas marque o que estiver incerto.
+- Actions permitidas: create_creditor, create_contract, create_commitment.
+
+PEDIDO DO USUÁRIO:
+${finalPrompt}`;
 
     const userMessage: ChatMessage = { id: `u-${Date.now()}`, role: 'user', text: `${finalPrompt}${fileSummary}` };
     setMessages((prev) => [...prev, userMessage]);
@@ -649,7 +765,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
     setAttachedFiles([]);
     setIsLoading(true);
     setLastActions([]);
-    const runAudit = shouldRunSystemAudit(finalPrompt, filesToSend.length);
+    const runAudit = false;
     const nextLoadingText = filesToSend.length > 0
       ? 'Lendo anexos e extraindo informações...'
       : runAudit
@@ -667,7 +783,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
           Authorization: `Bearer ${supabaseConfig.anonKey}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ prompt: finalPrompt, systemContext, localAudit: audit?.reply || '', files: filesToSend })
+        body: JSON.stringify({ prompt: restrictedPrompt, systemContext, localAudit: '', files: filesToSend })
       });
       const data = await response.json().catch(() => null);
 
@@ -730,7 +846,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
             </div>
             <div>
               <h1 className="text-base font-medium text-slate-900">IA FiscalPro</h1>
-              <p className="text-xs text-slate-500">Contratos, notas, empenhos, objetos e cadastros automáticos.</p>
+              <p className="text-xs text-slate-500">Credores, contratos e empenhos com confirmação antes de salvar.</p>
             </div>
           </div>
           <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
@@ -765,6 +881,32 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
         </div>
 
         <div className="p-4 border-t border-slate-100 bg-white">
+          {pendingActions.length > 0 && (
+            <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-xs text-amber-900">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <p className="font-medium text-amber-950">Cadastros aguardando confirmação</p>
+                  <p className="mt-1 text-amber-800">
+                    Confira os dados extraídos, principalmente o objeto do contrato, antes de salvar.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={confirmPendingActions}
+                    className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium transition-colors"
+                  >
+                    Confirmar
+                  </button>
+                  <button
+                    onClick={() => setPendingActions([])}
+                    className="px-3 py-1.5 rounded-lg bg-white hover:bg-amber-100 border border-amber-200 text-amber-800 font-medium transition-colors"
+                  >
+                    Descartar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           {attachedFiles.length > 0 && (
             <div className="mb-3 flex flex-wrap gap-2">
               {attachedFiles.map((file) => (
@@ -809,7 +951,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
                 }
               }}
               rows={2}
-              placeholder="Digite uma orientação ou anexe PDFs para extrair contrato, empenho, nota fiscal, alertas e cadastros..."
+              placeholder="Digite uma orientação ou anexe PDFs para preparar cadastro de credor, contrato ou empenho..."
               className="flex-1 resize-none px-3.5 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
             />
             <button
