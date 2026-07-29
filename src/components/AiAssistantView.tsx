@@ -55,15 +55,6 @@ type AiAction =
       category?: string;
     }
   | {
-      type: 'create_note';
-      noteNumber: string;
-      contractNum?: string;
-      creditor?: string;
-      value: number;
-      commitmentNumber?: string;
-      budgetAllocation?: string;
-    }
-  | {
       type: 'create_alert';
       title: string;
       desc: string;
@@ -158,10 +149,7 @@ const parseJsonResponse = (text: string): AiResponse => {
 
 const normalize = (value: string) => value.toLowerCase().trim();
 
-const isAllowedRegistrationAction = (action: AiAction) =>
-  action.type === 'create_creditor' || action.type === 'create_contract' || action.type === 'create_commitment';
-
-const filterAllowedActions = (actions: AiAction[] = []) => actions.filter(isAllowedRegistrationAction);
+const filterAllowedActions = (actions: AiAction[] = []) => actions;
 
 const isConfirmationText = (value: string) =>
   /^(confirmar|confirmo|pode|pode salvar|salvar|cadastrar|confirmar cadastro|sim)$/i.test(value.trim());
@@ -385,7 +373,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
         id: 'welcome',
         role: 'assistant',
         text:
-          'Olá! Sou a IA do FiscalPro. Posso ajudar somente a preparar cadastro de credores, contratos e empenhos. Você pode anexar PDF ou escrever os dados; eu extraio as informações, destaco pontos para conferir, principalmente o objeto do contrato, e só salvo depois da sua confirmação.'
+          'Olá! Sou a IA do FiscalPro. Você pode anexar PDF ou escrever os dados; eu identifico empresa já cadastrada, contrato, empenho, nota, dotação, programa, valores e faço os cadastros quando houver informação suficiente.'
       }
     ];
   });
@@ -572,7 +560,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
     return `${withGreeting}\n\n${auditReply}`;
   };
 
-  const executeActions = (actions: AiAction[] = [], confirmed = false) => {
+  const executeActions = (actions: AiAction[] = [], confirmed = true) => {
     const executed: string[] = [];
     const allowedActions = filterAllowedActions(actions);
 
@@ -583,7 +571,11 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
 
     allowedActions.forEach((action) => {
       if (action.type === 'create_creditor' && action.name) {
-        const alreadyExists = creditors.some((item) => normalize(item.name) === normalize(action.name));
+        const alreadyExists = creditors.some(
+          (item) =>
+            normalize(item.name) === normalize(action.name) ||
+            (!!action.cnpj && item.cnpj.replace(/\D/g, '') === action.cnpj.replace(/\D/g, ''))
+        );
         if (!alreadyExists) {
           onAddCreditor({
             id: `cred-ai-${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -600,10 +592,16 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
 
       if (action.type === 'create_contract' && action.contractNum && action.creditor && action.object) {
         const alreadyExists = contracts.some((item) => normalize(item.contractNum) === normalize(action.contractNum));
+        const matchedCreditor = creditors.find(
+          (item) =>
+            normalize(item.name) === normalize(action.creditor) ||
+            normalize(item.name).includes(normalize(action.creditor)) ||
+            normalize(action.creditor).includes(normalize(item.name))
+        );
         if (!alreadyExists) {
           onAddContract({
             contractNum: action.contractNum,
-            creditor: action.creditor,
+            creditor: matchedCreditor?.name || action.creditor,
             object: action.object,
             startDate: action.startDate || '',
             endDate: action.endDate || '',
@@ -621,14 +619,14 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
         }
       }
 
-      if (action.type === 'create_commitment' && action.number && action.budgetAllocation && action.program) {
+      if (action.type === 'create_commitment' && action.number && action.budgetAllocation) {
         const alreadyExists = commitments.some((item) => normalize(item.number) === normalize(action.number));
         if (!alreadyExists) {
           const value = Number(action.value) || 0;
           onAddCommitment({
             number: action.number,
             budgetAllocation: action.budgetAllocation,
-            program: action.program,
+            program: action.program || detectProgram(action.description || '', action.budgetAllocation),
             value,
             description: action.description || 'Cadastrado pela IA'
           });
@@ -637,27 +635,40 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
       }
 
       if (action.type === 'create_note' && action.noteNumber && action.value) {
-        const alreadyExists = false;
+        const alreadyExists = notes.some((item) => normalize(item.noteNumber) === normalize(action.noteNumber));
         const selectedCommitment =
           commitments.find((item) => normalize(item.number) === normalize(action.commitmentNumber || '')) ||
           commitments.find((item) => item.budgetAllocation === action.budgetAllocation);
+        const commitmentDraft = allowedActions.find(
+          (item) =>
+            item.type === 'create_commitment' &&
+            (normalize(item.number) === normalize(action.commitmentNumber || '') || item.budgetAllocation === action.budgetAllocation)
+        );
         const selectedContract = contracts.find((item) => normalize(item.contractNum) === normalize(action.contractNum || ''));
+        const selectedCreditor = creditors.find(
+          (item) =>
+            normalize(item.name) === normalize(action.creditor || '') ||
+            normalize(item.name).includes(normalize(action.creditor || '')) ||
+            normalize(action.creditor || '').includes(normalize(item.name))
+        );
         const noteValue = Number(action.value) || 0;
-        const commitmentBalance = selectedCommitment?.currentBalance ?? selectedCommitment?.balance ?? 0;
+        const commitmentBalance = selectedCommitment?.currentBalance ?? selectedCommitment?.balance ?? commitmentDraft?.balance ?? commitmentDraft?.value ?? 0;
+        const budgetAllocation = selectedCommitment?.budgetAllocation || commitmentDraft?.budgetAllocation || action.budgetAllocation || '';
+        const program = selectedCommitment?.program || commitmentDraft?.program || detectProgram(commitmentDraft?.description || '', budgetAllocation);
 
         if (!alreadyExists) {
           onAddNote({
             id: `n-ai-${Date.now()}-${Math.random().toString(16).slice(2)}`,
             noteNumber: action.noteNumber,
             contractNum: action.contractNum || selectedContract?.contractNum || 'Contrato Não Selecionado',
-            creditor: action.creditor || selectedContract?.creditor || 'Credor Não Identificado',
+            creditor: selectedCreditor?.name || action.creditor || selectedContract?.creditor || 'Credor Não Identificado',
             issueDate: new Date().toLocaleDateString('pt-BR'),
             value: noteValue,
             status: 'Pendente',
-            budgetAllocation: selectedCommitment?.budgetAllocation || action.budgetAllocation || '',
-            program: selectedCommitment?.program || '',
-            commitmentNumber: selectedCommitment?.number || action.commitmentNumber || '',
-            commitmentValue: selectedCommitment?.value || 0,
+            budgetAllocation,
+            program,
+            commitmentNumber: selectedCommitment?.number || commitmentDraft?.number || action.commitmentNumber || '',
+            commitmentValue: selectedCommitment?.value || commitmentDraft?.value || 0,
             commitmentBalance,
             currentBalance: commitmentBalance - noteValue,
             commitmentId: selectedCommitment?.id || ''
@@ -744,16 +755,17 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
       : '';
     const finalPrompt =
       prompt ||
-      'Analise os PDFs anexados e extraia somente dados para cadastro de credor, contrato e empenho. Não cadastre automaticamente; monte rascunhos para confirmação do usuário.';
+      'Analise os PDFs anexados, identifique empresa, contrato, empenho, nota, dotação, programa, valores e faça os cadastros quando houver dados suficientes.';
 
     const restrictedPrompt = `REGRAS DA IA FISCALPRO:
 - Responda em JSON com "reply" e "actions".
-- A IA só pode preparar cadastros de credores, contratos e empenhos.
-- Nunca crie nota fiscal, alerta, relatório, fiscal, portaria ou aditivo.
-- Nunca salve automaticamente. Extraia os dados e peça confirmação do usuário.
-- Em contratos, destaque para o usuário confirmar o objeto do contrato, empresa, número, vigência, valor, secretaria/fundo e fiscal quando houver.
-- Se vier PDF, leia e extraia os dados prováveis, mas marque o que estiver incerto.
-- Actions permitidas: create_creditor, create_contract, create_commitment.
+- A IA pode cadastrar credores, contratos, empenhos, notas e alertas quando houver dados suficientes.
+- Antes de criar credor, verifique a lista de credores no contexto; se a empresa já existir, use exatamente o nome cadastrado.
+- Em contratos e notas, vincule ao contrato, credor e empenho existentes quando encontrar correspondência por número, CNPJ ou nome da empresa.
+- Identifique dotação 06.01 ou 06.06 e escolha o programa compatível pela lista do sistema.
+- Em contratos, extraia objeto, empresa, número, vigência, valor, secretaria/fundo e fiscal quando houver.
+- Se vier PDF, leia e extraia os dados prováveis; se algum campo estiver incerto, informe no reply.
+- Actions permitidas: create_creditor, create_contract, create_commitment, create_note, create_alert.
 
 PEDIDO DO USUÁRIO:
 ${finalPrompt}`;
@@ -765,7 +777,7 @@ ${finalPrompt}`;
     setAttachedFiles([]);
     setIsLoading(true);
     setLastActions([]);
-    const runAudit = false;
+    const runAudit = shouldRunSystemAudit(finalPrompt, filesToSend.length);
     const nextLoadingText = filesToSend.length > 0
       ? 'Lendo anexos e extraindo informações...'
       : runAudit
@@ -846,7 +858,7 @@ ${finalPrompt}`;
             </div>
             <div>
               <h1 className="text-base font-medium text-slate-900">IA FiscalPro</h1>
-              <p className="text-xs text-slate-500">Credores, contratos e empenhos com confirmação antes de salvar.</p>
+              <p className="text-xs text-slate-500">Cadastros inteligentes com empresa, contrato, empenho, nota e dotação.</p>
             </div>
           </div>
           <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
@@ -951,7 +963,7 @@ ${finalPrompt}`;
                 }
               }}
               rows={2}
-              placeholder="Digite uma orientação ou anexe PDFs para preparar cadastro de credor, contrato ou empenho..."
+              placeholder="Digite uma orientação ou anexe PDFs para cadastrar credor, contrato, empenho, nota e vínculos..."
               className="flex-1 resize-none px-3.5 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
             />
             <button
