@@ -48,18 +48,6 @@ type AiAction =
       commitmentNumber?: string;
       budgetAllocation?: string;
       issueDate?: string;
-      attestationDate?: string;
-      fiscalName?: string;
-    }
-  | {
-      type: 'update_note';
-      noteNumber: string;
-      contractNum?: string;
-      creditor?: string;
-      issueDate?: string;
-      attestationDate?: string;
-      fiscalName?: string;
-      status?: ServiceNote['status'];
     }
   | {
       type: 'create_creditor';
@@ -87,7 +75,6 @@ interface AiAssistantViewProps {
   onAddContract: (contract: Omit<Contract, 'id'>) => void;
   onAddCommitment: (commitment: Omit<Commitment, 'id' | 'currentBalance' | 'balance'>) => void;
   onAddNote: (note: ServiceNote) => void;
-  onUpdateNote?: (note: ServiceNote) => void;
   onAddCreditor: (creditor: Creditor) => void;
   onAddAlert: (alert: { title: string; desc: string; linkTab?: ActiveTab }) => void;
 }
@@ -158,12 +145,6 @@ const coerceActionType = (value: string) => {
     nota_servico: 'create_note',
     nota_de_servico: 'create_note',
     create_note: 'create_note',
-    update_note: 'update_note',
-    atualizar_nota: 'update_note',
-    corrigir_nota: 'update_note',
-    nota_atesto: 'update_note',
-    atesto: 'update_note',
-    nota_de_atesto: 'update_note',
     alert: 'create_alert',
     alerta: 'create_alert',
     create_alert: 'create_alert'
@@ -215,22 +196,7 @@ const normalizeAction = (raw: any): AiAction | null => {
       value: Number(raw.value || raw.valor || raw.valorNota || raw.valor_nota || raw.valorLiquido || raw.valor_liquido || 0),
       commitmentNumber: raw.commitmentNumber || raw.commitment_number || raw.numeroEmpenho || raw.numero_empenho || raw.empenho || '',
       budgetAllocation: raw.budgetAllocation || raw.budget_allocation || raw.dotacao || raw.dotação || '',
-      issueDate: raw.issueDate || raw.issue_date || raw.dataEmissao || raw.data_emissao || raw.emissao || raw.emissão || '',
-      attestationDate: raw.attestationDate || raw.attestation_date || raw.dataAtesto || raw.data_atesto || raw.atesto || '',
-      fiscalName: raw.fiscalName || raw.fiscal_name || raw.fiscal || ''
-    };
-  }
-
-  if (type === 'update_note') {
-    return {
-      type,
-      noteNumber: String(raw.noteNumber || raw.note_number || raw.numeroNota || raw.numero_nota || raw.numero || raw.nota || ''),
-      contractNum: raw.contractNum || raw.contract_num || raw.numeroContrato || raw.numero_contrato || raw.contrato || '',
-      creditor: raw.creditor || raw.credor || raw.empresa || raw.contratada || '',
-      issueDate: raw.issueDate || raw.issue_date || raw.dataEmissao || raw.data_emissao || raw.emissao || raw.emissão || '',
-      attestationDate: raw.attestationDate || raw.attestation_date || raw.dataAtesto || raw.data_atesto || raw.atesto || '',
-      fiscalName: raw.fiscalName || raw.fiscal_name || raw.fiscal || '',
-      status: raw.status || undefined
+      issueDate: raw.issueDate || raw.issue_date || raw.dataEmissao || raw.data_emissao || raw.emissao || raw.emissão || ''
     };
   }
 
@@ -259,11 +225,6 @@ const collectActions = (parsed: any): AiAction[] => {
     parsed.notas,
     parsed.notasFiscais,
     parsed.notas_fiscais,
-    parsed.atestos,
-    parsed.notasAtesto,
-    parsed.notas_atesto,
-    parsed.correcoes,
-    parsed.correções,
     parsed.contratos,
     parsed.empenhos,
     parsed.credores,
@@ -367,7 +328,6 @@ const getActionLabel = (action: AiAction) => {
   if (action.type === 'create_contract') return `contrato ${action.contractNum || ''}`.trim();
   if (action.type === 'create_commitment') return `empenho ${action.number || ''}`.trim();
   if (action.type === 'create_note') return `nota ${action.noteNumber || ''}`.trim();
-  if (action.type === 'update_note') return `correção da nota ${action.noteNumber || ''}`.trim();
   if (action.type === 'create_alert') return `alerta ${action.title || ''}`.trim();
   return 'ação';
 };
@@ -527,7 +487,6 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
   onAddContract,
   onAddCommitment,
   onAddNote,
-  onUpdateNote,
   onAddCreditor,
   onAddAlert
 }) => {
@@ -553,7 +512,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
         id: 'welcome',
         role: 'assistant',
         text:
-          'Olá! Sou a IA do FiscalPro. Você pode anexar vários PDFs ou escrever os dados; eu identifico empresa já cadastrada, contrato, empenho, nota, dotação, programa, valores e faço os cadastros quando houver informação suficiente. Se vier nota de atesto, eu atualizo a nota existente.'
+          'Olá! Sou a IA do FiscalPro. Você pode anexar PDF ou escrever os dados; eu identifico empresa já cadastrada, contrato, empenho, nota, dotação, programa, valores e faço os cadastros quando houver informação suficiente.'
       }
     ];
   });
@@ -872,30 +831,6 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
         return;
       }
 
-      if (action.type === 'update_note' && action.noteNumber) {
-        const noteToUpdate = notes.find(
-          (item) =>
-            normalize(item.noteNumber) === normalize(action.noteNumber) ||
-            (!!action.contractNum && normalize(item.contractNum) === normalize(action.contractNum) && normalize(item.creditor).includes(normalize(action.creditor || '')))
-        );
-
-        if (noteToUpdate && onUpdateNote) {
-          onUpdateNote({
-            ...noteToUpdate,
-            issueDate: action.issueDate || noteToUpdate.issueDate,
-            attestationDate: action.attestationDate || noteToUpdate.attestationDate || '',
-            fiscalName: action.fiscalName || noteToUpdate.fiscalName || '',
-            status: action.attestationDate || action.status === 'Concluido' ? 'Concluido' : noteToUpdate.status
-          });
-          executed.push(`Nota corrigida com atesto: ${noteToUpdate.noteNumber}`);
-        } else if (!noteToUpdate) {
-          skipped.push(`Nota de atesto não vinculada: não encontrei a nota ${action.noteNumber} cadastrada.`);
-        } else {
-          skipped.push(`Nota de atesto não aplicada: atualização de nota indisponível.`);
-        }
-        return;
-      }
-
       if (action.type === 'create_alert' && action.title) {
         const key = `${normalize(action.title)}|${normalize(action.desc || '')}`;
         if (emittedAlertKeysRef.current.has(key)) return;
@@ -984,13 +919,11 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
 - Em contratos e notas, vincule ao contrato, credor e empenho existentes quando encontrar correspondência por número, CNPJ ou nome da empresa.
 - Para cada PDF de nota fiscal ou nota de serviço, retorne uma action create_note quando encontrar número da nota e valor. Use contractNum, creditor, commitmentNumber e budgetAllocation quando identificar.
 - Em create_note, extraia a data de emissão do PDF e envie em issueDate. Não preencha attestationDate nem fiscalName; esses campos serão digitados manualmente pelo usuário.
-- Se o PDF for nota de atesto, termo de atesto, comprovante de atesto ou fiscalização da nota, não crie nota nova. Retorne update_note com noteNumber, attestationDate e fiscalName quando houver.
-- Para vários PDFs no mesmo envio, retorne uma action separada para cada nota, empenho, contrato ou atesto identificado.
 - Se disser que uma nota foi cadastrada, obrigatoriamente inclua uma action create_note válida; se faltar número ou valor, diga que não foi cadastrada e informe o campo faltante.
 - Identifique dotação 06.01 ou 06.06 e escolha o programa compatível pela lista do sistema.
 - Em contratos, extraia objeto, empresa, número, vigência, valor, secretaria/fundo e fiscal quando houver.
 - Se vier PDF, leia e extraia os dados prováveis; se algum campo estiver incerto, informe no reply.
-- Actions permitidas: create_creditor, create_contract, create_commitment, create_note, update_note, create_alert.
+- Actions permitidas: create_creditor, create_contract, create_commitment, create_note, create_alert.
 
 PEDIDO DO USUÁRIO:
 ${finalPrompt}`;
@@ -1188,7 +1121,7 @@ ${finalPrompt}`;
                 }
               }}
               rows={2}
-              placeholder="Digite uma orientação ou anexe vários PDFs para cadastrar notas, contratos, empenhos ou corrigir atestos..."
+              placeholder="Digite uma orientação ou anexe PDFs para cadastrar credor, contrato, empenho, nota e vínculos..."
               className="flex-1 resize-none px-3.5 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
             />
             <button
@@ -1212,8 +1145,6 @@ ${finalPrompt}`;
           <div className="mt-3 space-y-2 text-xs text-slate-600">
             <p>Identifica objeto, número de contrato, credor, empenho, dotação, programa e valores.</p>
             <p>Lê PDFs anexados e extrai informações de contratos, empenhos e notas fiscais.</p>
-            <p>Aceita vários PDFs no mesmo envio e cria uma ação para cada documento identificado.</p>
-            <p>Quando o PDF for de atesto, localiza a nota e preenche data de atesto/fiscal.</p>
             <p>Cadastra contrato, empenho, credor e nota quando os dados estiverem completos.</p>
             <p>Emite alertas administrativos para o usuário quando detectar risco ou pendência.</p>
             <p>Ao lançar nota, desconta do saldo do empenho pelo fluxo normal do sistema.</p>

@@ -1266,7 +1266,6 @@ export default function App() {
               onAddContract={handleAddContract}
               onAddCommitment={handleAddCommitment}
               onAddNote={handleAddNote}
-              onUpdateNote={handleUpdateNote}
               onAddCreditor={handleAddCreditor}
               onAddAlert={handleAddAiAlert}
             />
