@@ -15,7 +15,7 @@ export const SettingsView: React.FC = () => {
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
-        <h2 className="text-xl font-bold text-slate-800">Configurações do Sistema</h2>
+        <h2 className="text-xl font-medium text-slate-800">Configurações do Sistema</h2>
         <p className="text-xs text-slate-500 mt-1">
           Parâmetros gerais de notificação, perfil e preferências do sistema SIGEC
         </p>
@@ -23,13 +23,13 @@ export const SettingsView: React.FC = () => {
 
       <form onSubmit={handleSave} className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-5">
         <div>
-          <h3 className="text-sm font-bold text-slate-800 flex items-center space-x-2 pb-3 border-b border-slate-100">
+          <h3 className="text-sm font-medium text-slate-800 flex items-center space-x-2 pb-3 border-b border-slate-100">
             <User className="w-4 h-4 text-emerald-600" />
             <span>Perfil Administrativo</span>
           </h3>
           <div className="mt-4 grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Nome do Usuário</label>
+              <label className="block text-xs font-medium text-slate-700 mb-1">Nome do Usuário</label>
               <input
                 type="text"
                 defaultValue="Administrador FiscalPro"
@@ -37,7 +37,7 @@ export const SettingsView: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">E-mail Institucional</label>
+              <label className="block text-xs font-medium text-slate-700 mb-1">E-mail Institucional</label>
               <input
                 type="email"
                 defaultValue="admin@fiscalpro.com.br"
@@ -48,13 +48,13 @@ export const SettingsView: React.FC = () => {
         </div>
 
         <div>
-          <h3 className="text-sm font-bold text-slate-800 flex items-center space-x-2 pb-3 border-b border-slate-100">
+          <h3 className="text-sm font-medium text-slate-800 flex items-center space-x-2 pb-3 border-b border-slate-100">
             <Bell className="w-4 h-4 text-emerald-600" />
             <span>Alertas e Regras de Vencimento</span>
           </h3>
           <div className="mt-4 space-y-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-medium text-slate-700 mb-1">
                 Antecedência de Alerta de Vencimento (Dias)
               </label>
               <select
@@ -73,14 +73,14 @@ export const SettingsView: React.FC = () => {
 
         <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
           {saved && (
-            <span className="text-xs font-semibold text-emerald-600 flex items-center space-x-1">
+            <span className="text-xs font-medium text-emerald-600 flex items-center space-x-1">
               <Check className="w-4 h-4" />
               <span>Configurações salvas com sucesso!</span>
             </span>
           )}
           <button
             type="submit"
-            className="ml-auto px-5 py-2.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-colors cursor-pointer"
+            className="ml-auto px-5 py-2.5 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-colors cursor-pointer"
           >
             Salvar Alterações
           </button>

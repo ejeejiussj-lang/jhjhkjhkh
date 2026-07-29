@@ -729,11 +729,11 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
               <Bot className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-base font-bold text-slate-900">IA FiscalPro</h1>
+              <h1 className="text-base font-medium text-slate-900">IA FiscalPro</h1>
               <p className="text-xs text-slate-500">Contratos, notas, empenhos, objetos e cadastros automáticos.</p>
             </div>
           </div>
-          <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
+          <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
             <Sparkles className="w-3.5 h-3.5" />
             <span>OpenRouter</span>
           </div>
@@ -770,7 +770,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
               {attachedFiles.map((file) => (
                 <div key={file.id} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-700">
                   <FileText className="w-3.5 h-3.5 text-rose-500" />
-                  <span className="font-semibold max-w-[220px] truncate">{file.filename}</span>
+                  <span className="font-medium max-w-[220px] truncate">{file.filename}</span>
                   <button
                     onClick={() => setAttachedFiles((prev) => prev.filter((item) => item.id !== file.id))}
                     className="p-0.5 text-slate-400 hover:text-rose-600 rounded cursor-pointer"
@@ -826,7 +826,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
 
       <aside className="bg-white border border-slate-200 rounded-2xl shadow-xs p-4 space-y-4">
         <div>
-          <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+          <h2 className="text-sm font-medium text-slate-900 flex items-center gap-2">
             <Wand2 className="w-4 h-4 text-emerald-600" />
             <span>O que ela faz</span>
           </h2>
@@ -841,18 +841,18 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
         </div>
 
         <div className="border-t border-slate-100 pt-4">
-          <h3 className="text-xs font-bold uppercase text-slate-400">Base carregada</h3>
+          <h3 className="text-xs font-medium uppercase text-slate-400">Base carregada</h3>
           <div className="mt-3 grid grid-cols-3 gap-2 text-center">
             <div className="rounded-xl bg-slate-50 border border-slate-100 p-2">
-              <p className="text-lg font-bold text-slate-900">{contracts.length}</p>
+              <p className="text-lg font-medium text-slate-900">{contracts.length}</p>
               <p className="text-[10px] text-slate-500">Contratos</p>
             </div>
             <div className="rounded-xl bg-slate-50 border border-slate-100 p-2">
-              <p className="text-lg font-bold text-slate-900">{commitments.length}</p>
+              <p className="text-lg font-medium text-slate-900">{commitments.length}</p>
               <p className="text-[10px] text-slate-500">Empenhos</p>
             </div>
             <div className="rounded-xl bg-slate-50 border border-slate-100 p-2">
-              <p className="text-lg font-bold text-slate-900">{creditors.length}</p>
+              <p className="text-lg font-medium text-slate-900">{creditors.length}</p>
               <p className="text-[10px] text-slate-500">Credores</p>
             </div>
           </div>
@@ -860,10 +860,10 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
 
         {lastActions.length > 0 && (
           <div className="border-t border-slate-100 pt-4">
-            <h3 className="text-xs font-bold uppercase text-slate-400">Últimas ações</h3>
+            <h3 className="text-xs font-medium uppercase text-slate-400">Últimas ações</h3>
             <div className="mt-3 space-y-2">
               {lastActions.map((item) => (
-                <div key={item} className="flex items-start gap-2 text-xs text-emerald-700 font-semibold">
+                <div key={item} className="flex items-start gap-2 text-xs text-emerald-700 font-medium">
                   <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
                   <span>{item}</span>
                 </div>

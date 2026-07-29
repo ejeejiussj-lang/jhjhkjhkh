@@ -86,7 +86,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-800">Relatório Mensal de Notas de Serviço</h2>
+          <h2 className="text-xl font-medium text-slate-800">Relatório Mensal de Notas de Serviço</h2>
           <p className="text-xs text-slate-500 mt-1">
             Consolidação mensal detalhada por número da nota, data, credor e secretaria ou fundo municipal de saúde.
           </p>
@@ -94,7 +94,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
         <div className="flex items-center space-x-2">
           <button
             onClick={handlePrintReport}
-            className="flex items-center space-x-1.5 px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl shadow-2xs transition-all cursor-pointer"
+            className="flex items-center space-x-1.5 px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium rounded-xl shadow-2xs transition-all cursor-pointer"
           >
             <Printer className="w-3.5 h-3.5 text-slate-500" />
             <span>Imprimir / PDF</span>
@@ -109,11 +109,11 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             {/* Filtro de Mês */}
             <div className="flex items-center space-x-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
               <Calendar className="w-3.5 h-3.5 text-slate-500" />
-              <span className="text-[11px] font-bold text-slate-700">Mês:</span>
+              <span className="text-[11px] font-medium text-slate-700">Mês:</span>
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-                className="bg-transparent text-slate-900 text-xs font-bold outline-none cursor-pointer"
+                className="bg-transparent text-slate-900 text-xs font-medium outline-none cursor-pointer"
               >
                 <option value="all">Todos os Meses</option>
                 {monthsList.map((m) => (
@@ -127,11 +127,11 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             {/* Filtro de Secretaria / Fundo */}
             <div className="flex items-center space-x-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
               <Building2 className="w-3.5 h-3.5 text-emerald-600" />
-              <span className="text-[11px] font-bold text-slate-700">Órgão:</span>
+              <span className="text-[11px] font-medium text-slate-700">Órgão:</span>
               <select
                 value={selectedSecretaria}
                 onChange={(e) => setSelectedSecretaria(e.target.value)}
-                className="bg-transparent text-slate-900 text-xs font-bold outline-none cursor-pointer max-w-[220px] truncate"
+                className="bg-transparent text-slate-900 text-xs font-medium outline-none cursor-pointer max-w-[220px] truncate"
               >
                 <option value="all">Secretaria & Fundo (Todos)</option>
                 <option value="Secretaria Municipal de Saúde">Secretaria Municipal de Saúde</option>
@@ -160,7 +160,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             <span>•</span>
             <span>Valor Total Consolidado: <strong className="text-emerald-700">R$ {totalFilteredValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></span>
           </div>
-          <span className="text-[11px] font-semibold text-slate-400">
+          <span className="text-[11px] font-medium text-slate-400">
             {selectedMonth === 'all' ? 'Exibindo todo o período' : `Mês selecionado: ${monthsList.find(m => m.value === selectedMonth)?.label}`}
           </span>
         </div>
@@ -171,9 +171,9 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
         <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Receipt className="w-4 h-4 text-emerald-600" />
-            <h3 className="text-sm font-bold text-slate-800">Demonstrativo Analítico de Notas de Serviço</h3>
+            <h3 className="text-sm font-medium text-slate-800">Demonstrativo Analítico de Notas de Serviço</h3>
           </div>
-          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+          <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">
             {filteredNotes.length} {filteredNotes.length === 1 ? 'Registro' : 'Registros'}
           </span>
         </div>
@@ -183,13 +183,13 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-400">
               <Receipt className="w-6 h-6" />
             </div>
-            <p className="text-sm font-bold text-slate-700">Nenhuma nota de serviço encontrada</p>
+            <p className="text-sm font-medium text-slate-700">Nenhuma nota de serviço encontrada</p>
             <p className="text-xs text-slate-400 max-w-sm mx-auto">
               Não há notas fiscais/serviço cadastradas para os filtros selecionados (mês, secretaria ou termo de busca).
             </p>
             <button
               onClick={() => { setSelectedMonth('all'); setSelectedSecretaria('all'); setSearchTerm(''); }}
-              className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-block"
+              className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-colors cursor-pointer inline-block"
             >
               Limpar Filtros
             </button>
@@ -198,7 +198,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-slate-50/80 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200/60 text-[10px]">
+                <tr className="bg-slate-50/80 text-slate-500 font-medium uppercase tracking-wider border-b border-slate-200/60 text-[10px]">
                   <th className="py-3 px-4">Nº da Nota</th>
                   <th className="py-3 px-4">Competência / Atesto</th>
                   <th className="py-3 px-4">Data de Emissão</th>
@@ -212,19 +212,19 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               <tbody className="divide-y divide-slate-100">
                 {filteredNotes.map((note) => (
                   <tr key={note.id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="py-3 px-4 font-extrabold text-slate-900 font-mono">
+                    <td className="py-3 px-4 font-medium text-slate-900 font-mono">
                       {note.noteNumber}
                     </td>
-                    <td className="py-3 px-4 font-semibold text-slate-700">{note.attestationDate || '-'}</td>
-                    <td className="py-3 px-4 font-semibold text-slate-700">{note.issueDate || '-'}</td>
-                    <td className="py-3 px-4 font-semibold text-slate-800">
+                    <td className="py-3 px-4 font-medium text-slate-700">{note.attestationDate || '-'}</td>
+                    <td className="py-3 px-4 font-medium text-slate-700">{note.issueDate || '-'}</td>
+                    <td className="py-3 px-4 font-medium text-slate-800">
                       {note.creditor}
                     </td>
                     <td className="py-3 px-4 font-mono font-medium text-slate-600">
                       {note.contractNum}
                     </td>
                     <td className="py-3 px-4">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${
                         note.secretaria.toLowerCase().includes('fundo')
                           ? 'bg-blue-50 text-blue-700 border border-blue-100'
                           : 'bg-emerald-50 text-emerald-700 border border-emerald-100'
@@ -232,11 +232,11 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                         {note.secretaria}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-right font-extrabold text-emerald-700">
+                    <td className="py-3 px-4 text-right font-medium text-emerald-700">
                       R$ {note.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </td>
                     <td className="py-3 px-4 text-center">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${
                         note.status === 'Paga'
                           ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                           : 'bg-amber-100 text-amber-800 border-amber-200'
@@ -255,26 +255,26 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       {/* Resumo Adicional por Órgão */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
-          <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5">
+          <h4 className="text-xs font-medium text-slate-800 uppercase tracking-wider flex items-center space-x-1.5">
             <Building2 className="w-4 h-4 text-emerald-600" />
             <span>Resumo por Secretaria Municipal de Saúde</span>
           </h4>
           <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between text-xs">
-            <span className="font-semibold text-slate-700">Total Notas (SMS)</span>
-            <span className="font-extrabold text-slate-900">
+            <span className="font-medium text-slate-700">Total Notas (SMS)</span>
+            <span className="font-medium text-slate-900">
               R$ {filteredNotes.filter(n => n.secretaria.toLowerCase().includes('secretaria')).reduce((sum, n) => sum + n.value, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </span>
           </div>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
-          <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5">
+          <h4 className="text-xs font-medium text-slate-800 uppercase tracking-wider flex items-center space-x-1.5">
             <Building2 className="w-4 h-4 text-blue-600" />
             <span>Resumo por Fundo Municipal de Saúde</span>
           </h4>
           <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between text-xs">
-            <span className="font-semibold text-slate-700">Total Notas (FMS)</span>
-            <span className="font-extrabold text-slate-900">
+            <span className="font-medium text-slate-700">Total Notas (FMS)</span>
+            <span className="font-medium text-slate-900">
               R$ {filteredNotes.filter(n => n.secretaria.toLowerCase().includes('fundo')).reduce((sum, n) => sum + n.value, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </span>
           </div>

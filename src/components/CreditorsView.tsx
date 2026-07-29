@@ -84,14 +84,14 @@ export const CreditorsView: React.FC<CreditorsViewProps> = ({ creditors, onAddCr
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-slate-800">Credores & Fornecedores</h2>
+          <h2 className="text-xl font-medium text-slate-800">Credores & Fornecedores</h2>
           <p className="text-xs text-slate-500 mt-1">
             Gestão cadastral de empresas e prestadores de serviços contratados
           </p>
         </div>
         <button
           onClick={openCreateModal}
-          className="flex items-center space-x-2 px-4 py-2.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-colors cursor-pointer"
+          className="flex items-center space-x-2 px-4 py-2.5 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-colors cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Cadastrar Credor</span>
@@ -115,7 +115,7 @@ export const CreditorsView: React.FC<CreditorsViewProps> = ({ creditors, onAddCr
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold">
+              <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-medium">
                 <th className="py-3 px-4">Razão Social</th>
                 <th className="py-3 px-4">CNPJ</th>
                 <th className="py-3 px-4">Categoria</th>
@@ -135,19 +135,19 @@ export const CreditorsView: React.FC<CreditorsViewProps> = ({ creditors, onAddCr
               ) : (
                 filtered.map((cred) => (
                   <tr key={cred.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3.5 px-4 font-semibold text-slate-900">
+                    <td className="py-3.5 px-4 font-medium text-slate-900">
                       <span>{cred.name}</span>
                     </td>
                     <td className="py-3.5 px-4 text-slate-600 font-medium font-mono">{cred.cnpj}</td>
                     <td className="py-3.5 px-4 text-slate-600">{cred.category}</td>
-                    <td className="py-3.5 px-4 font-semibold text-slate-800">
+                    <td className="py-3.5 px-4 font-medium text-slate-800">
                       {cred.activeContractsCount} contratos
                     </td>
-                    <td className="py-3.5 px-4 font-semibold text-emerald-700">
+                    <td className="py-3.5 px-4 font-medium text-emerald-700">
                       {formatCurrency(cred.totalValue)}
                     </td>
                     <td className="py-3.5 px-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
                         {cred.status}
                       </span>
                     </td>
@@ -187,7 +187,7 @@ export const CreditorsView: React.FC<CreditorsViewProps> = ({ creditors, onAddCr
               <Trash2 className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-800">Excluir Credor</h3>
+              <h3 className="text-base font-medium text-slate-800">Excluir Credor</h3>
               <p className="text-xs text-slate-500 mt-1">
                 Tem certeza que deseja excluir este credor do sistema? Esta ação não pode ser desfeita.
               </p>
@@ -196,7 +196,7 @@ export const CreditorsView: React.FC<CreditorsViewProps> = ({ creditors, onAddCr
               <button
                 type="button"
                 onClick={() => setDeletingId(null)}
-                className="flex-1 px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl cursor-pointer"
+                className="flex-1 px-4 py-2 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl cursor-pointer"
               >
                 Cancelar
               </button>
@@ -208,7 +208,7 @@ export const CreditorsView: React.FC<CreditorsViewProps> = ({ creditors, onAddCr
                   }
                   setDeletingId(null);
                 }}
-                className="flex-1 px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-xs cursor-pointer"
+                className="flex-1 px-4 py-2 text-xs font-medium text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-xs cursor-pointer"
               >
                 Sim, Excluir
               </button>
@@ -222,14 +222,14 @@ export const CreditorsView: React.FC<CreditorsViewProps> = ({ creditors, onAddCr
           <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
               <div>
-                <h3 className="text-base font-bold text-slate-800">{editingCreditor ? 'Editar Credor / Empresa' : 'Cadastrar Novo Credor / Empresa'}</h3>
+                <h3 className="text-base font-medium text-slate-800">{editingCreditor ? 'Editar Credor / Empresa' : 'Cadastrar Novo Credor / Empresa'}</h3>
                 <p className="text-[11px] text-slate-400">Preencha os dados cadastrais manualmente</p>
               </div>
             </div>
 
             <form onSubmit={handleCreate} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   CNPJ da Empresa <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -243,7 +243,7 @@ export const CreditorsView: React.FC<CreditorsViewProps> = ({ creditors, onAddCr
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Razão Social / Nome da Empresa <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -257,7 +257,7 @@ export const CreditorsView: React.FC<CreditorsViewProps> = ({ creditors, onAddCr
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Categoria / Atividade</label>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Categoria / Atividade</label>
                 <input
                   type="text"
                   value={category}
@@ -268,12 +268,12 @@ export const CreditorsView: React.FC<CreditorsViewProps> = ({ creditors, onAddCr
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Status / Situação Cadastral</label>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Status / Situação Cadastral</label>
                 <input
                   type="text"
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg font-semibold text-emerald-700"
+                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg font-medium text-emerald-700"
                 />
               </div>
 
@@ -284,13 +284,13 @@ export const CreditorsView: React.FC<CreditorsViewProps> = ({ creditors, onAddCr
                     setEditingCreditor(null);
                     setShowAddModal(false);
                   }}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
+                  className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-xs cursor-pointer"
+                  className="px-4 py-2 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-xs cursor-pointer"
                 >
                   {editingCreditor ? 'Atualizar Credor' : 'Salvar Credor'}
                 </button>

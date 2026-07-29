@@ -246,12 +246,12 @@ export const ContractTable: React.FC<ContractTableProps> = ({
     <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm flex flex-col justify-between overflow-hidden transition-all">
       {/* Toast Export Notification */}
       {exportNotice && (
-        <div className="bg-emerald-600 text-white px-4 py-2.5 text-xs font-semibold flex items-center justify-between animate-fadeIn">
+        <div className="bg-emerald-600 text-white px-4 py-2.5 text-xs font-medium flex items-center justify-between animate-fadeIn">
           <div className="flex items-center space-x-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-200" />
             <span>{exportNotice}</span>
           </div>
-          <button onClick={() => setExportNotice(null)} className="text-emerald-100 hover:text-white font-bold">
+          <button onClick={() => setExportNotice(null)} className="text-emerald-100 hover:text-white font-medium">
             ×
           </button>
         </div>
@@ -263,8 +263,8 @@ export const ContractTable: React.FC<ContractTableProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center space-x-2">
-              <h3 className="text-lg font-bold text-slate-900 tracking-tight">Contratos Recentes</h3>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
+              <h3 className="text-lg font-medium text-slate-900 tracking-tight">Contratos Recentes</h3>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
                 {filteredContracts.length} registrados
               </span>
             </div>
@@ -277,7 +277,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
           <div className="flex items-center space-x-2.5 self-start sm:self-auto">
             <button
               onClick={handleExportCSV}
-              className="flex items-center space-x-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200/80 rounded-xl transition-all cursor-pointer"
+              className="flex items-center space-x-1.5 px-3.5 py-2 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200/80 rounded-xl transition-all cursor-pointer"
               title="Exportar contratos visíveis em arquivo CSV"
             >
               <Download className="w-3.5 h-3.5 text-slate-600" />
@@ -286,7 +286,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
 
             <button
               onClick={onOpenNewContractModal}
-              className="flex items-center space-x-1.5 px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-all cursor-pointer"
+              className="flex items-center space-x-1.5 px-4 py-2 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-all cursor-pointer"
             >
               <FilePlus className="w-4 h-4" />
               <span>Novo Contrato</span>
@@ -305,7 +305,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
               }}
               className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
                 statusFilter === 'Todos'
-                  ? 'bg-white text-slate-900 font-bold shadow-xs'
+                  ? 'bg-white text-slate-900 font-medium shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -319,7 +319,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
               }}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
                 statusFilter === 'Ativo'
-                  ? 'bg-white text-slate-900 font-bold shadow-xs'
+                  ? 'bg-white text-slate-900 font-medium shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -334,7 +334,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
               }}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
                 statusFilter === 'A Vencer'
-                  ? 'bg-white text-slate-900 font-bold shadow-xs'
+                  ? 'bg-white text-slate-900 font-medium shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -349,7 +349,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
               }}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
                 statusFilter === 'Encerrado'
-                  ? 'bg-white text-slate-900 font-bold shadow-xs'
+                  ? 'bg-white text-slate-900 font-medium shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -400,7 +400,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
       <div className="overflow-x-auto min-h-[320px]">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="bg-slate-50/80 border-b border-slate-200/80 text-slate-500 font-bold uppercase tracking-wider text-[11px]">
+            <tr className="bg-slate-50/80 border-b border-slate-200/80 text-slate-500 font-medium uppercase tracking-wider text-[11px]">
               <th className="py-3.5 px-5">Contrato & Categoria</th>
               <th className="py-3.5 px-4">Credor / Contratada</th>
               <th className="py-3.5 px-4 max-w-sm">Objeto</th>
@@ -415,7 +415,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
               <tr>
                 <td colSpan={7} className="py-12 text-center text-slate-400 space-y-2">
                   <FileText className="w-8 h-8 mx-auto text-slate-300" />
-                  <p className="font-semibold text-slate-600 text-sm">Nenhum contrato encontrado</p>
+                  <p className="font-medium text-slate-600 text-sm">Nenhum contrato encontrado</p>
                   <p className="text-xs text-slate-400">Tente ajustar seus filtros ou termo de busca.</p>
                 </td>
               </tr>
@@ -453,12 +453,12 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                         <div className="flex flex-col space-y-1">
                           <span
                             onClick={() => onViewContractDetails?.(c)}
-                            className="font-bold text-slate-900 group-hover:text-emerald-700 transition-colors cursor-pointer text-sm"
+                            className="font-medium text-slate-900 group-hover:text-emerald-700 transition-colors cursor-pointer text-sm"
                           >
                             {c.contractNum}
                           </span>
                           <div className="flex flex-wrap gap-1 items-center">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
                               {c.category || 'Geral'}
                             </span>
                             {linkedNotesCount > 0 && (
@@ -467,7 +467,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                                   e.stopPropagation();
                                   toggleExpand(c.id);
                                 }}
-                                className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[10px] font-bold border transition-colors cursor-pointer ${
+                                className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[10px] font-medium border transition-colors cursor-pointer ${
                                   isExpanded
                                     ? 'bg-slate-800 text-white border-slate-800 hover:bg-slate-900'
                                     : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
@@ -484,9 +484,9 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                       </td>
 
                     {/* Creditor */}
-                    <td className="py-4 px-4 font-semibold text-slate-800">
+                    <td className="py-4 px-4 font-medium text-slate-800">
                       <div>
-                        <p className="text-sm font-semibold text-slate-900">{c.creditor}</p>
+                        <p className="text-sm font-medium text-slate-900">{c.creditor}</p>
                         <p className="text-[11px] text-slate-400 font-normal">Contratada ativa</p>
                       </div>
                     </td>
@@ -525,13 +525,13 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                     {/* Balance & Financial Execution */}
                     <td className="py-4 px-4 text-right whitespace-nowrap">
                       <div className="inline-block text-right space-y-1.5">
-                        <div className="font-bold text-slate-900 text-sm">
+                        <div className="font-medium text-slate-900 text-sm">
                           {formatVal(c.totalValue)}
                         </div>
                         <div className="flex items-center justify-end space-x-1.5 text-[11px] text-slate-500 font-medium">
-                          <span>Saldo: <strong className="text-emerald-700 font-semibold">{formatVal(remaining)}</strong></span>
+                          <span>Saldo: <strong className="text-emerald-700 font-medium">{formatVal(remaining)}</strong></span>
                           <span className="text-slate-300">•</span>
-                          <span className="text-slate-600 bg-slate-100 px-1 rounded text-[10px] font-semibold">{usagePct}% usado</span>
+                          <span className="text-slate-600 bg-slate-100 px-1 rounded text-[10px] font-medium">{usagePct}% usado</span>
                         </div>
                         {/* Mini progress bar */}
                         <div className="w-32 bg-slate-100 rounded-full h-1 ml-auto overflow-hidden">
@@ -551,7 +551,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
 
                     {/* Status Badge */}
                     <td className="py-4 px-4 text-center whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
                         <span className="w-1.5 h-1.5 rounded-full mr-1.5 bg-slate-400" />
                         {c.status}
                       </span>
@@ -597,7 +597,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                               setActiveActionId(null);
                               onViewContractDetails?.(c);
                             }}
-                            className="w-full flex items-center space-x-2 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                            className="w-full flex items-center space-x-2 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
                           >
                             <Receipt className="w-3.5 h-3.5 text-slate-500" />
                             <span>Notas de Serviço ({linkedNotesCount})</span>
@@ -642,26 +642,26 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                           <div className="hidden">
                             <div className="flex items-center space-x-2 border-b border-slate-100 pb-2">
                               <UserCheck className="w-4 h-4 text-emerald-600" />
-                              <span className="font-bold text-xs text-slate-900 uppercase tracking-wider">
+                              <span className="font-medium text-xs text-slate-900 uppercase tracking-wider">
                                 Dados da Fiscalização & Portaria de Nomeação
                               </span>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
                               <div>
-                                <span className="text-[10px] uppercase font-bold text-slate-400 block">Fiscal do Contrato</span>
-                                <span className="font-bold text-slate-800">{c.fiscalName || 'Não Informado'}</span>
+                                <span className="text-[10px] uppercase font-medium text-slate-400 block">Fiscal do Contrato</span>
+                                <span className="font-medium text-slate-800">{c.fiscalName || 'Não Informado'}</span>
                               </div>
                               <div>
-                                <span className="text-[10px] uppercase font-bold text-slate-400 block">Portaria do Fiscal</span>
-                                <span className="font-bold text-emerald-700">{c.fiscalPortaria || 'Não Informada'}</span>
+                                <span className="text-[10px] uppercase font-medium text-slate-400 block">Portaria do Fiscal</span>
+                                <span className="font-medium text-emerald-700">{c.fiscalPortaria || 'Não Informada'}</span>
                               </div>
                               <div>
-                                <span className="text-[10px] uppercase font-bold text-slate-400 block">Publicação da Portaria</span>
+                                <span className="text-[10px] uppercase font-medium text-slate-400 block">Publicação da Portaria</span>
                                 <span className="font-medium text-slate-700">{c.fiscalPortariaPublicationDate || 'Não Informada'}</span>
                               </div>
                               <div>
-                                <span className="text-[10px] uppercase font-bold text-slate-400 block">Vigência da Portaria</span>
+                                <span className="text-[10px] uppercase font-medium text-slate-400 block">Vigência da Portaria</span>
                                 <span className="font-medium text-slate-700">{c.fiscalPortariaValidity || 'Conforme Contrato'}</span>
                               </div>
                             </div>
@@ -670,7 +670,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                           <div className="flex items-center justify-between pt-1">
                             <div className="flex items-center space-x-2">
                               <Receipt className="w-4 h-4 text-slate-600" />
-                              <span className="font-bold text-xs text-slate-800 uppercase tracking-wider">
+                              <span className="font-medium text-xs text-slate-800 uppercase tracking-wider">
                                 Notas de Serviço Vinculadas ({matchedNotes.length})
                               </span>
                             </div>
@@ -687,8 +687,8 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                               >
                                 <div className="space-y-1">
                                   <div className="flex items-center space-x-1.5">
-                                    <span className="font-bold text-xs text-slate-900">{note.noteNumber}</span>
-                                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                                    <span className="font-medium text-xs text-slate-900">{note.noteNumber}</span>
+                                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium ${
                                       note.status === 'Paga'
                                         ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
                                         : 'bg-slate-100 text-slate-700 border border-slate-200'
@@ -697,12 +697,12 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                                     </span>
                                   </div>
                                   <div className="text-[10px] text-slate-500 font-medium">
-                                    Contrato: <strong className="font-semibold text-slate-700">{note.contractNum || c.contractNum}</strong>
+                                    Contrato: <strong className="font-medium text-slate-700">{note.contractNum || c.contractNum}</strong>
                                   </div>
                                   <div className="text-[10px] text-slate-500 font-medium">
-                                    Atesto: <strong className="font-semibold text-slate-700">{note.attestationDate || '-'}</strong>
+                                    Atesto: <strong className="font-medium text-slate-700">{note.attestationDate || '-'}</strong>
                                   </div>
-                                  <div className="text-xs font-bold text-slate-900">
+                                  <div className="text-xs font-medium text-slate-900">
                                     R$ {note.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                   </div>
                                 </div>
@@ -727,19 +727,19 @@ export const ContractTable: React.FC<ContractTableProps> = ({
       <div className="p-4 bg-slate-50/80 border-t border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-600">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <div>
-            Mostrando <span className="font-bold text-slate-900">{filteredContracts.length > 0 ? startIndex + 1 : 0}</span>{' '}
+            Mostrando <span className="font-medium text-slate-900">{filteredContracts.length > 0 ? startIndex + 1 : 0}</span>{' '}
             a{' '}
-            <span className="font-bold text-slate-900">
+            <span className="font-medium text-slate-900">
               {Math.min(startIndex + itemsPerPage, filteredContracts.length)}
             </span>{' '}
-            de <span className="font-bold text-slate-900">{filteredContracts.length}</span> contratos
+            de <span className="font-medium text-slate-900">{filteredContracts.length}</span> contratos
           </div>
 
           <div className="hidden sm:block border-l border-slate-300 h-4" />
 
           <div className="text-slate-500">
             Soma dos visíveis:{' '}
-            <span className="font-bold text-emerald-700">{formatCurrency(totalValueSum)}</span>
+            <span className="font-medium text-emerald-700">{formatCurrency(totalValueSum)}</span>
           </div>
         </div>
 
@@ -753,7 +753,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                 setItemsPerPage(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-800 font-semibold focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-800 font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500"
             >
               <option value={5}>5</option>
               <option value={10}>10</option>
@@ -771,7 +771,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
               <ChevronLeft className="w-4 h-4" />
             </button>
 
-            <span className="px-2 text-xs font-semibold text-slate-700">
+            <span className="px-2 text-xs font-medium text-slate-700">
               {currentPage} / {totalPages}
             </span>
 
@@ -792,7 +792,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-2xl overflow-hidden animate-fadeIn my-8">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
               <div>
-                <h3 className="text-base font-bold text-slate-900">Lançar Aditivo</h3>
+                <h3 className="text-base font-medium text-slate-900">Lançar Aditivo</h3>
                 <p className="text-[11px] text-slate-500">
                   Contrato {amendmentContract.contractNum} - {amendmentContract.creditor}
                 </p>
@@ -809,22 +809,22 @@ export const ContractTable: React.FC<ContractTableProps> = ({
             <form onSubmit={submitAmendment} className="p-6 space-y-4 max-h-[78vh] overflow-y-auto">
               <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-3 text-xs grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
-                  <span className="block text-[10px] uppercase font-bold text-emerald-700">Valor atual</span>
-                  <span className="font-bold text-slate-900">{formatCurrency(amendmentContract.totalValue)}</span>
+                  <span className="block text-[10px] uppercase font-medium text-emerald-700">Valor atual</span>
+                  <span className="font-medium text-slate-900">{formatCurrency(amendmentContract.totalValue)}</span>
                 </div>
                 <div>
-                  <span className="block text-[10px] uppercase font-bold text-emerald-700">Vigência atual</span>
-                  <span className="font-bold text-slate-900">{amendmentContract.startDate} até {amendmentContract.endDate}</span>
+                  <span className="block text-[10px] uppercase font-medium text-emerald-700">Vigência atual</span>
+                  <span className="font-medium text-slate-900">{amendmentContract.startDate} até {amendmentContract.endDate}</span>
                 </div>
                 <div>
-                  <span className="block text-[10px] uppercase font-bold text-emerald-700">Status</span>
-                  <span className="font-bold text-slate-900">{amendmentContract.status}</span>
+                  <span className="block text-[10px] uppercase font-medium text-emerald-700">Status</span>
+                  <span className="font-medium text-slate-900">{amendmentContract.status}</span>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
                     Número / Identificação do Aditivo <span className="text-rose-500">*</span>
                   </label>
                   <input
@@ -833,19 +833,19 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                     value={amendmentNum}
                     onChange={(e) => setAmendmentNum(e.target.value)}
                     placeholder="Ex: 1º Termo Aditivo"
-                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold text-slate-900"
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-900"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
                     Motivo do Aditivo <span className="text-rose-500">*</span>
                   </label>
                   <select
                     required
                     value={amendmentType}
                     onChange={(e) => setAmendmentType(e.target.value as ContractAmendment['type'])}
-                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold text-slate-900 cursor-pointer"
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-900 cursor-pointer"
                   >
                     {amendmentTypes.map((item) => (
                       <option key={item} value={item}>
@@ -856,13 +856,13 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                 </div>
               </div>
 
-              <div className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-xs text-amber-900 font-semibold">
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-xs text-amber-900 font-medium">
                 {getAmendmentGuidance()}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
                     Valor da Alteração (R$) {requiresValue && <span className="text-rose-500">*</span>}
                   </label>
                   <input
@@ -872,13 +872,13 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                     value={amendmentValue}
                     onChange={(e) => setAmendmentValue(e.target.value)}
                     placeholder={amendmentType === 'Aditivo de Redução de Valor' ? 'Ex: 5000' : 'Ex: 15000'}
-                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold text-slate-900"
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-900"
                   />
                   <p className="text-[10px] text-slate-400 mt-1">Redução e rescisão são gravadas como impacto negativo.</p>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
                     Nova Data de Término {requiresNewEndDate && <span className="text-rose-500">*</span>}
                   </label>
                   <input
@@ -887,14 +887,14 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                     value={newEndDate}
                     onChange={(e) => setNewEndDate(e.target.value)}
                     placeholder="Ex: 31/12/2026"
-                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-900"
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-900"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
                     Data de Assinatura <span className="text-rose-500">*</span>
                   </label>
                   <input
@@ -903,25 +903,25 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                     value={signatureDate}
                     onChange={(e) => setSignatureDate(e.target.value)}
                     placeholder="Ex: 10/05/2026"
-                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-900"
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-900"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Data de Publicação</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Data de Publicação</label>
                   <input
                     type="text"
                     value={publicationDate}
                     onChange={(e) => setPublicationDate(e.target.value)}
                     placeholder="Ex: 12/05/2026"
-                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-900"
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-900"
                   />
                 </div>
               </div>
 
               {requiresScope && (
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
                     Alterações / Escopo <span className="text-rose-500">*</span>
                   </label>
                   <textarea
@@ -936,7 +936,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
               )}
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Justificativa / Fundamentação <span className="text-rose-500">*</span>
                 </label>
                 <textarea
@@ -949,7 +949,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                 />
               </div>
 
-              <label className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-xs font-semibold text-slate-700 cursor-pointer">
+              <label className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-xs font-medium text-slate-700 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={autoUpdateContract}
@@ -963,13 +963,13 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                 <button
                   type="button"
                   onClick={() => resetAmendmentForm()}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                  className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-colors cursor-pointer"
                 >
                   <Check className="w-4 h-4" />
                   <span>Salvar Aditivo</span>

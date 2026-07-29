@@ -182,12 +182,12 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
         <div>
           <button
             onClick={onCancel}
-            className="group flex items-center space-x-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors mb-2 cursor-pointer"
+            className="group flex items-center space-x-1.5 text-xs font-medium text-slate-500 hover:text-slate-800 transition-colors mb-2 cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
             <span>Voltar ao Dashboard</span>
           </button>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+          <h1 className="text-2xl font-medium tracking-tight text-slate-900 flex items-center gap-2">
             <span>{isEditing ? 'Editar Contrato' : 'Lançar Novo Contrato'}</span>
           </h1>
           <p className="text-xs text-slate-500 mt-1">
@@ -199,7 +199,7 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
       </div>
 
       {successMessage && (
-        <div className="bg-emerald-600 text-white p-4 rounded-xl text-xs font-semibold flex items-center space-x-2 animate-fadeIn shadow-xs">
+        <div className="bg-emerald-600 text-white p-4 rounded-xl text-xs font-medium flex items-center space-x-2 animate-fadeIn shadow-xs">
           <Check className="w-4 h-4 text-emerald-200 shrink-0" />
           <span>{isEditing ? 'Contrato atualizado com sucesso! Redirecionando...' : 'Contrato cadastrado com sucesso! Redirecionando...'}</span>
         </div>
@@ -208,7 +208,7 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
       {/* Main Form Container */}
       <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-          <h3 className="text-sm font-bold text-slate-900">
+          <h3 className="text-sm font-medium text-slate-900">
             {isEditing ? 'Formulário de Edição de Contrato' : 'Formulário de Lançamento de Contrato'}
           </h3>
         </div>
@@ -218,7 +218,7 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
           {/* SECTION 1: Identificação do Instrumento */}
           <div className="space-y-4">
             <div className="border-b border-slate-100 pb-2">
-              <div className="flex items-center space-x-2 text-xs font-bold text-slate-800 uppercase tracking-wider">
+              <div className="flex items-center space-x-2 text-xs font-medium text-slate-800 uppercase tracking-wider">
                 <Landmark className="w-4 h-4 text-emerald-600" />
                 <span>1. Órgão e Empresa / Credor Contratado</span>
               </div>
@@ -226,7 +226,7 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
                   Número do Contrato <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -235,18 +235,18 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
                   value={contractNum}
                   onChange={(e) => setContractNum(e.target.value)}
                   placeholder="Ex: CT-2025-0012 ou 012/2025"
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold text-slate-900"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-900"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
                   Órgão Responsável / Categoria Contratante <span className="text-rose-500">*</span>
                 </label>
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-900 font-semibold cursor-pointer"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-900 font-medium cursor-pointer"
                 >
                   {categoryOptions.map((cat) => (
                     <option key={cat} value={cat}>
@@ -258,7 +258,7 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
             </div>
 
             <div className="space-y-2 pt-1">
-              <label className="block text-xs font-bold text-slate-700">
+              <label className="block text-xs font-medium text-slate-700">
                 Empresa / Credor Contratado <span className="text-rose-500">*</span>
               </label>
 
@@ -267,7 +267,7 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
                   required
                   value={creditor}
                   onChange={(e) => handleSelectCreditor(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-900 cursor-pointer"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-900 cursor-pointer"
                 >
                   <option value="">-- Selecione a Empresa / Credor Cadastrado --</option>
                   {creditors.map((c) => (
@@ -284,7 +284,7 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+              <label className="block text-xs font-medium text-slate-700 mb-1.5">
                 Objeto do Contrato <span className="text-rose-500">*</span>
               </label>
               <textarea
@@ -300,14 +300,14 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
 
           {/* SECTION 2: Vigência e Valor */}
           <div className="space-y-4 pt-2">
-            <div className="flex items-center space-x-2 text-xs font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-2">
+            <div className="flex items-center space-x-2 text-xs font-medium text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-2">
               <FileCheck className="w-4 h-4 text-emerald-600" />
               <span>2. Vigência e Valor Global do Contrato</span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
                   Vigência - Data Início <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -316,11 +316,11 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                   placeholder="Ex: 01/08/2025"
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-900"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-900"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
                   Vigência - Data Término <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -329,14 +329,14 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                   placeholder="Ex: 31/07/2026"
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-900"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-900"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
                   Valor Total do Contrato (R$) <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -345,17 +345,17 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
                   value={totalValue}
                   onChange={(e) => setTotalValue(e.target.value)}
                   placeholder="Ex: 150000"
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-900 text-sm"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-900 text-sm"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
                   Status Inicial
                 </label>
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value as ContractStatus)}
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-800 font-semibold cursor-pointer"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-800 font-medium cursor-pointer"
                 >
                   <option value="Ativo">Ativo</option>
                   <option value="A Vencer">A Vencer</option>
@@ -367,18 +367,18 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
 
           <div className="space-y-4 pt-2">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <div className="flex items-center space-x-2 text-xs font-bold text-slate-800 uppercase tracking-wider">
+              <div className="flex items-center space-x-2 text-xs font-medium text-slate-800 uppercase tracking-wider">
                 <FilePlus className="w-4 h-4 text-emerald-600" />
                 <span>3. Itens do Contrato</span>
               </div>
-              <span className="text-[11px] font-bold text-emerald-700">
+              <span className="text-[11px] font-medium text-emerald-700">
                 Total dos itens: {formatCurrency(contractItemsTotal)}
               </span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-[1fr_90px_110px_130px_130px_auto] gap-3 items-end">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
                   Descrição do Item
                 </label>
                 <input
@@ -391,7 +391,7 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
                   Unidade
                 </label>
                 <input
@@ -399,12 +399,12 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
                   value={itemUnit}
                   onChange={(e) => setItemUnit(e.target.value)}
                   placeholder="UN"
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-900 font-semibold"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-900 font-medium"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
                   Quantidade
                 </label>
                 <input
@@ -414,12 +414,12 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
                   value={itemQuantity}
                   onChange={(e) => setItemQuantity(e.target.value)}
                   placeholder="0"
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-900 font-semibold"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-900 font-medium"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
                   Valor Unitário
                 </label>
                 <input
@@ -429,15 +429,15 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
                   value={itemUnitValue}
                   onChange={(e) => setItemUnitValue(e.target.value)}
                   placeholder="0,00"
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-900 font-semibold"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-900 font-medium"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
                   Total do Item
                 </label>
-                <div className="w-full px-3.5 py-2.5 text-xs bg-slate-100 border border-slate-200 rounded-xl text-slate-900 font-bold">
+                <div className="w-full px-3.5 py-2.5 text-xs bg-slate-100 border border-slate-200 rounded-xl text-slate-900 font-medium">
                   {formatCurrency(currentItemTotal)}
                 </div>
               </div>
@@ -445,7 +445,7 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
               <button
                 type="button"
                 onClick={handleAddItem}
-                className="h-10 px-4 inline-flex items-center justify-center gap-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors cursor-pointer"
+                className="h-10 px-4 inline-flex items-center justify-center gap-1.5 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Adicionar</span>
@@ -455,7 +455,7 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
             {items.length > 0 && (
               <div className="border border-slate-200 rounded-xl overflow-hidden">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500 font-bold">
+                  <thead className="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500 font-medium">
                     <tr>
                       <th className="px-3 py-2.5">Item</th>
                       <th className="px-3 py-2.5 text-center">Un.</th>
@@ -468,16 +468,16 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
                   <tbody className="divide-y divide-slate-100">
                     {items.map((item) => (
                       <tr key={item.id} className="bg-white">
-                        <td className="px-3 py-2.5 font-semibold text-slate-800">{item.description}</td>
+                        <td className="px-3 py-2.5 font-medium text-slate-800">{item.description}</td>
                         <td className="px-3 py-2.5 text-center text-slate-600">{item.unit}</td>
                         <td className="px-3 py-2.5 text-right text-slate-700">{item.quantity.toLocaleString('pt-BR')}</td>
                         <td className="px-3 py-2.5 text-right text-slate-700">{formatCurrency(item.unitValue)}</td>
-                        <td className="px-3 py-2.5 text-right font-bold text-slate-900">{formatCurrency(item.quantity * item.unitValue)}</td>
+                        <td className="px-3 py-2.5 text-right font-medium text-slate-900">{formatCurrency(item.quantity * item.unitValue)}</td>
                         <td className="px-3 py-2.5 text-right">
                           <button
                             type="button"
                             onClick={() => handleRemoveItem(item.id)}
-                            className="inline-flex items-center justify-end gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                            className="inline-flex items-center justify-end gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                             title="Remover item"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -495,7 +495,7 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
               <button
                 type="button"
                 onClick={() => setTotalValue(String(contractItemsTotal))}
-                className="inline-flex items-center px-3 py-2 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors cursor-pointer"
+                className="inline-flex items-center px-3 py-2 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors cursor-pointer"
               >
                 Usar total dos itens como valor do contrato
               </button>
@@ -505,7 +505,7 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
           {/* SECTION 3: Dados do Fiscal e Portaria */}
           <div className="space-y-4 pt-2">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <div className="flex items-center space-x-2 text-xs font-bold text-slate-800 uppercase tracking-wider">
+              <div className="flex items-center space-x-2 text-xs font-medium text-slate-800 uppercase tracking-wider">
                 <UserCheck className="w-4 h-4 text-emerald-600" />
                 <span>4. Fiscalização do Contrato & Portaria</span>
               </div>
@@ -513,14 +513,14 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
 
             {fiscais.length > 0 ? (
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
                   Fiscal do Contrato Cadastrado <span className="text-rose-500">*</span>
                 </label>
                 <select
                   required
                   value={selectedFiscalId}
                   onChange={(e) => handleSelectFiscal(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-900 cursor-pointer"
+                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-900 cursor-pointer"
                 >
                   <option value="">-- Selecione o Fiscal Cadastrado na aba Fiscais & Portarias --</option>
                   {fiscais.map((f) => (
@@ -539,20 +539,20 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
             {fiscalName && (
               <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Fiscal Designado</span>
-                  <span className="font-bold text-slate-900">{fiscalName}</span>
+                  <span className="text-[10px] uppercase font-medium text-slate-400 block">Fiscal Designado</span>
+                  <span className="font-medium text-slate-900">{fiscalName}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Portaria nº</span>
-                  <span className="font-bold text-slate-900">{fiscalPortaria || 'N/A'}</span>
+                  <span className="text-[10px] uppercase font-medium text-slate-400 block">Portaria nº</span>
+                  <span className="font-medium text-slate-900">{fiscalPortaria || 'N/A'}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Data Publicação</span>
-                  <span className="font-bold text-slate-900">{fiscalPortariaPublicationDate || 'N/A'}</span>
+                  <span className="text-[10px] uppercase font-medium text-slate-400 block">Data Publicação</span>
+                  <span className="font-medium text-slate-900">{fiscalPortariaPublicationDate || 'N/A'}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Vigência Portaria</span>
-                  <span className="font-bold text-slate-900">{fiscalPortariaValidity || 'N/A'}</span>
+                  <span className="text-[10px] uppercase font-medium text-slate-400 block">Vigência Portaria</span>
+                  <span className="font-medium text-slate-900">{fiscalPortariaValidity || 'N/A'}</span>
                 </div>
               </div>
             )}
@@ -563,7 +563,7 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
             <button
               type="button"
               onClick={handleReset}
-              className="flex items-center space-x-1 px-4 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 rounded-xl hover:bg-slate-50 transition-all cursor-pointer"
+              className="flex items-center space-x-1 px-4 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 rounded-xl hover:bg-slate-50 transition-all cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>{isEditing ? 'Limpar edição' : 'Limpar Campos'}</span>
@@ -573,13 +573,13 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
               <button
                 type="button"
                 onClick={onCancel}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+                className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                className="flex items-center space-x-1.5 px-6 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-all cursor-pointer"
+                className="flex items-center space-x-1.5 px-6 py-2.5 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-all cursor-pointer"
               >
                 <Check className="w-4 h-4" />
                 <span>{isEditing ? 'Salvar Alterações' : 'Salvar e Gravar Contrato'}</span>

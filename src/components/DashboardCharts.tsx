@@ -184,10 +184,10 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({
               </div>
               <div className="space-y-1">
                 <div className="flex items-center space-x-2 flex-wrap gap-2">
-                  <h3 className="text-sm font-bold text-amber-950 uppercase tracking-wide">
+                  <h3 className="text-sm font-medium text-amber-950 uppercase tracking-wide">
                     Alerta de Vencimento de Contratos ({expiringContracts.length} de {allExpiringContracts.length})
                   </h3>
-                  <span className="px-2 py-0.5 bg-amber-200/90 text-amber-900 text-[10px] font-bold rounded-full uppercase">
+                  <span className="px-2 py-0.5 bg-amber-200/90 text-amber-900 text-[10px] font-medium rounded-full uppercase">
                     Controle de Vigência
                   </span>
                 </div>
@@ -201,11 +201,11 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({
               {/* Month Filter Selector */}
               <div className="flex items-center space-x-1.5 bg-white border border-amber-300/80 rounded-xl px-3 py-1.5 shadow-2xs">
                 <Calendar className="w-3.5 h-3.5 text-amber-700" />
-                <span className="text-[11px] font-bold text-amber-900">Mês:</span>
+                <span className="text-[11px] font-medium text-amber-900">Mês:</span>
                 <select
                   value={selectedExpiringMonth}
                   onChange={(e) => setSelectedExpiringMonth(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-                  className="bg-transparent text-amber-950 text-xs font-bold outline-none cursor-pointer"
+                  className="bg-transparent text-amber-950 text-xs font-medium outline-none cursor-pointer"
                 >
                   <option value="all">Todos os Meses</option>
                   <option value={1}>Janeiro</option>
@@ -225,7 +225,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({
 
               <button
                 onClick={() => onNavigateTab('aditivos')}
-                className="flex items-center space-x-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer"
+                className="flex items-center space-x-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-xl shadow-xs transition-all cursor-pointer"
               >
                 <Layers className="w-3.5 h-3.5" />
                 <span>Prorrogar via Aditivo</span>
@@ -255,15 +255,15 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({
                   >
                     <div className="flex items-start justify-between">
                       <div>
-                        <span className="text-xs font-extrabold text-slate-900 block font-mono bg-amber-100 px-2 py-0.5 rounded border border-amber-200">
+                        <span className="text-xs font-medium text-slate-900 block font-mono bg-amber-100 px-2 py-0.5 rounded border border-amber-200">
                           Nº {c.contractNum}
                         </span>
-                        <span className="text-[11px] font-semibold text-slate-600 block truncate max-w-[190px] mt-1" title={c.creditor}>
+                        <span className="text-[11px] font-medium text-slate-600 block truncate max-w-[190px] mt-1" title={c.creditor}>
                           {c.creditor}
                         </span>
                       </div>
                       <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                        className={`px-2 py-0.5 rounded text-[10px] font-medium border ${
                           days !== null && days <= 30
                             ? 'bg-rose-100 text-rose-800 border-rose-200'
                             : 'bg-amber-100 text-amber-800 border-amber-200'
@@ -276,12 +276,12 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({
                     {/* Datas de Controle de Vigência Detalhas */}
                     <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 grid grid-cols-2 gap-2 text-[10px]">
                       <div>
-                        <span className="text-slate-400 font-bold uppercase block text-[9px]">Início Vigência</span>
-                        <span className="text-slate-800 font-bold">{c.startDate}</span>
+                        <span className="text-slate-400 font-medium uppercase block text-[9px]">Início Vigência</span>
+                        <span className="text-slate-800 font-medium">{c.startDate}</span>
                       </div>
                       <div className="text-right">
-                        <span className="text-rose-600 font-bold uppercase block text-[9px]">Data de Vencimento</span>
-                        <span className="text-rose-700 font-bold text-xs bg-rose-50 px-2 py-0.5 rounded border border-rose-100 inline-block">
+                        <span className="text-rose-600 font-medium uppercase block text-[9px]">Data de Vencimento</span>
+                        <span className="text-rose-700 font-medium text-xs bg-rose-50 px-2 py-0.5 rounded border border-rose-100 inline-block">
                           {c.endDate}
                         </span>
                       </div>
@@ -289,7 +289,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({
 
                     {/* Saldo e Utilização */}
                     <div className="space-y-1">
-                      <div className="flex justify-between text-[10px] font-bold">
+                      <div className="flex justify-between text-[10px] font-medium">
                         <span className="text-slate-500">Saldo Restante:</span>
                         <span className="text-emerald-700">{formatCurrency(remaining)}</span>
                       </div>
@@ -305,14 +305,14 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({
                     <div className="flex items-center justify-between pt-1 text-[11px]">
                       <button
                         onClick={() => onPrintContract(c)}
-                        className="text-slate-600 hover:text-slate-900 font-bold flex items-center space-x-1 cursor-pointer"
+                        className="text-slate-600 hover:text-slate-900 font-medium flex items-center space-x-1 cursor-pointer"
                       >
                         <Printer className="w-3 h-3 text-slate-500" />
                         <span>Ficha PDF</span>
                       </button>
                       <button
                         onClick={() => onNavigateTab('aditivos')}
-                        className="text-amber-700 hover:text-amber-900 font-bold flex items-center space-x-1 cursor-pointer"
+                        className="text-amber-700 hover:text-amber-900 font-medium flex items-center space-x-1 cursor-pointer"
                       >
                         <span>Aditivar</span>
                         <ArrowRight className="w-3 h-3" />
@@ -331,7 +331,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({
         {/* Top Header dos Gráficos */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div>
-            <h2 className="text-base font-bold text-slate-900 flex items-center space-x-2">
+            <h2 className="text-base font-medium text-slate-900 flex items-center space-x-2">
               <BarChart2 className="w-5 h-5 text-emerald-600" />
               <span>Painel de Análise de Saldos e Execução Financeira</span>
             </h2>
@@ -341,12 +341,12 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({
           </div>
 
           {/* Chart Tabs selector */}
-          <div className="flex items-center p-1 bg-slate-100 rounded-xl space-x-1 self-start sm:self-auto text-xs font-semibold">
+          <div className="flex items-center p-1 bg-slate-100 rounded-xl space-x-1 self-start sm:self-auto text-xs font-medium">
             <button
               onClick={() => setActiveChartView('finance')}
               className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 activeChartView === 'finance'
-                  ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                  ? 'bg-white text-slate-900 shadow-2xs font-medium'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -356,7 +356,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({
               onClick={() => setActiveChartView('status')}
               className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 activeChartView === 'status'
-                  ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                  ? 'bg-white text-slate-900 shadow-2xs font-medium'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -366,7 +366,7 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({
               onClick={() => setActiveChartView('evolution')}
               className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 activeChartView === 'evolution'
-                  ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                  ? 'bg-white text-slate-900 shadow-2xs font-medium'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -378,21 +378,21 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({
         {/* Totais do Topo do Gráfico */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50/80 p-3.5 rounded-xl border border-slate-200/70 text-xs">
           <div>
-            <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Pactuado Global</span>
-            <span className="font-bold text-slate-900 text-sm mt-0.5 block">{formatCurrency(totalPactuado)}</span>
+            <span className="text-[10px] uppercase font-medium text-slate-400 block">Total Pactuado Global</span>
+            <span className="font-medium text-slate-900 text-sm mt-0.5 block">{formatCurrency(totalPactuado)}</span>
           </div>
           <div>
-            <span className="text-[10px] uppercase font-bold text-slate-400 block">Valor Consumido (Notas)</span>
-            <span className="font-bold text-rose-700 text-sm mt-0.5 block">{formatCurrency(totalUsado)}</span>
+            <span className="text-[10px] uppercase font-medium text-slate-400 block">Valor Consumido (Notas)</span>
+            <span className="font-medium text-rose-700 text-sm mt-0.5 block">{formatCurrency(totalUsado)}</span>
           </div>
           <div>
-            <span className="text-[10px] uppercase font-bold text-slate-400 block">Saldo Líquido Restante</span>
-            <span className="font-bold text-emerald-700 text-sm mt-0.5 block">{formatCurrency(totalSaldoRestante)}</span>
+            <span className="text-[10px] uppercase font-medium text-slate-400 block">Saldo Líquido Restante</span>
+            <span className="font-medium text-emerald-700 text-sm mt-0.5 block">{formatCurrency(totalSaldoRestante)}</span>
           </div>
           <div>
-            <span className="text-[10px] uppercase font-bold text-slate-400 block">% Executado Global</span>
+            <span className="text-[10px] uppercase font-medium text-slate-400 block">% Executado Global</span>
             <div className="flex items-center space-x-2 mt-0.5">
-              <span className="font-bold text-slate-800 text-sm">{percentualGlobalUsado}%</span>
+              <span className="font-medium text-slate-800 text-sm">{percentualGlobalUsado}%</span>
               <div className="flex-1 bg-slate-200 rounded-full h-2 max-w-[80px]">
                 <div className="bg-emerald-600 h-2 rounded-full" style={{ width: `${percentualGlobalUsado}%` }} />
               </div>
@@ -465,30 +465,30 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({
               </ResponsiveContainer>
 
               <div className="space-y-3 bg-slate-50/80 p-4 rounded-xl border border-slate-200/70 text-xs">
-                <h4 className="font-bold text-slate-800 uppercase text-[11px] tracking-wider border-b border-slate-200 pb-2">
+                <h4 className="font-medium text-slate-800 uppercase text-[11px] tracking-wider border-b border-slate-200 pb-2">
                   Detalhamento de Vigência e Situação
                 </h4>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="flex items-center space-x-1.5 font-semibold text-emerald-800">
+                    <span className="flex items-center space-x-1.5 font-medium text-emerald-800">
                       <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                       <span>Contratos Ativos e Regulares:</span>
                     </span>
-                    <span className="font-bold text-slate-900">{statusCounts.Ativo}</span>
+                    <span className="font-medium text-slate-900">{statusCounts.Ativo}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="flex items-center space-x-1.5 font-semibold text-amber-800">
+                    <span className="flex items-center space-x-1.5 font-medium text-amber-800">
                       <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
                       <span>Contratos a Vencer (&le; 90 dias):</span>
                     </span>
-                    <span className="font-bold text-amber-900">{statusCounts['A Vencer']}</span>
+                    <span className="font-medium text-amber-900">{statusCounts['A Vencer']}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="flex items-center space-x-1.5 font-semibold text-slate-600">
+                    <span className="flex items-center space-x-1.5 font-medium text-slate-600">
                       <span className="w-2.5 h-2.5 rounded-full bg-slate-500" />
                       <span>Contratos Encerrados / Finalizados:</span>
                     </span>
-                    <span className="font-bold text-slate-800">{statusCounts.Encerrado}</span>
+                    <span className="font-medium text-slate-800">{statusCounts.Encerrado}</span>
                   </div>
                 </div>
 

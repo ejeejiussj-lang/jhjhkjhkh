@@ -170,14 +170,14 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-900">Notas de Serviço</h2>
+          <h2 className="text-xl font-medium text-slate-900">Notas de Serviço</h2>
           <p className="text-xs text-slate-500 mt-0.5">
             Lançamento de notas vinculadas ao contrato, fiscal e empenho.
           </p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center space-x-2 px-4 py-2.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-colors cursor-pointer self-start sm:self-center"
+          className="flex items-center space-x-2 px-4 py-2.5 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-colors cursor-pointer self-start sm:self-center"
         >
           <Plus className="w-4 h-4" />
           <span>Lançar Nota de Serviço</span>
@@ -202,7 +202,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
             <select
               value={contractFilter}
               onChange={(e) => setContractFilter(e.target.value)}
-              className="bg-transparent text-xs font-semibold text-slate-700 outline-none cursor-pointer"
+              className="bg-transparent text-xs font-medium text-slate-700 outline-none cursor-pointer"
             >
               <option value="ALL">Todos os Contratos</option>
               {contracts.map((c) => (
@@ -218,7 +218,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
             <select
               value={creditorFilter}
               onChange={(e) => setCreditorFilter(e.target.value)}
-              className="bg-transparent text-xs font-semibold text-slate-700 outline-none cursor-pointer"
+              className="bg-transparent text-xs font-medium text-slate-700 outline-none cursor-pointer"
             >
               <option value="ALL">Todas as Empresas / Credores</option>
               {allCompanyNames.map((name) => (
@@ -235,7 +235,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider">
+              <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-medium uppercase tracking-wider">
                 <th className="py-3 px-4">Número da Nota</th>
                 <th className="py-3 px-4">Contrato Vinculado</th>
                 <th className="py-3 px-4">Vínculo</th>
@@ -265,35 +265,35 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 
                   return (
                     <tr key={n.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-3.5 px-4 font-bold text-purple-700 whitespace-nowrap">
+                      <td className="py-3.5 px-4 font-medium text-purple-700 whitespace-nowrap">
                         <span className="flex items-center space-x-1.5">
                           <Receipt className="w-3.5 h-3.5 text-purple-500" />
                           <span>{n.noteNumber}</span>
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 font-bold text-slate-700 whitespace-nowrap">{n.contractNum}</td>
+                      <td className="py-3.5 px-4 font-medium text-slate-700 whitespace-nowrap">{n.contractNum}</td>
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         {isLinked ? (
-                          <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/60">
                             <Link2 className="w-3 h-3" />
                             <span>VINCULADA</span>
                           </span>
                         ) : (
-                          <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                          <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-[10px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
                             <Link2Off className="w-3 h-3" />
                             <span>SEM CONTRATO</span>
                           </span>
                         )}
                       </td>
-                      <td className="py-3.5 px-4 font-semibold text-slate-800">{n.creditor}</td>
+                      <td className="py-3.5 px-4 font-medium text-slate-800">{n.creditor}</td>
                       <td className="py-3.5 px-4 text-slate-600 font-medium whitespace-nowrap">
                         <div className="space-y-0.5">
                           <p>Emissão: {n.issueDate || '-'}</p>
                           <p>Atesto: {n.attestationDate || '-'}</p>
-                          <p className="font-bold text-slate-800">Fiscal: {n.fiscalName || '-'}</p>
+                          <p className="font-medium text-slate-800">Fiscal: {n.fiscalName || '-'}</p>
                         </div>
                       </td>
-                      <td className="py-3.5 px-4 font-bold text-slate-700 whitespace-nowrap">{n.budgetAllocation || '-'}</td>
+                      <td className="py-3.5 px-4 font-medium text-slate-700 whitespace-nowrap">{n.budgetAllocation || '-'}</td>
                       <td className="py-3.5 px-4 text-slate-700 min-w-64">
                         <p className="line-clamp-2" title={n.program || ''}>
                           {n.program || '-'}
@@ -301,22 +301,22 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                       </td>
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <div className="space-y-0.5">
-                          <p className="font-bold text-slate-800">{n.commitmentNumber || '-'}</p>
+                          <p className="font-medium text-slate-800">{n.commitmentNumber || '-'}</p>
                           <p className="text-[10px] text-slate-500">Empenho: {formatCurrency(n.commitmentValue || 0)}</p>
                         </div>
                       </td>
-                      <td className="py-3.5 px-4 font-semibold text-slate-900 whitespace-nowrap">{formatCurrency(n.value)}</td>
+                      <td className="py-3.5 px-4 font-medium text-slate-900 whitespace-nowrap">{formatCurrency(n.value)}</td>
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <div className="space-y-0.5 text-right">
                           <p className="text-[10px] text-slate-500">Antes: {formatCurrency(n.commitmentBalance || 0)}</p>
-                          <p className={`font-bold ${(n.currentBalance || 0) < 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
+                          <p className={`font-medium ${(n.currentBalance || 0) < 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
                             {formatCurrency(n.currentBalance || 0)}
                           </p>
                         </div>
                       </td>
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium ${
                             n.status === 'Paga' || n.status === 'Concluido'
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
                               : n.status === 'Pendente'
@@ -331,7 +331,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                         {onUpdateNote && (
                           <button
                             onClick={() => handleEdit(n)}
-                            className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 mr-1.5 text-[11px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-100 rounded-lg transition-colors cursor-pointer"
+                            className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 mr-1.5 text-[11px] font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-100 rounded-lg transition-colors cursor-pointer"
                             title="Editar nota"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
@@ -344,7 +344,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                               onDeleteNote(n);
                             }
                           }}
-                          className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-rose-700 bg-rose-100/70 hover:bg-rose-200/80 border border-rose-200/80 rounded-lg transition-colors cursor-pointer"
+                          className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-rose-700 bg-rose-100/70 hover:bg-rose-200/80 border border-rose-200/80 rounded-lg transition-colors cursor-pointer"
                           title="Excluir nota"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -365,7 +365,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 w-full max-w-2xl animate-fadeIn">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
-                <h3 className="text-base font-bold text-slate-900">{editingNote ? 'Editar Nota de Serviço' : 'Lançar Nota de Serviço'}</h3>
+                <h3 className="text-base font-medium text-slate-900">{editingNote ? 'Editar Nota de Serviço' : 'Lançar Nota de Serviço'}</h3>
                 <p className="text-[11px] text-slate-500">O empenho selecionado preenche dotação, programa e saldo.</p>
               </div>
               <button
@@ -381,7 +381,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 
             <form onSubmit={handleCreate} className="mt-4 space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Número da Nota Fiscal (NF) <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -390,19 +390,19 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                   value={noteNumber}
                   onChange={(e) => setNoteNumber(e.target.value)}
                   placeholder="Ex: NF-203443 ou 10452"
-                  className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-bold text-slate-800"
+                  className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Contrato <span className="text-rose-500">*</span>
                 </label>
                 <select
                   required
                   value={contractNum}
                   onChange={(e) => handleContractChange(e.target.value)}
-                  className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-semibold text-slate-800 cursor-pointer"
+                  className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800 cursor-pointer"
                 >
                   <option value="">-- Selecione o contrato --</option>
                   {contracts.length > 0 ? (
@@ -419,8 +419,8 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 
               {selectedContract && (
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs">
-                  <span className="block text-[10px] font-bold uppercase text-slate-400">Nome do fiscal</span>
-                  <span className="font-bold text-slate-900">{selectedContract.fiscalName || 'Fiscal não informado'}</span>
+                  <span className="block text-[10px] font-medium uppercase text-slate-400">Nome do fiscal</span>
+                  <span className="font-medium text-slate-900">{selectedContract.fiscalName || 'Fiscal não informado'}</span>
                   {selectedContract.fiscalPortaria && (
                     <span className="ml-2 text-slate-500">Portaria {selectedContract.fiscalPortaria}</span>
                   )}
@@ -428,14 +428,14 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
               )}
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Empresa / Credor <span className="text-rose-500">*</span>
                 </label>
                 <select
                   required
                   value={creditor}
                   onChange={(e) => setCreditor(e.target.value)}
-                  className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-semibold text-slate-800 cursor-pointer"
+                  className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800 cursor-pointer"
                 >
                   <option value="">-- Selecione a empresa / credor --</option>
                   {registeredCompanies.length > 0 ? (
@@ -451,14 +451,14 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Empenho <span className="text-rose-500">*</span>
                 </label>
                 <select
                   required
                   value={commitmentId}
                   onChange={(e) => setCommitmentId(e.target.value)}
-                  className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-bold text-slate-800 cursor-pointer"
+                  className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800 cursor-pointer"
                 >
                   <option value="">-- Selecione o empenho --</option>
                   {availableCommitments.map((item) => (
@@ -472,41 +472,41 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
               {selectedCommitment ? (
                 <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 text-xs grid grid-cols-1 md:grid-cols-4 gap-3">
                   <div>
-                    <span className="block text-[10px] font-bold uppercase text-emerald-700">Dotação</span>
-                    <span className="font-bold text-slate-900">{selectedCommitment.budgetAllocation}</span>
+                    <span className="block text-[10px] font-medium uppercase text-emerald-700">Dotação</span>
+                    <span className="font-medium text-slate-900">{selectedCommitment.budgetAllocation}</span>
                   </div>
                   <div className="md:col-span-3">
-                    <span className="block text-[10px] font-bold uppercase text-emerald-700">Programa</span>
-                    <span className="font-bold text-slate-900">{selectedCommitment.program}</span>
+                    <span className="block text-[10px] font-medium uppercase text-emerald-700">Programa</span>
+                    <span className="font-medium text-slate-900">{selectedCommitment.program}</span>
                   </div>
                   <div>
-                    <span className="block text-[10px] font-bold uppercase text-emerald-700">Valor do empenho</span>
-                    <span className="font-bold text-slate-900">{formatCurrency(selectedCommitment.value)}</span>
+                    <span className="block text-[10px] font-medium uppercase text-emerald-700">Valor do empenho</span>
+                    <span className="font-medium text-slate-900">{formatCurrency(selectedCommitment.value)}</span>
                   </div>
                   <div>
-                    <span className="block text-[10px] font-bold uppercase text-emerald-700">Saldo antes</span>
-                    <span className="font-bold text-slate-900">{formatCurrency(selectedCommitment.currentBalance)}</span>
+                    <span className="block text-[10px] font-medium uppercase text-emerald-700">Saldo antes</span>
+                    <span className="font-medium text-slate-900">{formatCurrency(selectedCommitment.currentBalance)}</span>
                   </div>
                   <div>
-                    <span className="block text-[10px] font-bold uppercase text-emerald-700">Desconto</span>
-                    <span className="font-bold text-slate-900">{formatCurrency(parseFloat(value) || 0)}</span>
+                    <span className="block text-[10px] font-medium uppercase text-emerald-700">Desconto</span>
+                    <span className="font-medium text-slate-900">{formatCurrency(parseFloat(value) || 0)}</span>
                   </div>
                   <div>
-                    <span className="block text-[10px] font-bold uppercase text-emerald-700">Saldo atual</span>
-                    <span className={`font-bold ${previewCurrentBalance < 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
+                    <span className="block text-[10px] font-medium uppercase text-emerald-700">Saldo atual</span>
+                    <span className={`font-medium ${previewCurrentBalance < 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
                       {formatCurrency(previewCurrentBalance)}
                     </span>
                   </div>
                 </div>
               ) : (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 font-semibold">
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 font-medium">
                   Selecione um empenho para puxar dotação, programa, valor e saldo automaticamente.
                 </div>
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
                     Valor da Nota (R$) <span className="text-rose-500">*</span>
                   </label>
                   <input
@@ -516,29 +516,29 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                     value={value}
                     onChange={(e) => setValue(e.target.value)}
                     placeholder="0.00"
-                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-bold text-slate-800"
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Data de Emissão</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Data de Emissão</label>
                   <input
                     type="text"
                     value={issueDate}
                     onChange={(e) => setIssueDate(e.target.value)}
                     placeholder="Ex: 28/07/2026"
-                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-bold text-slate-800"
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Data de Atesto</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Data de Atesto</label>
                   <input
                     type="text"
                     value={attestationDate}
                     onChange={(e) => setAttestationDate(e.target.value)}
                     placeholder="Ao preencher, conclui"
-                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-bold text-slate-800"
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800"
                   />
                 </div>
               </div>
@@ -550,13 +550,13 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                     setEditingNote(null);
                     setShowModal(false);
                   }}
-                  className="px-4 py-2 text-xs text-slate-600 hover:bg-slate-100 font-semibold rounded-lg cursor-pointer"
+                  className="px-4 py-2 text-xs text-slate-600 hover:bg-slate-100 font-medium rounded-lg cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-xs transition-colors cursor-pointer"
+                  className="px-4 py-2 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-xs transition-colors cursor-pointer"
                 >
                   {editingNote ? 'Atualizar Nota' : 'Confirmar Lançamento'}
                 </button>

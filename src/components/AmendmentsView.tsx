@@ -145,7 +145,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center space-x-2.5">
+          <h1 className="text-2xl font-medium text-slate-900 tracking-tight flex items-center space-x-2.5">
             <Layers className="w-7 h-7 text-emerald-600" />
             <span>Termos Aditivos dos Contratos</span>
           </h1>
@@ -156,7 +156,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
 
         <button
           onClick={openNewModal}
-          className="inline-flex items-center space-x-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer self-start sm:self-auto"
+          className="inline-flex items-center space-x-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-xl shadow-xs transition-all cursor-pointer self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Cadastrar Termo Aditivo</span>
@@ -192,8 +192,8 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
           </select>
         </div>
 
-        <div className="text-xs font-semibold text-slate-500">
-          Total: <span className="font-bold text-slate-900">{filteredAmendments.length}</span> aditivos cadastrados
+        <div className="text-xs font-medium text-slate-500">
+          Total: <span className="font-medium text-slate-900">{filteredAmendments.length}</span> aditivos cadastrados
         </div>
       </div>
 
@@ -202,7 +202,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-bold uppercase text-slate-600 tracking-wider">
+              <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-medium uppercase text-slate-600 tracking-wider">
                 <th className="py-3.5 px-4">Termo Aditivo</th>
                 <th className="py-3.5 px-4">Contrato Vinculado</th>
                 <th className="py-3.5 px-4">Tipo do Aditivo</th>
@@ -217,23 +217,23 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-slate-400">
                     <Layers className="w-8 h-8 mx-auto text-slate-300 mb-2" />
-                    <p className="font-semibold text-slate-700 text-xs">Nenhum termo aditivo encontrado.</p>
+                    <p className="font-medium text-slate-700 text-xs">Nenhum termo aditivo encontrado.</p>
                     <p className="text-[11px] text-slate-400">Clique em "Cadastrar Termo Aditivo" para vincular um aditivo a um contrato.</p>
                   </td>
                 </tr>
               ) : (
                 filteredAmendments.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3.5 px-4 font-bold text-slate-900 whitespace-nowrap">
+                    <td className="py-3.5 px-4 font-medium text-slate-900 whitespace-nowrap">
                       {item.amendmentNum}
                     </td>
                     <td className="py-3.5 px-4">
-                      <div className="font-bold text-slate-900">{item.contractNum}</div>
+                      <div className="font-medium text-slate-900">{item.contractNum}</div>
                       <div className="text-[11px] text-slate-500 font-medium">{item.creditor}</div>
                     </td>
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium border ${
                           item.type === 'Acréscimo de Valor'
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                             : item.type === 'Prorrogação de Prazo'
@@ -246,7 +246,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
                         {item.type}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 font-bold whitespace-nowrap">
+                    <td className="py-3.5 px-4 font-medium whitespace-nowrap">
                       {item.valueChange > 0 ? (
                         <span className="text-emerald-700 flex items-center space-x-1">
                           <ArrowUpRight className="w-3.5 h-3.5" />
@@ -263,7 +263,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
                     </td>
                     <td className="py-3.5 px-4 font-medium text-slate-700 whitespace-nowrap">
                       {item.newEndDate ? (
-                        <span className="text-blue-800 font-bold bg-blue-50/60 px-2 py-0.5 rounded border border-blue-100">
+                        <span className="text-blue-800 font-medium bg-blue-50/60 px-2 py-0.5 rounded border border-blue-100">
                           {item.newEndDate}
                         </span>
                       ) : (
@@ -306,7 +306,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-xl overflow-hidden animate-in fade-in zoom-in duration-200 my-8">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
               <div>
-                <h3 className="text-sm font-bold text-slate-800">
+                <h3 className="text-sm font-medium text-slate-800">
                   {editingAmendment ? 'Editar Termo Aditivo' : 'Lançar Novo Termo Aditivo'}
                 </h3>
                 <p className="text-[11px] text-slate-500">Selecione o contrato e informe o tipo e os dados do aditivo</p>
@@ -322,14 +322,14 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
             <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
               {/* Select Contract */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Selecione o Contrato Vinculado <span className="text-rose-500">*</span>
                 </label>
                 <select
                   required
                   value={selectedContractNum}
                   onChange={(e) => handleContractSelect(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold text-slate-800 cursor-pointer"
+                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-800 cursor-pointer"
                 >
                   <option value="">-- Selecione o Contrato --</option>
                   {contracts.map((c) => (
@@ -343,20 +343,20 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
               {/* Matched Contract Info Card */}
               {matchedContract && (
                 <div className="p-3 bg-emerald-50/70 border border-emerald-200/80 rounded-xl text-xs space-y-1">
-                  <div className="font-bold text-emerald-900 flex items-center justify-between">
+                  <div className="font-medium text-emerald-900 flex items-center justify-between">
                     <span>{matchedContract.creditor}</span>
-                    <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold uppercase">
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-medium uppercase">
                       {matchedContract.category || 'Contrato Ativo'}
                     </span>
                   </div>
                   <div className="text-slate-600 grid grid-cols-2 gap-2 pt-1 text-[11px]">
                     <div>
-                      <span className="text-slate-400 block uppercase font-bold text-[9px]">Valor Atual:</span>
-                      <span className="font-bold text-slate-800">{formatCurrency(matchedContract.totalValue)}</span>
+                      <span className="text-slate-400 block uppercase font-medium text-[9px]">Valor Atual:</span>
+                      <span className="font-medium text-slate-800">{formatCurrency(matchedContract.totalValue)}</span>
                     </div>
                     <div>
-                      <span className="text-slate-400 block uppercase font-bold text-[9px]">Vigência Atual:</span>
-                      <span className="font-bold text-slate-800">{matchedContract.startDate} até {matchedContract.endDate}</span>
+                      <span className="text-slate-400 block uppercase font-medium text-[9px]">Vigência Atual:</span>
+                      <span className="font-medium text-slate-800">{matchedContract.startDate} até {matchedContract.endDate}</span>
                     </div>
                   </div>
                 </div>
@@ -365,7 +365,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
               {/* Amendment Number and Type */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
                     Número / Identificação do Aditivo <span className="text-rose-500">*</span>
                   </label>
                   <input
@@ -374,18 +374,18 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
                     value={amendmentNum}
                     onChange={(e) => setAmendmentNum(e.target.value)}
                     placeholder="Ex: 1º Termo Aditivo, AD-2025-001"
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold"
+                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
                     Tipo de Aditivo <span className="text-rose-500">*</span>
                   </label>
                   <select
                     value={type}
                     onChange={(e) => setType(e.target.value as any)}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold"
+                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
                   >
                     <option value="Acréscimo de Valor">Acréscimo de Valor</option>
                     <option value="Prorrogação de Prazo">Prorrogação de Prazo</option>
@@ -400,7 +400,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
               {/* Value change and New End Date */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
                     Valor da Alteração (R$)
                   </label>
                   <input
@@ -409,13 +409,13 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
                     value={valueChange}
                     onChange={(e) => setValueChange(e.target.value)}
                     placeholder="Ex: 15000 (positivo) ou -5000 (redução)"
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold"
+                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
                   />
                   <span className="text-[10px] text-slate-400 block mt-0.5">Use valores positivos para acréscimo ou negativo para redução</span>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
                     Nova Data Término (Vigência)
                   </label>
                   <input
@@ -432,7 +432,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
               {/* Dates: Signature & Publication */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
                     Data de Assinatura <span className="text-rose-500">*</span>
                   </label>
                   <input
@@ -446,7 +446,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
                     Data de Publicação (Diário Oficial)
                   </label>
                   <input
@@ -461,7 +461,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
 
               {/* Justification / Objeto */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Justificativa / Motivo do Termo Aditivo <span className="text-rose-500">*</span>
                 </label>
                 <textarea
@@ -483,7 +483,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
                   onChange={(e) => setAutoUpdateContract(e.target.checked)}
                   className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
                 />
-                <label htmlFor="autoUpdate" className="text-xs text-slate-700 font-semibold cursor-pointer select-none">
+                <label htmlFor="autoUpdate" className="text-xs text-slate-700 font-medium cursor-pointer select-none">
                   Atualizar automaticamente o contrato com o novo valor ou nova data de término
                 </label>
               </div>
@@ -492,13 +492,13 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                  className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="flex items-center space-x-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-all cursor-pointer"
+                  className="flex items-center space-x-1.5 px-4 py-2 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-all cursor-pointer"
                 >
                   <Check className="w-4 h-4" />
                   <span>{editingAmendment ? 'Atualizar Aditivo' : 'Salvar Aditivo'}</span>

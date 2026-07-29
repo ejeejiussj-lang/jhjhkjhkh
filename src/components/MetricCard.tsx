@@ -43,16 +43,16 @@ export const MetricCard: React.FC<MetricCardProps> = ({
       className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between"
     >
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-slate-500">{title}</span>
+        <span className="text-xs font-medium text-slate-500">{title}</span>
       </div>
 
       <div className="mt-3">
-        <div className={`text-2xl font-bold tracking-tight ${styles.valueColor}`}>
+        <div className={`text-2xl font-medium tracking-tight ${styles.valueColor}`}>
           {value}
         </div>
         {trendText && (
           <div className="mt-2 inline-flex items-center space-x-1">
-            <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${styles.trendBg}`}>
+            <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${styles.trendBg}`}>
               {trendText}
             </span>
           </div>

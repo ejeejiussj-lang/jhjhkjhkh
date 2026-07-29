@@ -94,7 +94,7 @@ export const NewContractModal: React.FC<NewContractModalProps> = ({
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
           <div>
-            <h3 className="text-base font-bold text-slate-800">Lançar Novo Contrato</h3>
+            <h3 className="text-base font-medium text-slate-800">Lançar Novo Contrato</h3>
             <p className="text-xs text-slate-500">Cadastre o contrato, vigência e a portaria do fiscal</p>
           </div>
           <button
@@ -109,7 +109,7 @@ export const NewContractModal: React.FC<NewContractModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-medium text-slate-700 mb-1">
                 Nº do Contrato <span className="text-rose-500">*</span>
               </label>
               <input
@@ -118,11 +118,11 @@ export const NewContractModal: React.FC<NewContractModalProps> = ({
                 value={contractNum}
                 onChange={(e) => setContractNum(e.target.value)}
                 placeholder="Ex: CT-2025-0012 ou 012/2025"
-                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold"
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-medium text-slate-700 mb-1">
                 Órgão Responsável / Categoria <span className="text-rose-500">*</span>
               </label>
               <select
@@ -140,7 +140,7 @@ export const NewContractModal: React.FC<NewContractModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-medium text-slate-700 mb-1">
               Empresa / Credor Contratado <span className="text-rose-500">*</span>
             </label>
             {creditors.length > 0 ? (
@@ -148,7 +148,7 @@ export const NewContractModal: React.FC<NewContractModalProps> = ({
                 required
                 value={creditor}
                 onChange={(e) => handleSelectCreditor(e.target.value)}
-                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-900 cursor-pointer"
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-900 cursor-pointer"
               >
                 <option value="">-- Selecione a Empresa / Credor Cadastrado --</option>
                 {creditors.map((c) => (
@@ -165,7 +165,7 @@ export const NewContractModal: React.FC<NewContractModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-medium text-slate-700 mb-1">
               Objeto do Contrato <span className="text-rose-500">*</span>
             </label>
             <textarea
@@ -180,7 +180,7 @@ export const NewContractModal: React.FC<NewContractModalProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-medium text-slate-700 mb-1">
                 Data Início (Vigência)
               </label>
               <input
@@ -193,7 +193,7 @@ export const NewContractModal: React.FC<NewContractModalProps> = ({
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-medium text-slate-700 mb-1">
                 Data Término (Vigência)
               </label>
               <input
@@ -209,7 +209,7 @@ export const NewContractModal: React.FC<NewContractModalProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-medium text-slate-700 mb-1">
                 Valor Total (R$)
               </label>
               <input
@@ -218,11 +218,11 @@ export const NewContractModal: React.FC<NewContractModalProps> = ({
                 value={totalValue}
                 onChange={(e) => setTotalValue(e.target.value)}
                 placeholder="Ex: 150000"
-                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold"
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-medium text-slate-700 mb-1">
                 Status Inicial
               </label>
               <select
@@ -239,7 +239,7 @@ export const NewContractModal: React.FC<NewContractModalProps> = ({
 
           {/* Fiscal e Portaria */}
           <div className="pt-2 border-t border-slate-100 space-y-3">
-            <h4 className="text-xs font-bold text-slate-800 flex items-center justify-between uppercase tracking-wider">
+            <h4 className="text-xs font-medium text-slate-800 flex items-center justify-between uppercase tracking-wider">
               <span className="flex items-center space-x-1.5">
                 <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Fiscalização do Contrato & Portaria</span>
@@ -248,14 +248,14 @@ export const NewContractModal: React.FC<NewContractModalProps> = ({
 
             {fiscais.length > 0 ? (
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Fiscal do Contrato Cadastrado <span className="text-rose-500">*</span>
                 </label>
                 <select
                   required
                   value={selectedFiscalId}
                   onChange={(e) => handleSelectFiscal(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-900 cursor-pointer"
+                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-900 cursor-pointer"
                 >
                   <option value="">-- Selecione o Fiscal Cadastrado na aba Fiscais & Portarias --</option>
                   {fiscais.map((f) => (
@@ -274,20 +274,20 @@ export const NewContractModal: React.FC<NewContractModalProps> = ({
             {fiscalName && (
               <div className="bg-emerald-50/50 p-3 rounded-lg border border-emerald-100 grid grid-cols-2 gap-2 text-xs">
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Fiscal Designado</span>
-                  <span className="font-bold text-slate-900">{fiscalName}</span>
+                  <span className="text-[10px] uppercase font-medium text-slate-400 block">Fiscal Designado</span>
+                  <span className="font-medium text-slate-900">{fiscalName}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Portaria</span>
-                  <span className="font-bold text-slate-900">{fiscalPortaria || 'N/A'}</span>
+                  <span className="text-[10px] uppercase font-medium text-slate-400 block">Portaria</span>
+                  <span className="font-medium text-slate-900">{fiscalPortaria || 'N/A'}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Data Publicação</span>
-                  <span className="font-bold text-slate-900">{fiscalPortariaPublicationDate || 'N/A'}</span>
+                  <span className="text-[10px] uppercase font-medium text-slate-400 block">Data Publicação</span>
+                  <span className="font-medium text-slate-900">{fiscalPortariaPublicationDate || 'N/A'}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Vigência</span>
-                  <span className="font-bold text-slate-900">{fiscalPortariaValidity || 'N/A'}</span>
+                  <span className="text-[10px] uppercase font-medium text-slate-400 block">Vigência</span>
+                  <span className="font-medium text-slate-900">{fiscalPortariaValidity || 'N/A'}</span>
                 </div>
               </div>
             )}
@@ -304,7 +304,7 @@ export const NewContractModal: React.FC<NewContractModalProps> = ({
             </button>
             <button
               type="submit"
-              className="flex items-center space-x-1.5 px-5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-xs transition-colors cursor-pointer"
+              className="flex items-center space-x-1.5 px-5 py-2 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-xs transition-colors cursor-pointer"
             >
               <Check className="w-3.5 h-3.5" />
               <span>Salvar Contrato</span>

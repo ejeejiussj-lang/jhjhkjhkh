@@ -14,7 +14,7 @@ export const SecurityModal: React.FC<SecurityModalProps> = ({ isOpen, onClose })
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-md overflow-hidden p-6 animate-in fade-in zoom-in duration-200">
         <div className="flex justify-between items-center pb-3 border-b border-slate-100">
           <div>
-            <h3 className="text-base font-bold text-slate-800">Ambiente Seguro & Protegido</h3>
+            <h3 className="text-base font-medium text-slate-800">Ambiente Seguro & Protegido</h3>
             <p className="text-[11px] text-slate-500">Informações de auditoria e segurança dos dados</p>
           </div>
           <button
@@ -32,7 +32,7 @@ export const SecurityModal: React.FC<SecurityModalProps> = ({ isOpen, onClose })
           <div className="flex items-start space-x-3">
             <Lock className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
             <div>
-              <h5 className="text-xs font-semibold text-slate-800">Criptografia Ponta a Ponta</h5>
+              <h5 className="text-xs font-medium text-slate-800">Criptografia Ponta a Ponta</h5>
               <p className="text-[11px] text-slate-400">AES-256 bits para armazenamento de dados e relatórios contratuais.</p>
             </div>
           </div>
@@ -40,7 +40,7 @@ export const SecurityModal: React.FC<SecurityModalProps> = ({ isOpen, onClose })
           <div className="flex items-start space-x-3">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
             <div>
-              <h5 className="text-xs font-semibold text-slate-800">Conformidade LGPD & Fiscal</h5>
+              <h5 className="text-xs font-medium text-slate-800">Conformidade LGPD & Fiscal</h5>
               <p className="text-[11px] text-slate-400">Trilhas de auditoria imutáveis para prestação de contas de órgãos reguladores.</p>
             </div>
           </div>
@@ -49,7 +49,7 @@ export const SecurityModal: React.FC<SecurityModalProps> = ({ isOpen, onClose })
         <div className="mt-6">
           <button
             onClick={onClose}
-            className="w-full py-2.5 px-4 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-colors"
+            className="w-full py-2.5 px-4 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-colors"
           >
             Entendido
           </button>

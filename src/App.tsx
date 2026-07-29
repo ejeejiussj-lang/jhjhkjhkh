@@ -494,6 +494,11 @@ export default function App() {
     return aDate - bDate;
   });
 
+  const expiringContracts60Days = dashboardContracts.filter((c) => {
+    const daysRemaining = getDaysUntilDate(c.endDate);
+    return daysRemaining !== null && daysRemaining >= 0 && daysRemaining <= 60;
+  });
+
   // Handlers
   const handleAddContract = (newContract: Omit<Contract, 'id'>) => {
     const contract: Contract = {
@@ -826,7 +831,7 @@ export default function App() {
 
   // Compute live KPI counters
   const activeContractsCount = contracts.filter((c) => c.status === 'Ativo').length;
-  const expiringContractsCount = contracts.filter((c) => c.status === 'A Vencer').length;
+  const expiringContractsCount = expiringContracts60Days.length;
 
   const handleLogout = () => {
     supabase.auth.signOut();
@@ -882,7 +887,7 @@ export default function App() {
               {/* Greeting Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
+                  <h1 className="text-2xl font-medium tracking-tight text-slate-900 flex items-center gap-2">
                     <span>Olá, {currentUser?.name || 'Administrador'}</span>
                     <span className="text-xl">👋</span>
                   </h1>
@@ -911,11 +916,54 @@ export default function App() {
                 />
               </div>
 
+              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                  <div>
+                    <h3 className="text-sm font-medium text-slate-800">
+                      Contratos a Vencer
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Monitoramento dos contratos nos ultimos 60 dias de vigencia
+                    </p>
+                  </div>
+                  <span className="text-xs font-medium text-slate-600">
+                    {expiringContracts60Days.length} contrato(s)
+                  </span>
+                </div>
+
+                {expiringContracts60Days.length === 0 ? (
+                  <div className="py-5 text-center text-slate-400">
+                    <p className="font-medium text-slate-700 text-xs">Nenhum contrato nos ultimos 60 dias de vigencia</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {expiringContracts60Days.map((c) => {
+                      const daysRemaining = getDaysUntilDate(c.endDate);
+                      return (
+                        <div key={c.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                          <div className="min-w-0">
+                            <p className="text-xs font-medium text-slate-800 truncate" title={c.creditor}>
+                              {c.creditor}
+                            </p>
+                            <p className="text-xs text-slate-600 font-mono truncate" title={c.contractNum}>
+                              Contrato {c.contractNum}
+                            </p>
+                          </div>
+                          <span className="text-[11px] font-medium text-rose-600 shrink-0">
+                            Vence em {daysRemaining}d
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
               {/* Visão de Execução de Saldos (Contratos Lançados) */}
               <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900">
+                    <h3 className="text-sm font-medium text-slate-800">
                       Visão de Execução de Saldos & Controle de Vencimentos
                     </h3>
                     <p className="text-xs text-slate-500 mt-0.5">
@@ -925,7 +973,7 @@ export default function App() {
 
                   <button
                     onClick={() => setActiveTab('contratos-lancados')}
-                    className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center space-x-1 hover:underline cursor-pointer self-start sm:self-auto"
+                    className="text-xs font-medium text-emerald-700 hover:text-emerald-800 flex items-center space-x-1 hover:underline cursor-pointer self-start sm:self-auto"
                   >
                     <span>Ver Todos ({contracts.length})</span>
                     <ArrowUpRight className="w-3.5 h-3.5" />
@@ -936,7 +984,7 @@ export default function App() {
                   {contracts.length === 0 ? (
                     <div className="py-8 text-center text-slate-400 space-y-1.5">
                       <Database className="w-7 h-7 mx-auto text-slate-300" />
-                      <p className="font-semibold text-slate-700 text-xs">Nenhum contrato cadastrado</p>
+                      <p className="font-medium text-slate-700 text-xs">Nenhum contrato cadastrado</p>
                     </div>
                   ) : (
                     dashboardContracts.map((c) => {
@@ -948,23 +996,22 @@ export default function App() {
                       const usagePct = c.totalValue > 0 ? Math.round((used / c.totalValue) * 100) : 0;
 
                       const daysRemaining = getDaysUntilDate(c.endDate);
-                      const isExpiring = daysRemaining !== null && daysRemaining <= 90;
 
                       // Determine Balance Alert
                       let balanceBadge = (
-                        <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                        <span className="text-[11px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
                           Saldo OK
                         </span>
                       );
                       if (remaining <= 0 || usagePct >= 100) {
                         balanceBadge = (
-                          <span className="text-[11px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded">
+                          <span className="text-[11px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
                             Esgotado
                           </span>
                         );
                       } else if (usagePct >= 80) {
                         balanceBadge = (
-                          <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">
+                          <span className="text-[11px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
                             Saldo Baixo
                           </span>
                         );
@@ -978,19 +1025,13 @@ export default function App() {
                       );
                       if (daysRemaining !== null && daysRemaining < 0) {
                         expirationBadge = (
-                          <span className="text-[11px] font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded">
+                          <span className="text-[11px] font-medium text-rose-600 px-2 py-0.5">
                             Vencido ({c.endDate})
                           </span>
                         );
-                      } else if (daysRemaining !== null && daysRemaining <= 30) {
+                      } else if (daysRemaining !== null && daysRemaining <= 60) {
                         expirationBadge = (
-                          <span className="text-[11px] font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded">
-                            Vence em {daysRemaining}d
-                          </span>
-                        );
-                      } else if (daysRemaining !== null && daysRemaining <= 90) {
-                        expirationBadge = (
-                          <span className="text-[11px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded">
+                          <span className="text-[11px] font-medium text-rose-600 px-2 py-0.5">
                             Vence em {daysRemaining}d
                           </span>
                         );
@@ -999,13 +1040,11 @@ export default function App() {
                       return (
                         <div
                           key={c.id}
-                          className={`py-3.5 first:pt-1 last:pb-1 flex flex-col md:flex-row md:items-center justify-between gap-3 ${
-                            isExpiring ? 'bg-rose-50/45 -mx-3 px-3 rounded-xl' : ''
-                          }`}
+                          className="py-3.5 first:pt-1 last:pb-1 flex flex-col md:flex-row md:items-center justify-between gap-3"
                         >
                           <div className="space-y-1 md:w-[35%] shrink-0">
                             <div className="flex items-center space-x-2">
-                              <span className={`text-xs font-bold ${isExpiring ? 'text-rose-800' : 'text-slate-900'} truncate`} title={c.creditor}>
+                              <span className="text-xs font-medium text-slate-800 truncate" title={c.creditor}>
                                 {c.creditor}
                               </span>
                               {balanceBadge}
@@ -1016,19 +1055,13 @@ export default function App() {
                           </div>
 
                           <div className="md:w-[40%] space-y-1">
-                            <div className="flex justify-between text-[11px] font-semibold text-slate-600">
+                            <div className="flex justify-between text-[11px] font-medium text-slate-600">
                               <span>{usagePct}% executado</span>
-                              <span className="text-emerald-700 font-bold">Saldo: R$ {remaining.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                              <span className="text-slate-700 font-medium">Saldo: R$ {remaining.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                             </div>
                             <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
                               <div
-                                className={`h-full rounded-full transition-all duration-300 ${
-                                  usagePct >= 100
-                                    ? 'bg-rose-600'
-                                    : usagePct >= 80
-                                    ? 'bg-amber-500'
-                                    : 'bg-emerald-500'
-                                }`}
+                                className="h-full rounded-full transition-all duration-300 bg-slate-500"
                                 style={{ width: `${Math.min(usagePct, 100)}%` }}
                               />
                             </div>
@@ -1051,7 +1084,7 @@ export default function App() {
               {/* Header and Filter */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+                  <h1 className="text-2xl font-medium tracking-tight text-slate-900">
                     Contratos Lançados
                   </h1>
                   <p className="text-xs text-slate-500 mt-1">
@@ -1203,7 +1236,7 @@ export default function App() {
               <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
                 <div className="flex items-center space-x-2">
                   <FileCheck2 className="w-5 h-5 text-emerald-600" />
-                  <h3 className="text-base font-bold text-slate-800">
+                  <h3 className="text-base font-medium text-slate-800">
                     Detalhes do Contrato {selectedContractDetail.contractNum}
                   </h3>
                 </div>
@@ -1218,7 +1251,7 @@ export default function App() {
               <div className="mt-4 space-y-4 text-xs overflow-y-auto pr-1 flex-1">
                 <div>
                   <span className="text-slate-400 font-medium">Credor / Empresa:</span>
-                  <p className="font-bold text-slate-800 text-sm mt-0.5">
+                  <p className="font-medium text-slate-800 text-sm mt-0.5">
                     {selectedContractDetail.creditor}
                   </p>
                 </div>
@@ -1231,13 +1264,13 @@ export default function App() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <span className="text-slate-400 font-medium">Período de Vigência:</span>
-                    <p className="font-semibold text-slate-800 mt-0.5">
+                    <p className="font-medium text-slate-800 mt-0.5">
                       {selectedContractDetail.startDate} a {selectedContractDetail.endDate}
                     </p>
                   </div>
                   <div>
                     <span className="text-slate-400 font-medium">Valor Total:</span>
-                    <p className="font-bold text-emerald-700 text-sm mt-0.5">
+                    <p className="font-medium text-emerald-700 text-sm mt-0.5">
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
                         selectedContractDetail.totalValue
                       )}
@@ -1248,23 +1281,23 @@ export default function App() {
                   <div>
                     <span className="text-slate-400 font-medium">Status Atual:</span>
                     <div className="mt-1">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
                         {selectedContractDetail.status}
                       </span>
                     </div>
                   </div>
                   <div>
                     <span className="text-slate-400 font-medium">Total de Notas Emitidas:</span>
-                    <p className="font-bold text-slate-800 text-sm mt-1">
+                    <p className="font-medium text-slate-800 text-sm mt-1">
                       {linkedNotes.length} {linkedNotes.length === 1 ? 'Nota' : 'Notas'}
                     </p>
                   </div>
                 </div>
 
                 <div className="pt-3 border-t border-slate-100 space-y-2">
-                  <span className="text-slate-500 font-bold text-xs uppercase tracking-wider flex items-center justify-between">
+                  <span className="text-slate-500 font-medium text-xs uppercase tracking-wider flex items-center justify-between">
                     <span>Itens do Contrato</span>
-                    <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                    <span className="text-[10px] text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
                       {contractItems.length} {contractItems.length === 1 ? 'Item' : 'Itens'}
                     </span>
                   </span>
@@ -1278,18 +1311,18 @@ export default function App() {
                         {contractItems.map((item) => (
                           <div key={item.id} className="p-2.5 flex items-center justify-between gap-3 text-xs bg-white">
                             <div className="min-w-0">
-                              <p className="font-bold text-slate-800 truncate">{item.description}</p>
+                              <p className="font-medium text-slate-800 truncate">{item.description}</p>
                               <p className="text-[10px] text-slate-500">
                                 {item.quantity.toLocaleString('pt-BR')} {item.unit} x {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.unitValue)}
                               </p>
                             </div>
-                            <span className="font-bold text-slate-900 whitespace-nowrap">
+                            <span className="font-medium text-slate-900 whitespace-nowrap">
                               {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.quantity * item.unitValue)}
                             </span>
                           </div>
                         ))}
                       </div>
-                      <div className="px-3 py-2 bg-slate-50 border-t border-slate-100 flex justify-between text-xs font-bold">
+                      <div className="px-3 py-2 bg-slate-50 border-t border-slate-100 flex justify-between text-xs font-medium">
                         <span className="text-slate-500">Total dos itens</span>
                         <span className="text-emerald-700">
                           {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(contractItemsTotal)}
@@ -1301,7 +1334,7 @@ export default function App() {
 
                 {/* Linked Service Notes Section */}
                 <div className="pt-3 border-t border-slate-100 space-y-2">
-                  <span className="text-slate-500 font-bold text-xs uppercase tracking-wider block">
+                  <span className="text-slate-500 font-medium text-xs uppercase tracking-wider block">
                     Notas de Serviço Vinculadas
                   </span>
                   {linkedNotes.length === 0 ? (
@@ -1313,7 +1346,7 @@ export default function App() {
                       {linkedNotes.map((note) => (
                         <div key={note.id} className="p-2.5 flex items-center justify-between text-xs hover:bg-slate-50 transition-colors">
                           <div className="space-y-0.5">
-                            <div className="flex items-center space-x-1.5 font-bold text-slate-800">
+                            <div className="flex items-center space-x-1.5 font-medium text-slate-800">
                               <Receipt className="w-3.5 h-3.5 text-slate-500" />
                               <span>{note.noteNumber}</span>
                             </div>
@@ -1323,7 +1356,7 @@ export default function App() {
                           </div>
 
                           <div className="flex items-center space-x-1.5">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium ${
                               note.status === 'Paga'
                                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
                                 : 'bg-slate-100 text-slate-700 border border-slate-200'
@@ -1339,9 +1372,9 @@ export default function App() {
 
                 {/* Linked Amendments Section */}
                 <div className="pt-3 border-t border-slate-100 space-y-2">
-                  <span className="text-slate-500 font-bold text-xs uppercase tracking-wider flex items-center justify-between">
+                  <span className="text-slate-500 font-medium text-xs uppercase tracking-wider flex items-center justify-between">
                     <span>Termos Aditivos Vinculados</span>
-                    <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                    <span className="text-[10px] text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
                       {linkedAmendments.length} {linkedAmendments.length === 1 ? 'Aditivo' : 'Aditivos'}
                     </span>
                   </span>
@@ -1354,16 +1387,16 @@ export default function App() {
                       {linkedAmendments.map((am) => (
                         <div key={am.id} className="p-2.5 flex items-center justify-between text-xs hover:bg-slate-50 transition-colors">
                           <div className="space-y-0.5">
-                            <div className="flex items-center space-x-1.5 font-bold text-slate-800">
+                            <div className="flex items-center space-x-1.5 font-medium text-slate-800">
                               <Layers className="w-3.5 h-3.5 text-emerald-600" />
                               <span>{am.amendmentNum}</span>
-                              <span className="text-[10px] font-semibold text-slate-500">({am.type})</span>
+                              <span className="text-[10px] font-medium text-slate-500">({am.type})</span>
                             </div>
                             <div className="text-[10px] text-slate-500">
                               Assinatura: {am.signatureDate} {am.valueChange ? `• Impacto: R$ ${am.valueChange.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''}
                             </div>
                           </div>
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
                             {am.status}
                           </span>
                         </div>
@@ -1376,7 +1409,7 @@ export default function App() {
               <div className="mt-6 pt-3 border-t border-slate-100 flex justify-end shrink-0">
                 <button
                   onClick={() => setSelectedContractDetail(null)}
-                  className="px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors"
+                  className="px-4 py-2 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors"
                 >
                   Fechar
                 </button>

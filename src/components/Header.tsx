@@ -109,7 +109,7 @@ export const Header: React.FC<HeaderProps> = ({
                     setShowDatePicker(false);
                   }}
                   className={`flex items-center justify-between w-full px-4 py-2 text-left hover:bg-emerald-50 hover:text-emerald-700 transition-colors ${
-                    selectedDate === option ? 'font-semibold text-emerald-600 bg-emerald-50/50' : 'text-slate-700'
+                    selectedDate === option ? 'font-medium text-emerald-600 bg-emerald-50/50' : 'text-slate-700'
                   }`}
                 >
                   <span>{option}</span>
@@ -137,7 +137,7 @@ export const Header: React.FC<HeaderProps> = ({
           {showNotifications && (
             <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-40">
               <div className="flex items-center justify-between px-4 py-2 border-b border-slate-100">
-                <h4 className="text-sm font-semibold text-slate-800">Notificações Reais</h4>
+                <h4 className="text-sm font-medium text-slate-800">Notificações Reais</h4>
                 <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
                   {unreadNotificationsCount} {unreadNotificationsCount === 1 ? 'nova' : 'novas'}
                 </span>
@@ -151,10 +151,10 @@ export const Header: React.FC<HeaderProps> = ({
                         onNotificationClick(item.id, item.linkTab);
                         setShowNotifications(false);
                       }}
-                      className={`p-3 hover:bg-slate-50 transition-colors cursor-pointer ${!item.read ? 'bg-emerald-50/20 font-semibold' : 'opacity-80'}`}
+                      className={`p-3 hover:bg-slate-50 transition-colors cursor-pointer ${!item.read ? 'bg-emerald-50/20 font-medium' : 'opacity-80'}`}
                     >
                       <div className="flex justify-between items-start">
-                        <p className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                        <p className="text-xs font-medium text-slate-800 flex items-center gap-1.5">
                           {!item.read && <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full inline-block" />}
                           <span>{item.title}</span>
                         </p>
@@ -201,11 +201,11 @@ export const Header: React.FC<HeaderProps> = ({
             className="flex items-center space-x-2.5 focus:outline-none group cursor-pointer"
             id="user-profile-btn"
           >
-            <div className="w-8 h-8 rounded-full bg-emerald-700 text-white font-semibold flex items-center justify-center text-xs shadow-xs ring-2 ring-emerald-500/30">
+            <div className="w-8 h-8 rounded-full bg-emerald-700 text-white font-medium flex items-center justify-center text-xs shadow-xs ring-2 ring-emerald-500/30">
               {currentUser ? currentUser.name.charAt(0).toUpperCase() : 'A'}
             </div>
             <div className="text-left hidden sm:block">
-              <span className="block text-xs font-semibold text-slate-800 leading-tight">
+              <span className="block text-xs font-medium text-slate-800 leading-tight">
                 {currentUser ? currentUser.name : 'Acessar Conta'}
               </span>
               <span className="block text-[10px] text-emerald-600 font-medium">
@@ -218,9 +218,9 @@ export const Header: React.FC<HeaderProps> = ({
           {showProfileMenu && (
             <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-40">
               <div className="px-4 py-2 border-b border-slate-100">
-                <p className="text-xs font-bold text-slate-800 truncate">{currentUser ? currentUser.name : 'Usuário'}</p>
+                <p className="text-xs font-medium text-slate-800 truncate">{currentUser ? currentUser.name : 'Usuário'}</p>
                 <p className="text-[10px] text-slate-500 truncate">{currentUser?.email || 'Acesso local'}</p>
-                <span className="inline-block mt-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                <span className="inline-block mt-1 text-[10px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
                   {currentUser?.role || 'Administrador'}
                 </span>
               </div>
@@ -231,7 +231,7 @@ export const Header: React.FC<HeaderProps> = ({
                     setShowProfileMenu(false);
                     if (onLogout) onLogout();
                   }}
-                  className="w-full flex items-center space-x-2 px-3 py-2 text-xs text-rose-700 hover:bg-rose-50 rounded-xl transition-colors text-left font-bold cursor-pointer"
+                  className="w-full flex items-center space-x-2 px-3 py-2 text-xs text-rose-700 hover:bg-rose-50 rounded-xl transition-colors text-left font-medium cursor-pointer"
                 >
                   <LogOut className="w-4 h-4 text-rose-600" />
                   <span>Sair (Ir para Tela Inicial)</span>

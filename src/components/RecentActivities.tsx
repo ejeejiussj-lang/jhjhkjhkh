@@ -58,7 +58,7 @@ export const RecentActivities: React.FC<RecentActivitiesProps> = ({
     <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 flex flex-col justify-between">
       <div>
         <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-          <h3 className="text-base font-bold text-slate-800">Atividades Recentes</h3>
+          <h3 className="text-base font-medium text-slate-800">Atividades Recentes</h3>
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Ao vivo" />
         </div>
 
@@ -74,7 +74,7 @@ export const RecentActivities: React.FC<RecentActivitiesProps> = ({
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold text-slate-800 group-hover:text-emerald-700 transition-colors leading-tight">
+                    <p className="text-xs font-medium text-slate-800 group-hover:text-emerald-700 transition-colors leading-tight">
                       {act.title}
                     </p>
                     <span className="text-[10px] text-slate-400 font-medium ml-2 shrink-0">{act.time}</span>
@@ -90,7 +90,7 @@ export const RecentActivities: React.FC<RecentActivitiesProps> = ({
       <div className="mt-6 pt-4 border-t border-slate-100 text-center">
         <button
           onClick={onViewAllActivities}
-          className="w-full py-2.5 px-4 text-xs font-semibold text-emerald-700 border border-emerald-300 hover:bg-emerald-50/80 rounded-xl transition-all cursor-pointer"
+          className="w-full py-2.5 px-4 text-xs font-medium text-emerald-700 border border-emerald-300 hover:bg-emerald-50/80 rounded-xl transition-all cursor-pointer"
           id="ver-todas-atividades-btn"
         >
           Ver todas as atividades

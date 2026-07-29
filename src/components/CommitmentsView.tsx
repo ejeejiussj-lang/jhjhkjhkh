@@ -120,7 +120,7 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
     <div className="space-y-6 animate-fadeIn pb-12">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
+          <h1 className="text-2xl font-medium text-slate-900 tracking-tight flex items-center gap-2.5">
             <Banknote className="w-7 h-7 text-emerald-600" />
             <span>Empenhos</span>
           </h1>
@@ -131,7 +131,7 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
 
         <button
           onClick={handleOpen}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer self-start sm:self-auto"
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-xl shadow-xs transition-all cursor-pointer self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Novo Empenho</span>
@@ -150,8 +150,8 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
           />
         </div>
 
-        <div className="text-xs font-semibold text-slate-500">
-          Total: <span className="font-bold text-slate-900">{filteredCommitments.length}</span> empenhos
+        <div className="text-xs font-medium text-slate-500">
+          Total: <span className="font-medium text-slate-900">{filteredCommitments.length}</span> empenhos
         </div>
       </div>
 
@@ -159,7 +159,7 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-bold uppercase text-slate-600 tracking-wider">
+              <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-medium uppercase text-slate-600 tracking-wider">
                 <th className="py-3.5 px-4">Número</th>
                 <th className="py-3.5 px-4">Dotação</th>
                 <th className="py-3.5 px-4">Programa</th>
@@ -173,21 +173,21 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-slate-400">
                     <Banknote className="w-8 h-8 mx-auto text-slate-300 mb-2" />
-                    <p className="font-semibold text-slate-700 text-xs">Nenhum empenho cadastrado.</p>
+                    <p className="font-medium text-slate-700 text-xs">Nenhum empenho cadastrado.</p>
                   </td>
                 </tr>
               ) : (
                 filteredCommitments.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3.5 px-4 font-bold text-slate-900">{item.number}</td>
-                    <td className="py-3.5 px-4 font-bold text-emerald-700">{item.budgetAllocation}</td>
+                    <td className="py-3.5 px-4 font-medium text-slate-900">{item.number}</td>
+                    <td className="py-3.5 px-4 font-medium text-emerald-700">{item.budgetAllocation}</td>
                     <td className="py-3.5 px-4 text-slate-700 min-w-72">
                       <p className="line-clamp-2" title={item.program}>{item.program}</p>
                     </td>
-                    <td className="py-3.5 px-4 text-right font-semibold text-slate-800">
+                    <td className="py-3.5 px-4 text-right font-medium text-slate-800">
                       {formatCurrency(item.value)}
                     </td>
-                    <td className={`py-3.5 px-4 text-right font-bold ${item.currentBalance < 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
+                    <td className={`py-3.5 px-4 text-right font-medium ${item.currentBalance < 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
                       {formatCurrency(item.currentBalance)}
                     </td>
                     <td className="py-3.5 px-4 text-right">
@@ -228,7 +228,7 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-xl overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
               <div>
-                <h3 className="text-sm font-bold text-slate-800">{editingCommitment ? 'Editar Empenho' : 'Cadastrar Empenho'}</h3>
+                <h3 className="text-sm font-medium text-slate-800">{editingCommitment ? 'Editar Empenho' : 'Cadastrar Empenho'}</h3>
                 <p className="text-[11px] text-slate-500">Informe dotacao, programa e valor. O saldo atual sera calculado automaticamente.</p>
               </div>
               <button
@@ -242,14 +242,14 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
                     Dotação <span className="text-rose-500">*</span>
                   </label>
                   <select
                     required
                     value={budgetAllocation}
                     onChange={(e) => handleBudgetChange(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold"
+                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
                   >
                     {BUDGET_ALLOCATIONS.map((item) => (
                       <option key={item} value={item}>{item}</option>
@@ -258,7 +258,7 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
                     Número do Empenho <span className="text-rose-500">*</span>
                   </label>
                   <input
@@ -267,20 +267,20 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
                     value={number}
                     onChange={(e) => setNumber(e.target.value)}
                     placeholder="Ex: 000123"
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold"
+                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Programa <span className="text-rose-500">*</span>
                 </label>
                 <select
                   required
                   value={program}
                   onChange={(e) => setProgram(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold"
+                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
                 >
                   {availablePrograms.map((item) => (
                     <option key={item} value={item}>{item}</option>
@@ -289,7 +289,7 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Valor do Empenho (R$) <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -299,7 +299,7 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
                   value={value}
                   onChange={(e) => setValue(e.target.value)}
                   placeholder="0.00"
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold"
+                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
                 />
                 <p className="text-[10px] text-slate-500 mt-1">
                   O saldo atual inicia igual ao valor do empenho e diminui quando uma nota fiscal for vinculada.
@@ -307,7 +307,7 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Observação</label>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Observação</label>
                 <textarea
                   rows={3}
                   value={description}
@@ -321,13 +321,13 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                  className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-all cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-all cursor-pointer"
                 >
                   <Check className="w-4 h-4" />
                   <span>{editingCommitment ? 'Atualizar Empenho' : 'Salvar Empenho'}</span>
@@ -343,7 +343,7 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-2xl overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
               <div>
-                <h3 className="text-base font-bold text-slate-900">Informações do Empenho</h3>
+                <h3 className="text-base font-medium text-slate-900">Informações do Empenho</h3>
                 <p className="text-[11px] text-slate-500">Número {selectedCommitment.number}</p>
               </div>
               <button onClick={() => setSelectedCommitment(null)} className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer">
@@ -354,46 +354,46 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                  <span className="block text-[10px] uppercase font-bold text-slate-400">Dotação</span>
-                  <span className="font-bold text-emerald-700">{selectedCommitment.budgetAllocation}</span>
+                  <span className="block text-[10px] uppercase font-medium text-slate-400">Dotação</span>
+                  <span className="font-medium text-emerald-700">{selectedCommitment.budgetAllocation}</span>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 md:col-span-3">
-                  <span className="block text-[10px] uppercase font-bold text-slate-400">Programa</span>
-                  <span className="font-bold text-slate-900">{selectedCommitment.program}</span>
+                  <span className="block text-[10px] uppercase font-medium text-slate-400">Programa</span>
+                  <span className="font-medium text-slate-900">{selectedCommitment.program}</span>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                  <span className="block text-[10px] uppercase font-bold text-slate-400">Valor</span>
-                  <span className="font-bold text-slate-900">{formatCurrency(selectedCommitment.value)}</span>
+                  <span className="block text-[10px] uppercase font-medium text-slate-400">Valor</span>
+                  <span className="font-medium text-slate-900">{formatCurrency(selectedCommitment.value)}</span>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                  <span className="block text-[10px] uppercase font-bold text-slate-400">Saldo atual</span>
-                  <span className={`font-bold ${selectedCommitment.currentBalance < 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
+                  <span className="block text-[10px] uppercase font-medium text-slate-400">Saldo atual</span>
+                  <span className={`font-medium ${selectedCommitment.currentBalance < 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
                     {formatCurrency(selectedCommitment.currentBalance)}
                   </span>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 md:col-span-2">
-                  <span className="block text-[10px] uppercase font-bold text-slate-400">Observação</span>
-                  <span className="font-semibold text-slate-700">{selectedCommitment.description || '-'}</span>
+                  <span className="block text-[10px] uppercase font-medium text-slate-400">Observação</span>
+                  <span className="font-medium text-slate-700">{selectedCommitment.description || '-'}</span>
                 </div>
               </div>
 
               <div>
-                <h4 className="text-xs font-bold uppercase text-slate-500 flex items-center gap-2 mb-2">
+                <h4 className="text-xs font-medium uppercase text-slate-500 flex items-center gap-2 mb-2">
                   <Link2 className="w-3.5 h-3.5" />
                   <span>Notas vinculadas ({getLinkedNotes(selectedCommitment).length})</span>
                 </h4>
                 <div className="space-y-2 max-h-56 overflow-y-auto">
                   {getLinkedNotes(selectedCommitment).length === 0 ? (
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-500 font-semibold">
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-500 font-medium">
                       Nenhuma nota vinculada a este empenho.
                     </div>
                   ) : (
                     getLinkedNotes(selectedCommitment).map((note) => (
                       <div key={note.id} className="rounded-xl border border-slate-200 bg-white p-3 grid grid-cols-1 md:grid-cols-4 gap-2 text-xs">
-                        <span className="font-bold text-slate-900">{note.noteNumber}</span>
+                        <span className="font-medium text-slate-900">{note.noteNumber}</span>
                         <span className="text-slate-600">Contrato: {note.contractNum || '-'}</span>
                         <span className="text-slate-600">Atesto: {note.attestationDate || '-'}</span>
-                        <span className="font-bold text-right text-slate-900">{formatCurrency(note.value)}</span>
+                        <span className="font-medium text-right text-slate-900">{formatCurrency(note.value)}</span>
                       </div>
                     ))
                   )}
