@@ -59,6 +59,7 @@ import {
 } from './lib/supabaseService';
 
 import { Contract, ActiveTab, Creditor, ServiceNote, FiscalPortaria, ContractAmendment, SystemNotification, Commitment } from './types';
+import { formatBRDate, parseBRDate } from './utils/dateFormat';
 
 const DEFAULT_CATEGORIES = [
   'Secretaria Municipal de Saúde',
@@ -66,15 +67,7 @@ const DEFAULT_CATEGORIES = [
 ];
 
 const parseContractEndDate = (endDate: string) => {
-  const parts = endDate.split('/');
-  if (parts.length !== 3) return null;
-  const d = parseInt(parts[0], 10);
-  const m = parseInt(parts[1], 10) - 1;
-  const y = parseInt(parts[2], 10);
-  if ([d, m, y].some(Number.isNaN)) return null;
-  const date = new Date(y, m, d);
-  date.setHours(0, 0, 0, 0);
-  return date;
+  return parseBRDate(endDate);
 };
 
 const getDaysUntilDate = (endDate: string) => {
@@ -814,7 +807,7 @@ export default function App() {
         items.push({
           id: `contract-exp-${c.id}`,
           title: `Contrato A Vencer: ${c.creditor}`,
-          desc: `Contrato: ${c.contractNum} | Vencimento: ${c.endDate}`,
+          desc: `Contrato: ${c.contractNum} | Vencimento: ${formatBRDate(c.endDate)}`,
           time: 'Atenção Vigência',
           type: 'contract',
           read: readNotificationIds.includes(`contract-exp-${c.id}`),
@@ -1079,13 +1072,13 @@ export default function App() {
                       // Determine Expiration Alert
                       let expirationBadge = (
                         <span className="text-[11px] font-medium text-slate-500">
-                          Vence: {c.endDate}
+                          Vence: {formatBRDate(c.endDate)}
                         </span>
                       );
                       if (daysRemaining !== null && daysRemaining < 0) {
                         expirationBadge = (
                           <span className="text-[11px] font-medium text-rose-600 px-2 py-0.5">
-                            Vencido ({c.endDate})
+                            Vencido ({formatBRDate(c.endDate)})
                           </span>
                         );
                       } else if (daysRemaining !== null && daysRemaining <= 60) {
@@ -1331,7 +1324,7 @@ export default function App() {
                   <div>
                     <span className="text-slate-400 font-medium">Período de Vigência:</span>
                     <p className="font-medium text-slate-800 mt-0.5">
-                      {selectedContractDetail.startDate} a {selectedContractDetail.endDate}
+                      {formatBRDate(selectedContractDetail.startDate)} a {formatBRDate(selectedContractDetail.endDate)}
                     </p>
                   </div>
                   <div>

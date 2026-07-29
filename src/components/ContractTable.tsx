@@ -21,6 +21,7 @@ import {
   Check
 } from 'lucide-react';
 import { Contract, ContractAmendment, ContractStatus, ServiceNote } from '../types';
+import { brDateToInputDate, formatBRDate, inputDateToBRDate, parseBRDate } from '../utils/dateFormat';
 
 interface ContractTableProps {
   contracts: Contract[];
@@ -198,22 +199,20 @@ export const ContractTable: React.FC<ContractTableProps> = ({
     }).format(val);
   };
 
-  // Helper to estimate progress based on start and end dates
   const calculateProgress = (startStr: string, endStr: string) => {
-    try {
-      const [sD, sM, sY] = startStr.split('/').map(Number);
-      const [eD, eM, eY] = endStr.split('/').map(Number);
-      const start = new Date(sY, sM - 1, sD).getTime();
-      const end = new Date(eY, eM - 1, eD).getTime();
-      const now = Date.now();
+    const startDate = parseBRDate(startStr);
+    const endDate = parseBRDate(endStr);
+    if (!startDate || !endDate || endDate.getTime() <= startDate.getTime()) return 0;
 
-      if (now <= start) return 5;
-      if (now >= end) return 100;
-      const pct = Math.round(((now - start) / (end - start)) * 100);
-      return Math.min(Math.max(pct, 10), 95);
-    } catch {
-      return 50;
-    }
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (today.getTime() <= startDate.getTime()) return 0;
+    if (today.getTime() >= endDate.getTime()) return 100;
+
+    const pct = Math.round(
+      ((today.getTime() - startDate.getTime()) / (endDate.getTime() - startDate.getTime())) * 100
+    );
+    return Math.min(Math.max(pct, 0), 99);
   };
 
   const handleExportCSV = () => {
@@ -502,8 +501,8 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                     <td className="py-4 px-4 whitespace-nowrap">
                       <div className="space-y-1.5 w-36">
                         <div className="flex items-center justify-between text-[11px]">
-                          <span className="font-medium text-slate-700">{c.startDate}</span>
-                          <span className="text-slate-400">até {c.endDate}</span>
+                          <span className="font-medium text-slate-700">{formatBRDate(c.startDate)}</span>
+                          <span className="text-slate-400">até {formatBRDate(c.endDate)}</span>
                         </div>
                         {/* Progress Bar */}
                         <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
@@ -814,7 +813,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                 </div>
                 <div>
                   <span className="block text-[10px] uppercase font-medium text-emerald-700">Vigência atual</span>
-                  <span className="font-medium text-slate-900">{amendmentContract.startDate} até {amendmentContract.endDate}</span>
+                  <span className="font-medium text-slate-900">{formatBRDate(amendmentContract.startDate)} até {formatBRDate(amendmentContract.endDate)}</span>
                 </div>
                 <div>
                   <span className="block text-[10px] uppercase font-medium text-emerald-700">Status</span>
@@ -882,11 +881,10 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                     Nova Data de Término {requiresNewEndDate && <span className="text-rose-500">*</span>}
                   </label>
                   <input
-                    type="text"
+                    type="date"
                     required={requiresNewEndDate}
-                    value={newEndDate}
-                    onChange={(e) => setNewEndDate(e.target.value)}
-                    placeholder="Ex: 31/12/2026"
+                    value={brDateToInputDate(newEndDate)}
+                    onChange={(e) => setNewEndDate(inputDateToBRDate(e.target.value))}
                     className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-900"
                   />
                 </div>
@@ -898,11 +896,10 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                     Data de Assinatura <span className="text-rose-500">*</span>
                   </label>
                   <input
-                    type="text"
+                    type="date"
                     required
-                    value={signatureDate}
-                    onChange={(e) => setSignatureDate(e.target.value)}
-                    placeholder="Ex: 10/05/2026"
+                    value={brDateToInputDate(signatureDate)}
+                    onChange={(e) => setSignatureDate(inputDateToBRDate(e.target.value))}
                     className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-900"
                   />
                 </div>
@@ -910,10 +907,9 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                 <div>
                   <label className="block text-xs font-medium text-slate-700 mb-1">Data de Publicação</label>
                   <input
-                    type="text"
-                    value={publicationDate}
-                    onChange={(e) => setPublicationDate(e.target.value)}
-                    placeholder="Ex: 12/05/2026"
+                    type="date"
+                    value={brDateToInputDate(publicationDate)}
+                    onChange={(e) => setPublicationDate(inputDateToBRDate(e.target.value))}
                     className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-900"
                   />
                 </div>

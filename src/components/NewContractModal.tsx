@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, FilePlus, Check, UserCheck, Landmark, Users, Plus } from 'lucide-react';
 import { Contract, ContractStatus, FiscalPortaria, Creditor } from '../types';
+import { brDateToInputDate, inputDateToBRDate } from '../utils/dateFormat';
 
 interface NewContractModalProps {
   isOpen: boolean;
@@ -184,11 +185,10 @@ export const NewContractModal: React.FC<NewContractModalProps> = ({
                 Data Início (Vigência)
               </label>
               <input
-                type="text"
+                type="date"
                 required
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                placeholder="Ex: 01/01/2025"
+                value={brDateToInputDate(startDate)}
+                onChange={(e) => setStartDate(inputDateToBRDate(e.target.value))}
                 className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
               />
             </div>
@@ -197,11 +197,10 @@ export const NewContractModal: React.FC<NewContractModalProps> = ({
                 Data Término (Vigência)
               </label>
               <input
-                type="text"
+                type="date"
                 required
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                placeholder="Ex: 31/12/2025"
+                value={brDateToInputDate(endDate)}
+                onChange={(e) => setEndDate(inputDateToBRDate(e.target.value))}
                 className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
               />
             </div>
@@ -315,5 +314,4 @@ export const NewContractModal: React.FC<NewContractModalProps> = ({
     </div>
   );
 };
-
 

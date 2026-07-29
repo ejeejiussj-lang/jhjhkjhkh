@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Layers, Plus, Search, Trash2, Edit3, Check, X, FileText, Calendar, DollarSign, ArrowUpRight, ArrowDownRight, Clock, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { Contract, ContractAmendment } from '../types';
+import { brDateToInputDate, inputDateToBRDate } from '../utils/dateFormat';
 
 interface AmendmentsViewProps {
   amendments: ContractAmendment[];
@@ -419,10 +420,9 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
                     Nova Data Término (Vigência)
                   </label>
                   <input
-                    type="text"
-                    value={newEndDate}
-                    onChange={(e) => setNewEndDate(e.target.value)}
-                    placeholder="Ex: 31/12/2026 (opcional)"
+                    type="date"
+                    value={brDateToInputDate(newEndDate)}
+                    onChange={(e) => setNewEndDate(inputDateToBRDate(e.target.value))}
                     className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
                   />
                   <span className="text-[10px] text-slate-400 block mt-0.5">Preencha se houver prorrogação de prazo</span>
@@ -436,11 +436,10 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
                     Data de Assinatura <span className="text-rose-500">*</span>
                   </label>
                   <input
-                    type="text"
+                    type="date"
                     required
-                    value={signatureDate}
-                    onChange={(e) => setSignatureDate(e.target.value)}
-                    placeholder="Ex: 10/05/2025"
+                    value={brDateToInputDate(signatureDate)}
+                    onChange={(e) => setSignatureDate(inputDateToBRDate(e.target.value))}
                     className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                   />
                 </div>
@@ -450,10 +449,9 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
                     Data de Publicação (Diário Oficial)
                   </label>
                   <input
-                    type="text"
-                    value={publicationDate}
-                    onChange={(e) => setPublicationDate(e.target.value)}
-                    placeholder="Ex: 12/05/2025"
+                    type="date"
+                    value={brDateToInputDate(publicationDate)}
+                    onChange={(e) => setPublicationDate(inputDateToBRDate(e.target.value))}
                     className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                   />
                 </div>

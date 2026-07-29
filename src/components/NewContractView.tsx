@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FilePlus, Check, ArrowLeft, RotateCcw, UserCheck, ShieldCheck, FileCheck, Landmark, Users, Plus, Tag, Trash2 } from 'lucide-react';
 import { Contract, ContractItem, ContractStatus, FiscalPortaria, Creditor } from '../types';
+import { brDateToInputDate, inputDateToBRDate } from '../utils/dateFormat';
 
 
 interface NewContractViewProps {
@@ -311,11 +312,10 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
                   Vigência - Data Início <span className="text-rose-500">*</span>
                 </label>
                 <input
-                  type="text"
+                  type="date"
                   required
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  placeholder="Ex: 01/08/2025"
+                  value={brDateToInputDate(startDate)}
+                  onChange={(e) => setStartDate(inputDateToBRDate(e.target.value))}
                   className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-900"
                 />
               </div>
@@ -324,11 +324,10 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
                   Vigência - Data Término <span className="text-rose-500">*</span>
                 </label>
                 <input
-                  type="text"
+                  type="date"
                   required
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  placeholder="Ex: 31/07/2026"
+                  value={brDateToInputDate(endDate)}
+                  onChange={(e) => setEndDate(inputDateToBRDate(e.target.value))}
                   className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-900"
                 />
               </div>

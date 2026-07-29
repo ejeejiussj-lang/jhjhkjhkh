@@ -1,26 +1,15 @@
 import React, { useMemo } from 'react';
 import { AlertTriangle, CalendarClock, ClipboardList } from 'lucide-react';
 import { Contract, ServiceNote } from '../types';
+import { formatBRDate, parseBRDate } from '../utils/dateFormat';
 
 interface ContractControlViewProps {
   contracts: Contract[];
   notes: ServiceNote[];
 }
 
-const parseContractDate = (value: string) => {
-  const parts = value.split('/');
-  if (parts.length !== 3) return null;
-  const day = Number(parts[0]);
-  const month = Number(parts[1]) - 1;
-  const year = Number(parts[2]);
-  const date = new Date(year, month, day);
-  if (Number.isNaN(date.getTime())) return null;
-  date.setHours(0, 0, 0, 0);
-  return date;
-};
-
 const getDaysUntil = (dateValue: string) => {
-  const target = parseContractDate(dateValue);
+  const target = parseBRDate(dateValue);
   if (!target) return null;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -49,7 +38,7 @@ export const ContractControlView: React.FC<ContractControlViewProps> = ({ contra
           balance,
           daysRemaining,
           isOutOfBalance: balance <= 0 || used >= contract.totalValue,
-          sortTime: parseContractDate(contract.endDate)?.getTime() ?? Number.MAX_SAFE_INTEGER
+          sortTime: parseBRDate(contract.endDate)?.getTime() ?? Number.MAX_SAFE_INTEGER
         };
       })
       .sort((a, b) => a.sortTime - b.sortTime);
@@ -127,7 +116,7 @@ export const ContractControlView: React.FC<ContractControlViewProps> = ({ contra
                       <td className="py-3.5 px-4 text-slate-700 font-mono">{contract.contractNum}</td>
                       <td className="py-3.5 px-4 text-slate-700">
                         <div className="space-y-0.5">
-                          <span>{contract.endDate || '-'}</span>
+                          <span>{formatBRDate(contract.endDate) || '-'}</span>
                           {isExpired && <p className="text-[11px] text-rose-600">Vencido</p>}
                           {isExpiring && <p className="text-[11px] text-rose-600">Vence em {daysRemaining} dia(s)</p>}
                         </div>

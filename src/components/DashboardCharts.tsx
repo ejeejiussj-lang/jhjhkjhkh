@@ -33,6 +33,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { Contract, ServiceNote } from '../types';
+import { formatBRDate, parseBRDate } from '../utils/dateFormat';
 
 interface DashboardChartsProps {
   contracts: Contract[];
@@ -52,18 +53,6 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
-  };
-
-  const parseBRDate = (dateStr: string): Date | null => {
-    if (!dateStr) return null;
-    const parts = dateStr.split('/');
-    if (parts.length === 3) {
-      const day = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10) - 1;
-      const year = parseInt(parts[2], 10);
-      return new Date(year, month, day);
-    }
-    return null;
   };
 
   const getDaysUntil = (dateStr: string): number | null => {
@@ -277,12 +266,12 @@ export const DashboardCharts: React.FC<DashboardChartsProps> = ({
                     <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 grid grid-cols-2 gap-2 text-[10px]">
                       <div>
                         <span className="text-slate-400 font-medium uppercase block text-[9px]">Início Vigência</span>
-                        <span className="text-slate-800 font-medium">{c.startDate}</span>
+                        <span className="text-slate-800 font-medium">{formatBRDate(c.startDate)}</span>
                       </div>
                       <div className="text-right">
                         <span className="text-rose-600 font-medium uppercase block text-[9px]">Data de Vencimento</span>
                         <span className="text-rose-700 font-medium text-xs bg-rose-50 px-2 py-0.5 rounded border border-rose-100 inline-block">
-                          {c.endDate}
+                          {formatBRDate(c.endDate)}
                         </span>
                       </div>
                     </div>

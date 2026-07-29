@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { UserCheck, Plus, Search, Trash2, Edit3, Check, X, ShieldCheck, Landmark } from 'lucide-react';
 import { FiscalPortaria } from '../types';
+import { brDateToInputDate, inputDateToBRDate } from '../utils/dateFormat';
 
 interface FiscaisViewProps {
   fiscais: FiscalPortaria[];
@@ -254,10 +255,9 @@ export const FiscaisView: React.FC<FiscaisViewProps> = ({
                     Data de Publicação
                   </label>
                   <input
-                    type="text"
-                    value={publicationDate}
-                    onChange={(e) => setPublicationDate(e.target.value)}
-                    placeholder="Ex: 02/01/2025"
+                    type="date"
+                    value={brDateToInputDate(publicationDate)}
+                    onChange={(e) => setPublicationDate(inputDateToBRDate(e.target.value))}
                     className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                   />
                 </div>
@@ -266,10 +266,9 @@ export const FiscaisView: React.FC<FiscaisViewProps> = ({
                     Vigência da Portaria
                   </label>
                   <input
-                    type="text"
-                    value={validity}
-                    onChange={(e) => setValidity(e.target.value)}
-                    placeholder="Ex: 01/01/2025 a 31/12/2025"
+                    type="date"
+                    value={brDateToInputDate(validity)}
+                    onChange={(e) => setValidity(inputDateToBRDate(e.target.value))}
                     className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                   />
                 </div>

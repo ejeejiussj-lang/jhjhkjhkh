@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Receipt, Plus, Link2, Link2Off, X, Search, Building2, Landmark, Trash2, Edit3 } from 'lucide-react';
 import { ServiceNote, Contract, Creditor, Commitment } from '../types';
+import { brDateToInputDate, inputDateToBRDate } from '../utils/dateFormat';
 
 interface InvoicesViewProps {
   notes: ServiceNote[];
@@ -523,10 +524,9 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                 <div>
                   <label className="block text-xs font-medium text-slate-700 mb-1">Data de Emissão</label>
                   <input
-                    type="text"
-                    value={issueDate}
-                    onChange={(e) => setIssueDate(e.target.value)}
-                    placeholder="Ex: 28/07/2026"
+                    type="date"
+                    value={brDateToInputDate(issueDate)}
+                    onChange={(e) => setIssueDate(inputDateToBRDate(e.target.value))}
                     className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800"
                   />
                 </div>
@@ -534,10 +534,9 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                 <div>
                   <label className="block text-xs font-medium text-slate-700 mb-1">Data de Atesto</label>
                   <input
-                    type="text"
-                    value={attestationDate}
-                    onChange={(e) => setAttestationDate(e.target.value)}
-                    placeholder="Ao preencher, conclui"
+                    type="date"
+                    value={brDateToInputDate(attestationDate)}
+                    onChange={(e) => setAttestationDate(inputDateToBRDate(e.target.value))}
                     className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800"
                   />
                 </div>
