@@ -978,7 +978,7 @@ export default function App() {
                       Contratos a Vencer
                     </h3>
                     <p className="text-xs text-rose-700/80 mt-0.5">
-                      Monitoramento dos contratos nos ultimos 60 dias de vigencia
+                      Monitoramento dos contratos nos últimos 60 dias de vigência
                     </p>
                   </div>
                   <span className="text-xs font-medium text-rose-700 bg-white/70 border border-rose-100 px-2 py-0.5 rounded-full">
@@ -988,7 +988,7 @@ export default function App() {
 
                 {expiringContracts60Days.length === 0 ? (
                   <div className="py-5 text-center">
-                    <p className="font-medium text-rose-700 text-xs">Nenhum contrato nos ultimos 60 dias de vigencia</p>
+                    <p className="font-medium text-rose-700 text-xs">Nenhum contrato nos últimos 60 dias de vigência</p>
                   </div>
                 ) : (
                   <div className="divide-y divide-rose-100">

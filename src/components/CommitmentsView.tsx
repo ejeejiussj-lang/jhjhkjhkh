@@ -229,7 +229,7 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
               <div>
                 <h3 className="text-sm font-medium text-slate-800">{editingCommitment ? 'Editar Empenho' : 'Cadastrar Empenho'}</h3>
-                <p className="text-[11px] text-slate-500">Informe dotacao, programa e valor. O saldo atual sera calculado automaticamente.</p>
+                <p className="text-[11px] text-slate-500">Informe dotação, programa e valor. O saldo atual será calculado automaticamente.</p>
               </div>
               <button
                 onClick={() => setShowModal(false)}

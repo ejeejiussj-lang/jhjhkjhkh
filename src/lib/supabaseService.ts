@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 
 -- Active RLS and policies for profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Permitir leitura para usuarios autenticados" ON public.profiles FOR SELECT USING (true);
+CREATE POLICY "Permitir leitura para usuários autenticados" ON public.profiles FOR SELECT USING (true);
 CREATE POLICY "Permitir insercao de perfil proprio" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
 CREATE POLICY "Permitir edicao de perfil proprio" ON public.profiles FOR UPDATE USING (auth.uid() = id);
 

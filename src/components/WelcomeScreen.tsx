@@ -300,4 +300,3 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onEnterSystem }) =
     </div>
   );
 };
-
