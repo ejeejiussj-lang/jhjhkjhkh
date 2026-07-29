@@ -47,6 +47,7 @@ type AiAction =
       value: number;
       commitmentNumber?: string;
       budgetAllocation?: string;
+      issueDate?: string;
     }
   | {
       type: 'create_creditor';
@@ -194,7 +195,8 @@ const normalizeAction = (raw: any): AiAction | null => {
       creditor: raw.creditor || raw.credor || raw.empresa || raw.contratada || '',
       value: Number(raw.value || raw.valor || raw.valorNota || raw.valor_nota || raw.valorLiquido || raw.valor_liquido || 0),
       commitmentNumber: raw.commitmentNumber || raw.commitment_number || raw.numeroEmpenho || raw.numero_empenho || raw.empenho || '',
-      budgetAllocation: raw.budgetAllocation || raw.budget_allocation || raw.dotacao || raw.dotação || ''
+      budgetAllocation: raw.budgetAllocation || raw.budget_allocation || raw.dotacao || raw.dotação || '',
+      issueDate: raw.issueDate || raw.issue_date || raw.dataEmissao || raw.data_emissao || raw.emissao || raw.emissão || ''
     };
   }
 
@@ -459,7 +461,8 @@ const createLocalResponse = (prompt: string): AiResponse => {
       creditor,
       value: noteValue,
       commitmentNumber,
-      budgetAllocation
+      budgetAllocation,
+      issueDate: findTextAfter(prompt, ['data de emissao', 'data de emissão', 'emissao', 'emissão'])
     });
   }
 
@@ -808,7 +811,9 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
             noteNumber: action.noteNumber,
             contractNum: action.contractNum || selectedContract?.contractNum || 'Contrato Não Selecionado',
             creditor: selectedCreditor?.name || action.creditor || selectedContract?.creditor || 'Credor Não Identificado',
-            issueDate: new Date().toLocaleDateString('pt-BR'),
+            issueDate: action.issueDate || '',
+            attestationDate: '',
+            fiscalName: '',
             value: noteValue,
             status: 'Pendente',
             budgetAllocation,
@@ -913,6 +918,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
 - Antes de criar credor, verifique a lista de credores no contexto; se a empresa já existir, use exatamente o nome cadastrado.
 - Em contratos e notas, vincule ao contrato, credor e empenho existentes quando encontrar correspondência por número, CNPJ ou nome da empresa.
 - Para cada PDF de nota fiscal ou nota de serviço, retorne uma action create_note quando encontrar número da nota e valor. Use contractNum, creditor, commitmentNumber e budgetAllocation quando identificar.
+- Em create_note, extraia a data de emissão do PDF e envie em issueDate. Não preencha attestationDate nem fiscalName; esses campos serão digitados manualmente pelo usuário.
 - Se disser que uma nota foi cadastrada, obrigatoriamente inclua uma action create_note válida; se faltar número ou valor, diga que não foi cadastrada e informe o campo faltante.
 - Identifique dotação 06.01 ou 06.06 e escolha o programa compatível pela lista do sistema.
 - Em contratos, extraia objeto, empresa, número, vigência, valor, secretaria/fundo e fiscal quando houver.

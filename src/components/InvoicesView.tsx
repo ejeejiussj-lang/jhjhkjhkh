@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Receipt, Plus, Link2, Link2Off, X, Search, Building2, Landmark, Trash2, Edit3 } from 'lucide-react';
 import { ServiceNote, Contract, Creditor, Commitment } from '../types';
-import { brDateToInputDate, inputDateToBRDate } from '../utils/dateFormat';
 
 interface InvoicesViewProps {
   notes: ServiceNote[];
@@ -26,6 +25,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
   const [noteNumber, setNoteNumber] = useState('');
   const [issueDate, setIssueDate] = useState('');
   const [attestationDate, setAttestationDate] = useState('');
+  const [fiscalName, setFiscalName] = useState('');
   const [contractNum, setContractNum] = useState('');
   const [creditor, setCreditor] = useState('');
   const [value, setValue] = useState('');
@@ -70,6 +70,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
       setNoteNumber('');
       setIssueDate('');
       setAttestationDate('');
+      setFiscalName('');
       setContractNum('');
       setCreditor('');
       setValue('');
@@ -82,6 +83,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
     setNoteNumber(note.noteNumber);
     setIssueDate(note.issueDate || '');
     setAttestationDate(note.attestationDate || '');
+    setFiscalName(note.fiscalName || '');
     setContractNum(note.contractNum || '');
     setCreditor(note.creditor || '');
     setValue(String(note.value || ''));
@@ -95,6 +97,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
     if (matched?.creditor) {
       setCreditor(matched.creditor);
     }
+    setFiscalName(matched?.fiscalName || '');
   };
 
   const handleCreate = (e: React.FormEvent) => {
@@ -112,7 +115,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
       creditor: creditor || 'Credor Não Identificado',
       issueDate,
       attestationDate,
-      fiscalName: selectedContract?.fiscalName || '',
+      fiscalName,
       value: noteValue,
       status: attestationDate ? 'Concluido' : 'Pendente',
       budgetAllocation: selectedCommitment?.budgetAllocation || '',
@@ -505,7 +508,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-slate-700 mb-1">
                     Valor da Nota (R$) <span className="text-rose-500">*</span>
@@ -524,9 +527,10 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                 <div>
                   <label className="block text-xs font-medium text-slate-700 mb-1">Data de Emissão</label>
                   <input
-                    type="date"
-                    value={brDateToInputDate(issueDate)}
-                    onChange={(e) => setIssueDate(inputDateToBRDate(e.target.value))}
+                    type="text"
+                    value={issueDate}
+                    onChange={(e) => setIssueDate(e.target.value)}
+                    placeholder="Ex: 28/07/2026"
                     className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800"
                   />
                 </div>
@@ -534,9 +538,21 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                 <div>
                   <label className="block text-xs font-medium text-slate-700 mb-1">Data de Atesto</label>
                   <input
-                    type="date"
-                    value={brDateToInputDate(attestationDate)}
-                    onChange={(e) => setAttestationDate(inputDateToBRDate(e.target.value))}
+                    type="text"
+                    value={attestationDate}
+                    onChange={(e) => setAttestationDate(e.target.value)}
+                    placeholder="Ex: 29/07/2026"
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Fiscal Responsável</label>
+                  <input
+                    type="text"
+                    value={fiscalName}
+                    onChange={(e) => setFiscalName(e.target.value)}
+                    placeholder="Nome do fiscal"
                     className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800"
                   />
                 </div>
