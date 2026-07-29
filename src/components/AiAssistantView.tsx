@@ -119,10 +119,18 @@ const fixMojibake = (value: string) => {
   return Object.entries(replacements).reduce((text, [from, to]) => text.replaceAll(from, to), value);
 };
 
+const cleanAiText = (value: string) =>
+  fixMojibake(value || '')
+    .replaceAll('Analisando PDFs, textos e preparando cadastro...', 'Preparando resposta...')
+    .replaceAll('Analisando PDFs, textos e preparando cadastro', 'Preparando resposta')
+    .replace(/(?:Preparando resposta\.{0,3}\s*){2,}/g, 'Preparando resposta...');
+
 const parseJsonResponse = (text: string): AiResponse => {
   const cleaned = text
     .replace(/```json/gi, '')
     .replace(/```/g, '')
+    .replaceAll('Analisando PDFs, textos e preparando cadastro...', 'Preparando resposta...')
+    .replaceAll('Analisando PDFs, textos e preparando cadastro', 'Preparando resposta')
     .trim();
   const firstBrace = cleaned.indexOf('{');
   const lastBrace = cleaned.lastIndexOf('}');
@@ -132,10 +140,10 @@ const parseJsonResponse = (text: string): AiResponse => {
     const parsed = JSON.parse(jsonText);
     return {
       ...parsed,
-      reply: fixMojibake(parsed.reply || '')
+      reply: cleanAiText(parsed.reply || '')
     };
   } catch {
-    return { reply: fixMojibake(cleaned) || 'Consegui analisar, mas não consegui montar uma ação automática.' };
+    return { reply: cleanAiText(cleaned) || 'Consegui analisar, mas não consegui montar uma ação automática.' };
   }
 };
 
@@ -290,7 +298,12 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
       const saved = localStorage.getItem('fiscalpro_ai_messages');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((message) => ({
+            ...message,
+            text: cleanAiText(String(message.text || ''))
+          }));
+        }
       }
     } catch (error) {
       console.error(error);
@@ -312,7 +325,11 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
 
   useEffect(() => {
-    localStorage.setItem('fiscalpro_ai_messages', JSON.stringify(messages.slice(-40)));
+    const cleanMessages = messages.slice(-40).map((message) => ({
+      ...message,
+      text: cleanAiText(message.text)
+    }));
+    localStorage.setItem('fiscalpro_ai_messages', JSON.stringify(cleanMessages));
   }, [messages]);
 
   const systemContext = useMemo(() => {
@@ -634,11 +651,11 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
     setLastActions([]);
     const runAudit = shouldRunSystemAudit(finalPrompt, filesToSend.length);
     const nextLoadingText = filesToSend.length > 0
-      ? 'Lendo PDFs e extraindo informações...'
+      ? 'Lendo anexos e extraindo informações...'
       : runAudit
       ? 'Analisando o sistema e preparando resposta...'
       : 'Preparando resposta...';
-    setLoadingText(nextLoadingText);
+    setLoadingText(filesToSend.length > 0 ? 'Lendo anexos e extraindo informa\u00e7\u00f5es...' : cleanAiText(nextLoadingText));
 
     try {
       const audit = runAudit ? buildSystemAudit() : undefined;
