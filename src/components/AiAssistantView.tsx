@@ -208,6 +208,29 @@ const buildConfirmationText = (actions: AiAction[]) =>
     .map((action, index) => `${index + 1}. ${describeAction(action)}`)
     .join('\n\n')}\n\nPara salvar, clique em Confirmar ou responda "confirmar". Para corrigir, envie os dados certos na mensagem.`;
 
+const getActionLabel = (action: AiAction) => {
+  if (action.type === 'create_creditor') return `credor ${action.name || ''}`.trim();
+  if (action.type === 'create_contract') return `contrato ${action.contractNum || ''}`.trim();
+  if (action.type === 'create_commitment') return `empenho ${action.number || ''}`.trim();
+  if (action.type === 'create_note') return `nota ${action.noteNumber || ''}`.trim();
+  if (action.type === 'create_alert') return `alerta ${action.title || ''}`.trim();
+  return 'ação';
+};
+
+const formatExecutionResult = (result: { executed: string[]; skipped: string[] }) => {
+  const parts: string[] = [];
+  if (result.executed.length) {
+    parts.push(`Ações executadas:\n${result.executed.map((item) => `- ${item}`).join('\n')}`);
+  }
+  if (result.skipped.length) {
+    parts.push(`Não executadas:\n${result.skipped.map((item) => `- ${item}`).join('\n')}`);
+  }
+  if (!parts.length) {
+    return '\n\nNenhum cadastro foi salvo porque a IA não retornou ações de cadastro com dados suficientes.';
+  }
+  return `\n\n${parts.join('\n\n')}`;
+};
+
 const parseDate = (value?: string) => {
   if (!value) return null;
   const trimmed = value.trim();
@@ -562,6 +585,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
 
   const executeActions = (actions: AiAction[] = [], confirmed = true) => {
     const executed: string[] = [];
+    const skipped: string[] = [];
     const allowedActions = filterAllowedActions(actions);
 
     if (!confirmed) {
@@ -587,7 +611,10 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
             status: 'Ativo'
           });
           executed.push(`Credor cadastrado: ${action.name}`);
+        } else {
+          skipped.push(`Credor já cadastrado: ${action.name}`);
         }
+        return;
       }
 
       if (action.type === 'create_contract' && action.contractNum && action.creditor && action.object) {
@@ -616,7 +643,10 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
             items: []
           });
           executed.push(`Contrato cadastrado: ${action.contractNum}`);
+        } else {
+          skipped.push(`Contrato já cadastrado: ${action.contractNum}`);
         }
+        return;
       }
 
       if (action.type === 'create_commitment' && action.number && action.budgetAllocation) {
@@ -631,7 +661,10 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
             description: action.description || 'Cadastrado pela IA'
           });
           executed.push(`Empenho cadastrado: ${action.number}`);
+        } else {
+          skipped.push(`Empenho já cadastrado: ${action.number}`);
         }
+        return;
       }
 
       if (action.type === 'create_note' && action.noteNumber && action.value) {
@@ -674,7 +707,10 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
             commitmentId: selectedCommitment?.id || ''
           });
           executed.push(`Nota cadastrada: ${action.noteNumber} (${formatCurrency(noteValue)})`);
+        } else {
+          skipped.push(`Nota já cadastrada: ${action.noteNumber}`);
         }
+        return;
       }
 
       if (action.type === 'create_alert' && action.title) {
@@ -688,19 +724,20 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
           linkTab: action.linkTab
         });
         executed.push(`Alerta emitido: ${action.title}`);
+        return;
       }
+
+      skipped.push(`Não cadastrado: ${getActionLabel(action)} com dados obrigatórios incompletos.`);
     });
 
-    setLastActions(executed);
-    return executed;
+    setLastActions(executed.length ? executed : skipped);
+    return { executed, skipped };
   };
 
   const confirmPendingActions = () => {
     if (pendingActions.length === 0) return;
-    const executed = executeActions(pendingActions, true);
-    const executedText = executed.length
-      ? `Cadastros salvos:\n${executed.map((item) => `- ${item}`).join('\n')}`
-      : 'Nenhum cadastro novo foi salvo. Pode ser que os registros já existam ou ainda faltem dados obrigatórios.';
+    const result = executeActions(pendingActions, true);
+    const executedText = formatExecutionResult(result).trim();
 
     setPendingActions([]);
     setMessages((prev) => [
@@ -762,6 +799,8 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
 - A IA pode cadastrar credores, contratos, empenhos, notas e alertas quando houver dados suficientes.
 - Antes de criar credor, verifique a lista de credores no contexto; se a empresa já existir, use exatamente o nome cadastrado.
 - Em contratos e notas, vincule ao contrato, credor e empenho existentes quando encontrar correspondência por número, CNPJ ou nome da empresa.
+- Para cada PDF de nota fiscal ou nota de serviço, retorne uma action create_note quando encontrar número da nota e valor. Use contractNum, creditor, commitmentNumber e budgetAllocation quando identificar.
+- Se disser que uma nota foi cadastrada, obrigatoriamente inclua uma action create_note válida; se faltar número ou valor, diga que não foi cadastrada e informe o campo faltante.
 - Identifique dotação 06.01 ou 06.06 e escolha o programa compatível pela lista do sistema.
 - Em contratos, extraia objeto, empresa, número, vigência, valor, secretaria/fundo e fiscal quando houver.
 - Se vier PDF, leia e extraia os dados prováveis; se algum campo estiver incerto, informe no reply.
@@ -801,8 +840,8 @@ ${finalPrompt}`;
 
       if (!response.ok || data?.error) {
         const fallback = createLocalResponse(finalPrompt);
-        const executed = executeActions([...(audit?.actions || []), ...(fallback.actions || [])]);
-        const executedText = executed.length ? `\n\nAções executadas:\n${executed.map((item) => `- ${item}`).join('\n')}` : '';
+        const result = executeActions([...(audit?.actions || []), ...(fallback.actions || [])]);
+        const executedText = formatExecutionResult(result);
 
         setMessages((prev) => [
           ...prev,
@@ -817,8 +856,8 @@ ${finalPrompt}`;
 
       const text = data?.choices?.[0]?.message?.content || '';
       const aiResponse = parseJsonResponse(text);
-      const executed = executeActions([...(audit?.actions || []), ...(aiResponse.actions || [])]);
-      const executedText = executed.length ? `\n\nAções executadas:\n${executed.map((item) => `- ${item}`).join('\n')}` : '';
+      const result = executeActions([...(audit?.actions || []), ...(aiResponse.actions || [])]);
+      const executedText = formatExecutionResult(result);
 
       setMessages((prev) => [
         ...prev,
@@ -832,8 +871,8 @@ ${finalPrompt}`;
       console.error(error);
       const audit = runAudit ? buildSystemAudit() : undefined;
       const fallback = createLocalResponse(finalPrompt);
-      const executed = executeActions([...(audit?.actions || []), ...(fallback.actions || [])]);
-      const executedText = executed.length ? `\n\nAções executadas:\n${executed.map((item) => `- ${item}`).join('\n')}` : '';
+      const result = executeActions([...(audit?.actions || []), ...(fallback.actions || [])]);
+      const executedText = formatExecutionResult(result);
 
       setMessages((prev) => [
         ...prev,
