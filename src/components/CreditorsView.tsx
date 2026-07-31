@@ -79,6 +79,92 @@ export const CreditorsView: React.FC<CreditorsViewProps> = ({ creditors, onAddCr
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
   };
 
+  if (showAddModal) {
+    return (
+      <div className="animate-fadeIn pb-12">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 w-full overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
+            <div>
+              <h3 className="text-lg font-medium text-slate-800">
+                {editingCreditor ? 'Editar Credor / Empresa' : 'Cadastrar Novo Credor / Empresa'}
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">Preencha os dados cadastrais</p>
+            </div>
+            <button
+              onClick={() => {
+                setEditingCreditor(null);
+                setShowAddModal(false);
+              }}
+              className="text-slate-400 hover:text-slate-600 p-2 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            >
+              <Users className="w-5 h-5 hidden" />
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+          </div>
+
+          <form onSubmit={handleCreate} className="p-6 space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                CNPJ da Empresa <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={cnpj}
+                onChange={(e) => setCnpj(e.target.value)}
+                placeholder="00.000.000/0001-00"
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                Razão Social / Nome da Empresa <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Digite a razão social..."
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">Status / Situação Cadastral</label>
+              <input
+                type="text"
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg font-medium text-emerald-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+              />
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingCreditor(null);
+                  setShowAddModal(false);
+                }}
+                className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-colors cursor-pointer"
+              >
+                {editingCreditor ? 'Atualizar Credor' : 'Salvar Credor'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -214,77 +300,6 @@ export const CreditorsView: React.FC<CreditorsViewProps> = ({ creditors, onAddCr
         </div>
       )}
 
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-              <div>
-                <h3 className="text-base font-medium text-slate-800">{editingCreditor ? 'Editar Credor / Empresa' : 'Cadastrar Novo Credor / Empresa'}</h3>
-                <p className="text-[11px] text-slate-400">Preencha os dados cadastrais manualmente</p>
-              </div>
-            </div>
-
-            <form onSubmit={handleCreate} className="space-y-3.5">
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  CNPJ da Empresa <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={cnpj}
-                  onChange={(e) => setCnpj(e.target.value)}
-                  placeholder="00.000.000/0001-00"
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Razão Social / Nome da Empresa <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Digite a razão social..."
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg font-medium"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Status / Situação Cadastral</label>
-                <input
-                  type="text"
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg font-medium text-emerald-700"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2 pt-4 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingCreditor(null);
-                    setShowAddModal(false);
-                  }}
-                  className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-xs cursor-pointer"
-                >
-                  {editingCreditor ? 'Atualizar Credor' : 'Salvar Credor'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -73,6 +73,7 @@ export interface Commitment {
   currentBalance: number;
   description?: string;
   createdAt?: string;
+  creditor?: string;
 }
 
 export interface FiscalPortaria {

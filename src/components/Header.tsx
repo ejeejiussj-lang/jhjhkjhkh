@@ -217,9 +217,6 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="block text-xs font-medium text-slate-800 leading-tight">
                 {currentUser ? currentUser.name : 'Acessar Conta'}
               </span>
-              <span className="block text-[10px] text-emerald-600 font-medium">
-                {currentUser ? currentUser.role : 'Entrar no Sistema'}
-              </span>
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden sm:block" />
           </button>
@@ -229,9 +226,6 @@ export const Header: React.FC<HeaderProps> = ({
               <div className="px-4 py-2 border-b border-slate-100">
                 <p className="text-xs font-medium text-slate-800 truncate">{currentUser ? currentUser.name : 'Usuário'}</p>
                 <p className="text-[10px] text-slate-500 truncate">{currentUser?.email || 'Acesso local'}</p>
-                <span className="inline-block mt-1 text-[10px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
-                  {currentUser?.role || 'Administrador'}
-                </span>
               </div>
 
               <div className="p-1 space-y-1">

@@ -111,8 +111,11 @@ CREATE TABLE IF NOT EXISTS public.commitments (
   balance NUMERIC DEFAULT 0,
   current_balance NUMERIC DEFAULT 0,
   description TEXT,
+  creditor TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+
+ALTER TABLE public.commitments ADD COLUMN IF NOT EXISTS creditor TEXT;
 
 ALTER TABLE public.commitments ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Permitir tudo em commitments" ON public.commitments FOR ALL USING (true);
@@ -329,6 +332,7 @@ export async function fetchCommitmentsFromSupabase(): Promise<Commitment[] | nul
       currentBalance: Number(item.current_balance || 0),
       description: item.description || '',
       createdAt: item.created_at || '',
+      creditor: item.creditor || '',
     }));
   } catch (err) {
     console.error('Erro ao buscar empenhos no Supabase:', err);
@@ -347,6 +351,7 @@ export async function saveCommitmentToSupabase(commitment: Commitment) {
       balance: commitment.balance,
       current_balance: commitment.currentBalance,
       description: commitment.description,
+      creditor: commitment.creditor,
     });
     if (error) throw error;
   } catch (err) {

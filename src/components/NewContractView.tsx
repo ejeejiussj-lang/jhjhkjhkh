@@ -312,10 +312,11 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
                   Vigência - Data Início <span className="text-rose-500">*</span>
                 </label>
                 <input
-                  type="date"
+                  type="text"
                   required
-                  value={brDateToInputDate(startDate)}
-                  onChange={(e) => setStartDate(inputDateToBRDate(e.target.value))}
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  placeholder="Ex: 01/01/2025"
                   className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-900"
                 />
               </div>
@@ -324,10 +325,11 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
                   Vigência - Data Término <span className="text-rose-500">*</span>
                 </label>
                 <input
-                  type="date"
+                  type="text"
                   required
-                  value={brDateToInputDate(endDate)}
-                  onChange={(e) => setEndDate(inputDateToBRDate(e.target.value))}
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  placeholder="Ex: 31/12/2025"
                   className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-900"
                 />
               </div>

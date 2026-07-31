@@ -1212,6 +1212,8 @@ export default function App() {
             <CommitmentsView
               commitments={filteredCommitments}
               notes={notes}
+              creditors={creditors}
+              contracts={contracts}
               onAddCommitment={handleAddCommitment}
               onUpdateCommitment={handleUpdateCommitment}
               onDeleteCommitment={handleDeleteCommitment}
