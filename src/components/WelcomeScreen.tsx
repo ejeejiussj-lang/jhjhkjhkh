@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogIn, Lock, Mail, UserPlus, User, ShieldCheck, Eye, EyeOff } from 'lucide-react';
+import { LogIn, Lock, Mail, UserPlus, User, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { UserProfile } from '../lib/supabaseService';
 
@@ -15,7 +15,6 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onEnterSystem }) =
   const [role, setRole] = useState<'Administrador' | 'Fiscal' | 'Gestor' | 'Auditor'>('Administrador');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
@@ -23,7 +22,6 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onEnterSystem }) =
     e.preventDefault();
     setLoading(true);
     setErrorMessage('');
-    setSuccessMessage('');
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -61,7 +59,6 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onEnterSystem }) =
     e.preventDefault();
     setLoading(true);
     setErrorMessage('');
-    setSuccessMessage('');
 
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -93,14 +90,11 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onEnterSystem }) =
           role,
         };
 
-        setSuccessMessage('Conta criada com sucesso no Supabase!');
-        setTimeout(() => {
-          onEnterSystem(userProf);
-        }, 1000);
+        onEnterSystem(userProf);
       }
     } catch (err: any) {
       console.error('Register error:', err);
-      setErrorMessage(err.message || 'Falha ao criar usuário no Supabase.');
+      setErrorMessage(err.message || 'Falha ao criar sua conta. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -122,51 +116,18 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onEnterSystem }) =
 
         {/* Card */}
         <div className="bg-white border border-slate-100 rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] text-left">
-          {/* Tabs */}
-          <div className="flex p-1 bg-slate-50 rounded-xl border border-slate-100 mb-8">
-            <button
-              type="button"
-              onClick={() => {
-                setMode('login');
-                setErrorMessage('');
-                setSuccessMessage('');
-              }}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium rounded-lg transition-all ${
-                mode === 'login'
-                  ? 'bg-white text-[#0f5b40] shadow-sm border-b-2 border-[#0f5b40]'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              <User className="w-4 h-4" />
-              <span>Entrar</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMode('register');
-                setErrorMessage('');
-                setSuccessMessage('');
-              }}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium rounded-lg transition-all ${
-                mode === 'register'
-                  ? 'bg-white text-[#0f5b40] shadow-sm border-b-2 border-[#0f5b40]'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              <UserPlus className="w-4 h-4" />
-              <span>Criar Conta</span>
-            </button>
+          <div className="mb-8 text-center">
+            <h2 className="text-xl font-semibold text-slate-900">
+              {mode === 'login' ? 'Entrar' : 'Criar conta'}
+            </h2>
+            <p className="mt-1.5 text-sm text-slate-500">
+              {mode === 'login' ? 'Acesse sua conta para continuar' : 'Preencha seus dados para começar'}
+            </p>
           </div>
 
           {errorMessage && (
             <div className="mb-6 p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-medium leading-relaxed">
               {errorMessage}
-            </div>
-          )}
-
-          {successMessage && (
-            <div className="mb-6 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-medium">
-              {successMessage}
             </div>
           )}
 
@@ -261,7 +222,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onEnterSystem }) =
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Ex: João da Silva"
+                    placeholder="Digite seu nome completo"
                     className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0f5b40] focus:border-transparent transition-all"
                   />
                 </div>
@@ -280,7 +241,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onEnterSystem }) =
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="novo.usuario@orgao.sp.gov.br"
+                    placeholder="Digite seu e-mail institucional"
                     className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0f5b40] focus:border-transparent transition-all"
                   />
                 </div>
@@ -300,7 +261,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onEnterSystem }) =
                     minLength={6}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="•••••••• (mínimo 6 caracteres)"
+                    placeholder="Crie uma senha com pelo menos 6 caracteres"
                     className="w-full pl-12 pr-10 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0f5b40] focus:border-transparent transition-all"
                   />
                   <button
@@ -326,21 +287,21 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onEnterSystem }) =
             </form>
           )}
 
-          {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200"></div>
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="bg-white px-3 text-slate-400 font-medium">ou</span>
-            </div>
+          <div className="mt-7 border-t border-slate-100 pt-6 text-center text-sm text-slate-500">
+            {mode === 'login' ? 'Ainda não possui uma conta?' : 'Já possui uma conta?'}{' '}
+            <button
+              type="button"
+              onClick={() => {
+                setMode(mode === 'login' ? 'register' : 'login');
+                setErrorMessage('');
+                setPassword('');
+              }}
+              className="font-semibold text-[#0f5b40] hover:underline cursor-pointer"
+            >
+              {mode === 'login' ? 'Cadastre-se' : 'Entrar'}
+            </button>
           </div>
 
-          {/* Security Note */}
-          <div className="flex items-center justify-center gap-2 text-slate-500">
-            <ShieldCheck className="w-4 h-4 text-[#0f5b40]" />
-            <span className="text-xs font-medium">Seus dados estão protegidos com segurança.</span>
-          </div>
         </div>
 
         {/* Footer */}

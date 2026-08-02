@@ -71,7 +71,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
             {!collapsed && (
               <div className="flex flex-col">
-                <span className="text-lg font-extrabold tracking-tight text-emerald-800 leading-none">SIGEC</span>
+                <span className="text-lg font-semibold tracking-tight text-emerald-800 leading-none">SIGEC</span>
                 <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase mt-1">Gestão de Contratos</span>
               </div>
             )}
