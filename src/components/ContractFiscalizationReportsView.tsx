@@ -1,18 +1,19 @@
 ﻿import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Eye, FileText, Plus, Printer, Receipt, Save, Search, Trash2 } from 'lucide-react';
-import { Contract, Creditor, FiscalPortaria, ServiceNote } from '../types';
+import { Contract, ContractAmendment, Creditor, FiscalPortaria, ServiceNote } from '../types';
 
 interface Props {
   contracts: Contract[];
   notes: ServiceNote[];
   creditors: Creditor[];
   fiscais: FiscalPortaria[];
+  amendments: ContractAmendment[];
 }
 
 type CheckValue = 'sim' | 'nao' | 'na';
-type ObjectFulfillmentValue = 'total' | 'parcial' | 'insatisfatorio';
-type ContractorPerformanceValue = 'otimo' | 'bom' | 'regular' | 'ruim';
-type AdditiveNeedValue = 'sim' | 'nao';
+type ObjectFulfillmentValue = '' | 'total' | 'parcial' | 'insatisfatorio';
+type ContractorPerformanceValue = '' | 'otimo' | 'bom' | 'regular' | 'ruim';
+type AdditiveNeedValue = '' | 'sim' | 'nao';
 
 interface GeneralChecks {
   validVigency: CheckValue;
@@ -49,6 +50,16 @@ interface PeriodEvaluation {
   contractualAdditiveNeeded: AdditiveNeedValue;
 }
 
+interface ReportAmendmentInfo {
+  id: string;
+  amendmentNum: string;
+  type: string;
+  status: string;
+  signatureDate: string;
+  publicationDate?: string;
+  justification: string;
+}
+
 interface FiscalizationReport {
   id: string;
   createdAt: string;
@@ -68,6 +79,7 @@ interface FiscalizationReport {
   invoicePaymentChecks?: InvoicePaymentChecks;
   documentManagementChecks?: DocumentManagementChecks;
   periodEvaluation?: PeriodEvaluation;
+  selectedAmendment?: ReportAmendmentInfo;
   noteIds: string[];
   notesTotal: number;
 }
@@ -103,10 +115,10 @@ const DOCUMENT_MANAGEMENT_DEFAULT_CHECKS: DocumentManagementChecks = {
 };
 
 const PERIOD_EVALUATION_DEFAULT: PeriodEvaluation = {
-  objectFulfillment: 'total',
-  contractorPerformance: 'bom',
+  objectFulfillment: '',
+  contractorPerformance: '',
   correctiveActions: '',
-  contractualAdditiveNeeded: 'nao'
+  contractualAdditiveNeeded: ''
 };
 
 const GENERAL_CHECK_ITEMS: Array<{ key: keyof GeneralChecks; number: string; label: string }> = [
@@ -215,17 +227,23 @@ const answerLabel = (value?: CheckValue) => {
 const objectFulfillmentLabel = (value?: ObjectFulfillmentValue) => {
   if (value === 'parcial') return 'Parcial';
   if (value === 'insatisfatorio') return 'Insatisfatório';
-  return 'Total';
+  if (value === 'total') return 'Total';
+  return '-';
 };
 
 const contractorPerformanceLabel = (value?: ContractorPerformanceValue) => {
   if (value === 'otimo') return 'Ótimo';
   if (value === 'regular') return 'Regular';
   if (value === 'ruim') return 'Ruim';
-  return 'Bom';
+  if (value === 'bom') return 'Bom';
+  return '-';
 };
 
-const additiveNeedLabel = (value?: AdditiveNeedValue) => (value === 'sim' ? 'Sim' : 'Não');
+const additiveNeedLabel = (value?: AdditiveNeedValue) => {
+  if (value === 'sim') return 'Sim';
+  if (value === 'nao') return 'Não';
+  return '-';
+};
 
 const Info: React.FC<{ label: string; value: string }> = ({ label, value }) => (
   <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
@@ -335,7 +353,7 @@ const PrintChecklistTable: React.FC<{
   </div>
 );
 
-export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, notes, creditors, fiscais }) => {
+export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, notes, creditors, fiscais, amendments }) => {
   const [reports, setReports] = useState<FiscalizationReport[]>(() => {
     try {
       return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -344,7 +362,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
     }
   });
   const [mode, setMode] = useState<'list' | 'create' | 'view'>('list');
-  const [selectedContractNum, setSelectedContractNum] = useState(contracts[0]?.contractNum || '');
+  const [selectedContractNum, setSelectedContractNum] = useState('');
   const [supplyOrder, setSupplyOrder] = useState('');
   const [selectedFiscalId, setSelectedFiscalId] = useState(fiscais[0]?.id || '');
   const [inspectionStartDate, setInspectionStartDate] = useState('');
@@ -354,6 +372,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
   const [invoicePaymentChecks, setInvoicePaymentChecks] = useState<InvoicePaymentChecks>(INVOICE_PAYMENT_DEFAULT_CHECKS);
   const [documentManagementChecks, setDocumentManagementChecks] = useState<DocumentManagementChecks>(DOCUMENT_MANAGEMENT_DEFAULT_CHECKS);
   const [periodEvaluation, setPeriodEvaluation] = useState<PeriodEvaluation>(PERIOD_EVALUATION_DEFAULT);
+  const [selectedAmendmentId, setSelectedAmendmentId] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
 
@@ -361,9 +380,6 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
     localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
   }, [reports]);
 
-  useEffect(() => {
-    if (!selectedContractNum && contracts[0]) setSelectedContractNum(contracts[0].contractNum);
-  }, [contracts, selectedContractNum]);
 
   useEffect(() => {
     if (!selectedFiscalId && fiscais[0]) setSelectedFiscalId(fiscais[0].id);
@@ -381,10 +397,27 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
 
   const selectedNotes = useMemo(
     () =>
-      notes
-        .filter((note) => norm(note.contractNum) === norm(selectedContractNum))
-        .sort((a, b) => a.noteNumber.localeCompare(b.noteNumber, 'pt-BR', { numeric: true })),
+      selectedContractNum
+        ? notes
+            .filter((note) => norm(note.contractNum) === norm(selectedContractNum))
+            .sort((a, b) => a.noteNumber.localeCompare(b.noteNumber, 'pt-BR', { numeric: true }))
+        : [],
     [notes, selectedContractNum]
+  );
+
+  const selectedContractAmendments = useMemo(
+    () =>
+      selectedContractNum
+        ? amendments
+            .filter((amendment) => norm(amendment.contractNum) === norm(selectedContractNum))
+            .sort((a, b) => a.amendmentNum.localeCompare(b.amendmentNum, 'pt-BR', { numeric: true }))
+        : [],
+    [amendments, selectedContractNum]
+  );
+
+  const selectedAmendment = useMemo(
+    () => selectedContractAmendments.find((amendment) => amendment.id === selectedAmendmentId) || null,
+    [selectedContractAmendments, selectedAmendmentId]
   );
 
   const selectedFiscal = useMemo(
@@ -430,7 +463,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
     setSelectedReportId(null);
     setSupplyOrder('');
     setSelectedFiscalId(fiscais[0]?.id || '');
-    setSelectedContractNum(contracts[0]?.contractNum || '');
+    setSelectedContractNum('');
     setInspectionStartDate('');
     setInspectionEndDate('');
     setGeneralChecks(DEFAULT_CHECKS);
@@ -438,6 +471,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
     setInvoicePaymentChecks(INVOICE_PAYMENT_DEFAULT_CHECKS);
     setDocumentManagementChecks(DOCUMENT_MANAGEMENT_DEFAULT_CHECKS);
     setPeriodEvaluation(PERIOD_EVALUATION_DEFAULT);
+    setSelectedAmendmentId('');
   };
 
   const saveReport = () => {
@@ -461,6 +495,17 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
       invoicePaymentChecks,
       documentManagementChecks,
       periodEvaluation,
+      selectedAmendment: selectedAmendment
+        ? {
+            id: selectedAmendment.id,
+            amendmentNum: selectedAmendment.amendmentNum,
+            type: selectedAmendment.type,
+            status: selectedAmendment.status,
+            signatureDate: selectedAmendment.signatureDate,
+            publicationDate: selectedAmendment.publicationDate,
+            justification: selectedAmendment.justification
+          }
+        : undefined,
       noteIds: selectedNotes.map((note) => note.id),
       notesTotal: selectedNotesTotal
     };
@@ -523,11 +568,19 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
         </div>
 
         <section className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-5">
-          <SectionTitle number="1" title="Dados do contrato" desc="Dados puxados automaticamente do contrato selecionado." />
+          <SectionTitle number="1" title="Dados do contrato" desc="Dados puxados após selecionar o contrato." />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <label className="space-y-1.5">
               <span className="text-xs font-medium text-slate-700">Contrato</span>
-              <select value={selectedContractNum} onChange={(event) => setSelectedContractNum(event.target.value)} className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
+              <select
+                value={selectedContractNum}
+                onChange={(event) => {
+                  setSelectedContractNum(event.target.value);
+                  setSelectedAmendmentId('');
+                }}
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+              >
+                <option value="">Selecione o contrato</option>
                 {contracts.map((contract) => (
                   <option key={contract.id} value={contract.contractNum}>{contract.contractNum} - {contract.creditor}</option>
                 ))}
@@ -696,10 +749,43 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
                     { value: 'sim', label: 'Sim' },
                     { value: 'nao', label: 'Não' }
                   ]}
-                  onChange={(value) => updatePeriodEvaluation('contractualAdditiveNeeded', value)}
+                  onChange={(value) => {
+                    updatePeriodEvaluation('contractualAdditiveNeeded', value);
+                    if (value !== 'sim') setSelectedAmendmentId('');
+                  }}
                   className="sm:w-36"
                 />
               </div>
+              {periodEvaluation.contractualAdditiveNeeded === 'sim' && (
+                <div className="p-3 rounded-xl border border-slate-200 bg-slate-50/60 space-y-3">
+                  <label className="space-y-1.5 block">
+                    <span className="text-[10px] font-medium text-emerald-700">Aditivo vinculado ao contrato</span>
+                    <select
+                      value={selectedAmendmentId}
+                      onChange={(event) => setSelectedAmendmentId(event.target.value)}
+                      disabled={!selectedContract || selectedContractAmendments.length === 0}
+                      className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 disabled:bg-slate-100 disabled:text-slate-400"
+                    >
+                      <option value="">{selectedContract ? 'Selecione o aditivo' : 'Selecione um contrato primeiro'}</option>
+                      {selectedContractAmendments.map((amendment) => (
+                        <option key={amendment.id} value={amendment.id}>
+                          {amendment.amendmentNum} - {amendment.type} - {amendment.status}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {selectedContract && selectedContractAmendments.length === 0 && (
+                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">Nenhum termo aditivo cadastrado para este contrato.</p>
+                  )}
+                  {selectedAmendment && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <Info label="Aditivo" value={selectedAmendment.amendmentNum} />
+                      <Info label="Tipo" value={selectedAmendment.type} />
+                      <Info label="Status" value={selectedAmendment.status} />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </section>
@@ -846,6 +932,13 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
               <Info label="Desempenho da contratada" value={contractorPerformanceLabel(evaluation.contractorPerformance)} />
               <Info label="Necessidade de aditivo contratual" value={additiveNeedLabel(evaluation.contractualAdditiveNeeded)} />
             </div>
+            {evaluation.contractualAdditiveNeeded === 'sim' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <Info label="Aditivo selecionado" value={selectedReport.selectedAmendment?.amendmentNum || 'Não selecionado'} />
+                <Info label="Tipo do aditivo" value={selectedReport.selectedAmendment?.type || '-'} />
+                <Info label="Status do aditivo" value={selectedReport.selectedAmendment?.status || '-'} />
+              </div>
+            )}
             <div className="space-y-1.5">
               <span className="text-xs font-medium text-slate-700">Recomendações / ações corretivas</span>
               <div className="min-h-24 px-3 py-2 text-xs leading-relaxed text-slate-700 bg-slate-50 border border-slate-200 rounded-xl whitespace-pre-wrap">{evaluation.correctiveActions.trim() || 'Não informado'}</div>
@@ -936,7 +1029,10 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
             <PrintInfoTable rows={[
               ['Cumprimento do objeto', objectFulfillmentLabel(evaluation.objectFulfillment)],
               ['Desempenho da contratada', contractorPerformanceLabel(evaluation.contractorPerformance)],
-              ['Necessidade de aditivo contratual', additiveNeedLabel(evaluation.contractualAdditiveNeeded)]
+              ['Necessidade de aditivo contratual', additiveNeedLabel(evaluation.contractualAdditiveNeeded)],
+              ['Aditivo selecionado', evaluation.contractualAdditiveNeeded === 'sim' ? selectedReport.selectedAmendment?.amendmentNum || 'Não selecionado' : '-'],
+              ['Tipo do aditivo', evaluation.contractualAdditiveNeeded === 'sim' ? selectedReport.selectedAmendment?.type || '-' : '-'],
+              ['Status do aditivo', evaluation.contractualAdditiveNeeded === 'sim' ? selectedReport.selectedAmendment?.status || '-' : '-']
             ]} />
           </div>
 

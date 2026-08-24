@@ -1266,6 +1266,7 @@ export default function App() {
               notes={filteredNotes}
               creditors={creditors}
               fiscais={fiscais}
+              amendments={amendments}
             />
           )}
 
