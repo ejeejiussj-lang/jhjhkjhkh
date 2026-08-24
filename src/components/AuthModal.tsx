@@ -30,6 +30,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   if (!isOpen) return null;
 
+  const getAuthErrorMessage = (err: any, fallback: string) => {
+    const message = String(err?.message || err || '');
+    if (message.toLowerCase().includes('failed to fetch')) {
+      return 'Nao foi possivel conectar ao Supabase agora. Verifique a internet ou tente novamente em alguns instantes.';
+    }
+    return err?.message || fallback;
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -52,7 +60,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           .from('profiles')
           .select('*')
           .eq('id', data.user.id)
-          .single();
+          .single()
+          .catch(() => ({ data: null }));
 
         const userProfile: UserProfile = {
           id: data.user.id,

@@ -18,6 +18,14 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onEnterSystem }) =
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
+  const getAuthErrorMessage = (err: any, fallback: string) => {
+    const message = String(err?.message || err || '');
+    if (message.toLowerCase().includes('failed to fetch')) {
+      return 'Nao foi possivel conectar ao Supabase agora. Verifique a internet ou tente novamente em alguns instantes.';
+    }
+    return err?.message || fallback;
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -49,7 +57,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onEnterSystem }) =
       }
     } catch (err: any) {
       console.error('Login error:', err);
-      setErrorMessage(err.message || 'Falha ao realizar login. Verifique seu e-mail e senha.');
+      setErrorMessage(getAuthErrorMessage(err, 'Falha ao realizar login. Verifique seu e-mail e senha.'));
     } finally {
       setLoading(false);
     }
@@ -94,7 +102,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onEnterSystem }) =
       }
     } catch (err: any) {
       console.error('Register error:', err);
-      setErrorMessage(err.message || 'Falha ao criar sua conta. Tente novamente.');
+      setErrorMessage(getAuthErrorMessage(err, 'Falha ao criar sua conta. Tente novamente.'));
     } finally {
       setLoading(false);
     }
