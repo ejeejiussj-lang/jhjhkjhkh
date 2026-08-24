@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import {
   LayoutDashboard,
   FilePlus,
@@ -47,6 +47,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const gestaoItems = [
     { id: 'controle-contratos', label: 'Controle de Contratos', icon: ClipboardList },
     { id: 'relatorios', label: 'Relatórios', icon: BarChart3 },
+    { id: 'relatorio-fiscalizacao', label: 'Relatório de Fiscalização de Contratos', icon: ClipboardList },
     { id: 'alertas', label: 'Alertas', icon: BellRing },
     { id: 'ia', label: 'IA', icon: Bot }
   ];

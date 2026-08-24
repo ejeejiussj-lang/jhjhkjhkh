@@ -28,6 +28,7 @@ import { SecurityModal } from './components/SecurityModal';
 import { CreditorsView } from './components/CreditorsView';
 import { InvoicesView } from './components/InvoicesView';
 import { ReportsView } from './components/ReportsView';
+import { ContractFiscalizationReportsView } from './components/ContractFiscalizationReportsView';
 import { AlertsView } from './components/AlertsView';
 import { FiscaisView } from './components/FiscaisView';
 import { AmendmentsView } from './components/AmendmentsView';
@@ -115,6 +116,7 @@ const ACTIVE_TABS: ActiveTab[] = [
   'notas',
   'aditivos',
   'relatorios',
+  'relatorio-fiscalizacao',
   'alertas',
   'ia'
 ];
@@ -153,27 +155,35 @@ export default function App() {
 
   // Supabase Auth and Sync Effect
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single()
-          .then(({ data: profile }) => {
-            const userProf: UserProfile = {
-              id: session.user.id,
-              email: session.user.email || 'usuario@orgao.sp.gov.br',
-              name: profile?.name || session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Usuário Supabase',
-              role: profile?.role || 'Administrador',
-            };
-            setCurrentUser(userProf);
-            localStorage.setItem('sigec_user', JSON.stringify(userProf));
-          });
-      }
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        if (session?.user) {
+          supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single()
+            .then(({ data: profile }) => {
+              const userProf: UserProfile = {
+                id: session.user.id,
+                email: session.user.email || 'usuario@orgao.sp.gov.br',
+                name: profile?.name || session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Usuario Supabase',
+                role: profile?.role || 'Administrador',
+              };
+              setCurrentUser(userProf);
+              localStorage.setItem('sigec_user', JSON.stringify(userProf));
+            })
+            .catch((error) => {
+              console.warn('Supabase profiles indisponivel; mantendo usuario local.', error);
+            });
+        }
+      })
+      .catch((error) => {
+        console.warn('Supabase auth indisponivel; seguindo em modo local.', error);
+      });
 
-    fetchContractsFromSupabase().then((remoteContracts) => {
+    fetchContractsFromSupabase().catch((error) => { console.warn('Supabase contratos indisponivel; mantendo dados locais.', error); return null; }).then((remoteContracts) => {
       if (remoteContracts) {
         setContracts((currentContracts) =>
           remoteContracts.map((remoteContract) => {
@@ -191,31 +201,31 @@ export default function App() {
       }
     });
 
-    fetchCreditorsFromSupabase().then((remoteCreditors) => {
+    fetchCreditorsFromSupabase().catch((error) => { console.warn('Supabase credores indisponivel; mantendo dados locais.', error); return null; }).then((remoteCreditors) => {
       if (remoteCreditors) {
         setCreditors(remoteCreditors);
       }
     });
 
-    fetchNotesFromSupabase().then((remoteNotes) => {
+    fetchNotesFromSupabase().catch((error) => { console.warn('Supabase notas indisponivel; mantendo dados locais.', error); return null; }).then((remoteNotes) => {
       if (remoteNotes) {
         setNotes(remoteNotes);
       }
     });
 
-    fetchCommitmentsFromSupabase().then((remoteCommitments) => {
+    fetchCommitmentsFromSupabase().catch((error) => { console.warn('Supabase empenhos indisponivel; mantendo dados locais.', error); return null; }).then((remoteCommitments) => {
       if (remoteCommitments) {
         setCommitments(remoteCommitments);
       }
     });
 
-    fetchFiscaisFromSupabase().then((remoteFiscais) => {
+    fetchFiscaisFromSupabase().catch((error) => { console.warn('Supabase fiscais indisponivel; mantendo dados locais.', error); return null; }).then((remoteFiscais) => {
       if (remoteFiscais) {
         setFiscais(remoteFiscais);
       }
     });
 
-    fetchAmendmentsFromSupabase().then((remoteAmendments) => {
+    fetchAmendmentsFromSupabase().catch((error) => { console.warn('Supabase aditivos indisponivel; mantendo dados locais.', error); return null; }).then((remoteAmendments) => {
       if (remoteAmendments) {
         setAmendments(remoteAmendments);
       }
@@ -1247,6 +1257,14 @@ export default function App() {
               contracts={contracts}
               notes={filteredNotes}
               onNavigateTab={(tab) => setActiveTab(tab)}
+            />
+          )}
+
+          {activeTab === 'relatorio-fiscalizacao' && (
+            <ContractFiscalizationReportsView
+              contracts={contracts}
+              notes={filteredNotes}
+              creditors={creditors}
             />
           )}
 
