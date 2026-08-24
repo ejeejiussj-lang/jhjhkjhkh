@@ -17,6 +17,14 @@ interface GeneralChecks {
   updatedDocuments: CheckValue;
 }
 
+interface ObjectExecutionChecks {
+  objectAsContracted: CheckValue;
+  deadlinesMet: CheckValue;
+  hasFailures: CheckValue;
+  sanctionsApplied: CheckValue;
+  measurementsMade: CheckValue;
+}
+
 interface FiscalizationReport {
   id: string;
   createdAt: string;
@@ -32,6 +40,7 @@ interface FiscalizationReport {
   inspectionStartDate?: string;
   inspectionEndDate?: string;
   generalChecks?: GeneralChecks;
+  objectExecutionChecks?: ObjectExecutionChecks;
   noteIds: string[];
   notesTotal: number;
 }
@@ -44,21 +53,57 @@ const DEFAULT_CHECKS: GeneralChecks = {
   updatedDocuments: 'na'
 };
 
+const OBJECT_EXECUTION_DEFAULT_CHECKS: ObjectExecutionChecks = {
+  objectAsContracted: 'na',
+  deadlinesMet: 'na',
+  hasFailures: 'na',
+  sanctionsApplied: 'na',
+  measurementsMade: 'na'
+};
+
 const GENERAL_CHECK_ITEMS: Array<{ key: keyof GeneralChecks; number: string; label: string }> = [
   {
     key: 'validVigency',
     number: '3.1.1',
-    label: 'O contrato possui vigencia e esta dentro do prazo?'
+    label: 'O contrato possui vigência e está dentro do prazo?'
   },
   {
     key: 'formalAdditive',
     number: '3.1.2',
-    label: 'Houve prorrogacao ou aditivo formalizado e publicado?'
+    label: 'Houve prorrogação ou aditivo formalizado e publicado?'
   },
   {
     key: 'updatedDocuments',
     number: '3.1.3',
-    label: 'A contratada mantem documentacao de habilitacao atualizada: FGTS, INSS, CND, CNDT etc.?'
+    label: 'A contratada mantém documentação de habilitação atualizada: FGTS, INSS, CND, CNDT etc.?'
+  }
+];
+
+const OBJECT_EXECUTION_CHECK_ITEMS: Array<{ key: keyof ObjectExecutionChecks; number: string; label: string }> = [
+  {
+    key: 'objectAsContracted',
+    number: '3.2.1',
+    label: 'O objeto contratado está sendo executado conforme o contrato?'
+  },
+  {
+    key: 'deadlinesMet',
+    number: '3.2.2',
+    label: 'Os prazos de entrega ou execução estão sendo cumpridos?'
+  },
+  {
+    key: 'hasFailures',
+    number: '3.2.3',
+    label: 'Há registro de falhas, atrasos ou não conformidades?'
+  },
+  {
+    key: 'sanctionsApplied',
+    number: '3.2.4',
+    label: 'Houve aplicação de sanções ou advertências à contratada?'
+  },
+  {
+    key: 'measurementsMade',
+    number: '3.2.5',
+    label: 'Foram realizadas medições ou relatórios de execução física e financeira?'
   }
 ];
 
@@ -69,7 +114,7 @@ const norm = (value = '') =>
 
 const answerLabel = (value?: CheckValue) => {
   if (value === 'sim') return 'Sim';
-  if (value === 'nao') return 'Nao';
+  if (value === 'nao') return 'Não';
   return 'N/A';
 };
 
@@ -126,6 +171,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
   const [inspectionStartDate, setInspectionStartDate] = useState('');
   const [inspectionEndDate, setInspectionEndDate] = useState('');
   const [generalChecks, setGeneralChecks] = useState<GeneralChecks>(DEFAULT_CHECKS);
+  const [objectExecutionChecks, setObjectExecutionChecks] = useState<ObjectExecutionChecks>(OBJECT_EXECUTION_DEFAULT_CHECKS);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
 
@@ -181,6 +227,10 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
     setGeneralChecks((current) => ({ ...current, [key]: value }));
   };
 
+  const updateObjectExecutionCheck = (key: keyof ObjectExecutionChecks, value: CheckValue) => {
+    setObjectExecutionChecks((current) => ({ ...current, [key]: value }));
+  };
+
   const openCreate = () => {
     setMode('create');
     setSelectedReportId(null);
@@ -190,6 +240,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
     setInspectionStartDate('');
     setInspectionEndDate('');
     setGeneralChecks(DEFAULT_CHECKS);
+    setObjectExecutionChecks(OBJECT_EXECUTION_DEFAULT_CHECKS);
   };
 
   const saveReport = () => {
@@ -200,15 +251,16 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
       contractNum: selectedContract.contractNum,
       contractObject: selectedContract.object,
       validity: `${selectedContract.startDate || '-'} a ${selectedContract.endDate || '-'}`,
-      supplyOrder: supplyOrder.trim() || 'Nao informada',
+      supplyOrder: supplyOrder.trim() || 'Não informada',
       contractor: selectedContract.creditor,
-      contractorDocument: selectedCreditor?.cnpj || 'Nao informado',
-      fiscalName: selectedFiscal?.name || 'Fiscal nao selecionado',
-      fiscalOrgan: selectedFiscal?.organ || 'Secretaria de Saude',
+      contractorDocument: selectedCreditor?.cnpj || 'Não informado',
+      fiscalName: selectedFiscal?.name || 'Fiscal não selecionado',
+      fiscalOrgan: selectedFiscal?.organ || 'Secretaria de Saúde',
       fiscalPortaria: selectedFiscal?.portaria || 'Pendente',
       inspectionStartDate,
       inspectionEndDate,
       generalChecks,
+      objectExecutionChecks,
       noteIds: selectedNotes.map((note) => note.id),
       notesTotal: selectedNotesTotal
     };
@@ -223,7 +275,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
         <thead className="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500">
           <tr>
             <th className="py-3 px-4">Nota fiscal</th>
-            <th className="py-3 px-4">Emissao</th>
+            <th className="py-3 px-4">Emissão</th>
             <th className="py-3 px-4">Atesto</th>
             <th className="py-3 px-4">Status</th>
             <th className="py-3 px-4 text-right">Valor</th>
@@ -261,12 +313,12 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Voltar</span>
             </button>
-            <h1 className="text-xl font-medium text-slate-900">Criar Relatorio de Fiscalizacao</h1>
-            <p className="text-xs text-slate-500 mt-1">Preencha as etapas do relatorio e salve para consulta posterior.</p>
+            <h1 className="text-xl font-medium text-slate-900">Criar Relatório de Fiscalização</h1>
+            <p className="text-xs text-slate-500 mt-1">Preencha as etapas do relatório e salve para consulta posterior.</p>
           </div>
           <button onClick={saveReport} disabled={!selectedContract} className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white text-xs font-medium rounded-xl transition-colors cursor-pointer disabled:cursor-not-allowed">
             <Save className="w-4 h-4" />
-            <span>Salvar relatorio</span>
+            <span>Salvar relatório</span>
           </button>
         </div>
 
@@ -287,10 +339,10 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
             </label>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-            <Info label="N do contrato" value={selectedContract?.contractNum || '-'} />
-            <Info label="Vigencia" value={selectedContract ? `${selectedContract.startDate} a ${selectedContract.endDate}` : '-'} />
+            <Info label="Nº do contrato" value={selectedContract?.contractNum || '-'} />
+            <Info label="Vigência" value={selectedContract ? `${selectedContract.startDate} a ${selectedContract.endDate}` : '-'} />
             <Info label="Contratado" value={selectedContract?.creditor || '-'} />
-            <Info label="CPF/CNPJ" value={selectedCreditor?.cnpj || 'Nao informado'} />
+            <Info label="CPF/CNPJ" value={selectedCreditor?.cnpj || 'Não informado'} />
           </div>
           <div className="space-y-1.5">
             <span className="text-xs font-medium text-slate-700">Objeto do contrato</span>
@@ -299,7 +351,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
         </section>
 
         <section className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-4">
-          <SectionTitle number="2" title="Dados do fiscal" desc="Selecione um fiscal cadastrado para puxar secretaria/orgao e portaria." />
+          <SectionTitle number="2" title="Dados do fiscal" desc="Selecione um fiscal cadastrado para puxar secretaria/órgão e portaria." />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <label className="space-y-1.5">
               <span className="text-xs font-medium text-slate-700">Fiscal cadastrado</span>
@@ -310,27 +362,27 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
                 ))}
               </select>
             </label>
-            <Info label="Secretaria / orgao" value={selectedFiscal?.organ || '-'} />
+            <Info label="Secretaria / órgão" value={selectedFiscal?.organ || '-'} />
             <Info label="Portaria" value={selectedFiscal?.portaria || '-'} />
           </div>
           {fiscais.length === 0 && <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">Nenhum fiscal cadastrado. Cadastre primeiro na aba Cadastrar Fiscais / Portarias.</p>}
         </section>
 
         <section className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-5">
-          <SectionTitle number="3" title="Dados da fiscalizacao" desc="Informe o periodo avaliado neste relatorio." />
+          <SectionTitle number="3" title="Dados da fiscalização" desc="Informe o período avaliado neste relatório." />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <label className="space-y-1.5">
-              <span className="text-xs font-medium text-slate-700">Periodo da fiscalizacao - de</span>
+              <span className="text-xs font-medium text-slate-700">Período da fiscalização - de</span>
               <input type="date" value={inspectionStartDate} onChange={(event) => setInspectionStartDate(event.target.value)} className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
             </label>
             <label className="space-y-1.5">
-              <span className="text-xs font-medium text-slate-700">Periodo da fiscalizacao - a</span>
+              <span className="text-xs font-medium text-slate-700">Período da fiscalização - a</span>
               <input type="date" value={inspectionEndDate} onChange={(event) => setInspectionEndDate(event.target.value)} className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
             </label>
           </div>
 
           <div className="space-y-3 pt-2 border-t border-slate-100">
-            <SectionTitle number="3.1" title="Informacoes gerais do contrato" />
+            <SectionTitle number="3.1" title="Informações gerais do contrato" />
             <div className="space-y-2">
               {GENERAL_CHECK_ITEMS.map((item) => (
                 <div key={item.key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/60">
@@ -339,6 +391,21 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
                     <p className="text-xs font-medium text-slate-800 mt-0.5">{item.label}</p>
                   </div>
                   <CheckSelector value={generalChecks[item.key]} onChange={(value) => updateGeneralCheck(item.key, value)} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3 pt-2 border-t border-slate-100">
+            <SectionTitle number="3.2" title="Execução do objeto" />
+            <div className="space-y-2">
+              {OBJECT_EXECUTION_CHECK_ITEMS.map((item) => (
+                <div key={item.key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/60">
+                  <div>
+                    <span className="text-[10px] font-medium text-emerald-700">Item {item.number}</span>
+                    <p className="text-xs font-medium text-slate-800 mt-0.5">{item.label}</p>
+                  </div>
+                  <CheckSelector value={objectExecutionChecks[item.key]} onChange={(value) => updateObjectExecutionCheck(item.key, value)} />
                 </div>
               ))}
             </div>
@@ -361,6 +428,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
 
   if (mode === 'view' && selectedReport) {
     const checks = selectedReport.generalChecks || DEFAULT_CHECKS;
+    const executionChecks = selectedReport.objectExecutionChecks || OBJECT_EXECUTION_DEFAULT_CHECKS;
     return (
       <div className="space-y-6">
         <div className="print:hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -369,7 +437,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Voltar</span>
             </button>
-            <h1 className="text-xl font-medium text-slate-900">Relatorio de Fiscalizacao de Contratos</h1>
+            <h1 className="text-xl font-medium text-slate-900">Relatório de Fiscalização de Contratos</h1>
             <p className="text-xs text-slate-500 mt-1">Criado em {selectedReport.createdAt}</p>
           </div>
           <button onClick={() => window.print()} className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium rounded-xl transition-colors cursor-pointer">
@@ -381,8 +449,8 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
         <section className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 space-y-5">
           <SectionTitle number="1" title="Dados do contrato" />
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-            <Info label="N do contrato" value={selectedReport.contractNum} />
-            <Info label="Vigencia" value={selectedReport.validity} />
+            <Info label="Nº do contrato" value={selectedReport.contractNum} />
+            <Info label="Vigência" value={selectedReport.validity} />
             <Info label="Ordem de fornecimento" value={selectedReport.supplyOrder} />
             <Info label="Total das notas" value={money(selectedReport.notesTotal)} />
           </div>
@@ -399,19 +467,19 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
           <SectionTitle number="2" title="Dados do fiscal" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <Info label="Fiscal" value={selectedReport.fiscalName} />
-            <Info label="Secretaria / orgao" value={selectedReport.fiscalOrgan} />
+            <Info label="Secretaria / órgão" value={selectedReport.fiscalOrgan} />
             <Info label="Portaria" value={selectedReport.fiscalPortaria} />
           </div>
         </section>
 
         <section className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 space-y-5">
-          <SectionTitle number="3" title="Dados da fiscalizacao" />
+          <SectionTitle number="3" title="Dados da fiscalização" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Info label="Periodo de" value={selectedReport.inspectionStartDate || '-'} />
-            <Info label="Periodo a" value={selectedReport.inspectionEndDate || '-'} />
+            <Info label="Período de" value={selectedReport.inspectionStartDate || '-'} />
+            <Info label="Período a" value={selectedReport.inspectionEndDate || '-'} />
           </div>
           <div className="space-y-3 pt-2 border-t border-slate-100">
-            <SectionTitle number="3.1" title="Informacoes gerais do contrato" />
+            <SectionTitle number="3.1" title="Informações gerais do contrato" />
             <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">
               {GENERAL_CHECK_ITEMS.map((item) => (
                 <div key={item.key} className="p-3 bg-white flex items-center justify-between gap-3">
@@ -420,6 +488,21 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
                     <p className="text-xs font-medium text-slate-800 mt-0.5">{item.label}</p>
                   </div>
                   <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium shrink-0">{answerLabel(checks[item.key])}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3 pt-2 border-t border-slate-100">
+            <SectionTitle number="3.2" title="Execução do objeto" />
+            <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">
+              {OBJECT_EXECUTION_CHECK_ITEMS.map((item) => (
+                <div key={item.key} className="p-3 bg-white flex items-center justify-between gap-3">
+                  <div>
+                    <span className="text-[10px] font-medium text-emerald-700">Item {item.number}</span>
+                    <p className="text-xs font-medium text-slate-800 mt-0.5">{item.label}</p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium shrink-0">{answerLabel(executionChecks[item.key])}</span>
                 </div>
               ))}
             </div>
@@ -441,12 +524,12 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-medium text-slate-900">Relatorio de Fiscalizacao de Contratos</h1>
-          <p className="text-xs text-slate-500 mt-1">Relatorios criados a partir dos contratos e notas fiscais.</p>
+          <h1 className="text-xl font-medium text-slate-900">Relatório de Fiscalização de Contratos</h1>
+          <p className="text-xs text-slate-500 mt-1">Relatórios criados a partir dos contratos e notas fiscais.</p>
         </div>
         <button onClick={openCreate} className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-xl transition-colors cursor-pointer self-start sm:self-auto">
           <Plus className="w-4 h-4" />
-          <span>Criar relatorio</span>
+          <span>Criar relatório</span>
         </button>
       </div>
 
@@ -454,7 +537,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
         <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <FileText className="w-4 h-4 text-emerald-600" />
-            <span className="text-sm font-medium text-slate-800">Relatorios criados</span>
+            <span className="text-sm font-medium text-slate-800">Relatórios criados</span>
           </div>
           <div className="relative w-full md:w-80">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -471,7 +554,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
                 <th className="py-3 px-4">Contratado</th>
                 <th className="py-3 px-4">Fiscal</th>
                 <th className="py-3 px-4 text-right">Notas</th>
-                <th className="py-3 px-4 text-right">Acoes</th>
+                <th className="py-3 px-4 text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -481,8 +564,8 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
                     <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-400 mb-3">
                       <Receipt className="w-6 h-6" />
                     </div>
-                    <p className="text-sm font-medium text-slate-700">Nenhum relatorio criado</p>
-                    <p className="text-xs text-slate-400 mt-1">Clique em Criar relatorio para iniciar.</p>
+                    <p className="text-sm font-medium text-slate-700">Nenhum relatório criado</p>
+                    <p className="text-xs text-slate-400 mt-1">Clique em Criar relatório para iniciar.</p>
                   </td>
                 </tr>
               ) : (
@@ -507,10 +590,10 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex justify-end gap-1.5">
-                        <button onClick={() => { setSelectedReportId(report.id); setMode('view'); }} className="p-2 rounded-lg text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 cursor-pointer" title="Ver relatorio">
+                        <button onClick={() => { setSelectedReportId(report.id); setMode('view'); }} className="p-2 rounded-lg text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 cursor-pointer" title="Ver relatório">
                           <Eye className="w-4 h-4" />
                         </button>
-                        <button onClick={() => setReports((current) => current.filter((item) => item.id !== report.id))} className="p-2 rounded-lg text-slate-500 hover:text-rose-700 hover:bg-rose-50 cursor-pointer" title="Excluir relatorio">
+                        <button onClick={() => setReports((current) => current.filter((item) => item.id !== report.id))} className="p-2 rounded-lg text-slate-500 hover:text-rose-700 hover:bg-rose-50 cursor-pointer" title="Excluir relatório">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
