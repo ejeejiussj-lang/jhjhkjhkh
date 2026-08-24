@@ -159,12 +159,12 @@ const INVOICE_PAYMENT_CHECK_ITEMS: Array<{ key: keyof InvoicePaymentChecks; numb
   {
     key: 'invoicesMatchDelivery',
     number: '3.3.1',
-    label: 'As notas fiscais correspondem aos servi\u00e7os/produtos efetivamente entregues?'
+    label: 'As notas fiscais correspondem aos serviços/produtos efetivamente entregues?'
   },
   {
     key: 'liquidationProof',
     number: '3.3.2',
-    label: 'H\u00e1 comprova\u00e7\u00e3o da liquida\u00e7\u00e3o da despesa?'
+    label: 'Há comprovação da liquidação da despesa?'
   },
   {
     key: 'legalPaymentDeadlines',
@@ -174,7 +174,7 @@ const INVOICE_PAYMENT_CHECK_ITEMS: Array<{ key: keyof InvoicePaymentChecks; numb
   {
     key: 'taxWithholdingsRegistered',
     number: '3.3.4',
-    label: 'H\u00e1 reten\u00e7\u00f5es de INSS, ISS, IR, PIS/COFINS e CSLL devidamente registradas?'
+    label: 'Há retenções de INSS, ISS, IR, PIS/COFINS e CSLL devidamente registradas?'
   }
 ];
 
@@ -182,22 +182,22 @@ const DOCUMENT_MANAGEMENT_CHECK_ITEMS: Array<{ key: keyof DocumentManagementChec
   {
     key: 'reportsArchived',
     number: '3.4.1',
-    label: 'Os relat\u00f3rios de acompanhamento est\u00e3o sendo arquivados no processo do contrato?'
+    label: 'Os relatórios de acompanhamento estão sendo arquivados no processo do contrato?'
   },
   {
     key: 'communicationsRegistered',
     number: '3.4.2',
-    label: 'As comunica\u00e7\u00f5es entre fiscal e contratada est\u00e3o registradas por of\u00edcio ou e-mail?'
+    label: 'As comunicações entre fiscal e contratada estão registradas por ofício ou e-mail?'
   },
   {
     key: 'occurrencesControlUpdated',
     number: '3.4.3',
-    label: 'Existe controle atualizado de ocorr\u00eancias em planilha ou sistema?'
+    label: 'Existe controle atualizado de ocorrências em planilha ou sistema?'
   },
   {
     key: 'meetingRecords',
     number: '3.4.4',
-    label: 'H\u00e1 registro de reuni\u00f5es de acompanhamento, quando realizadas?'
+    label: 'Há registro de reuniões de acompanhamento, quando realizadas?'
   }
 ];
 
@@ -208,24 +208,24 @@ const norm = (value = '') =>
 
 const answerLabel = (value?: CheckValue) => {
   if (value === 'sim') return 'Sim';
-  if (value === 'nao') return 'N\u00e3o';
+  if (value === 'nao') return 'Não';
   return 'N/A';
 };
 
 const objectFulfillmentLabel = (value?: ObjectFulfillmentValue) => {
   if (value === 'parcial') return 'Parcial';
-  if (value === 'insatisfatorio') return 'Insatisfat\u00f3rio';
+  if (value === 'insatisfatorio') return 'Insatisfatório';
   return 'Total';
 };
 
 const contractorPerformanceLabel = (value?: ContractorPerformanceValue) => {
-  if (value === 'otimo') return '\u00d3timo';
+  if (value === 'otimo') return 'Ótimo';
   if (value === 'regular') return 'Regular';
   if (value === 'ruim') return 'Ruim';
   return 'Bom';
 };
 
-const additiveNeedLabel = (value?: AdditiveNeedValue) => (value === 'sim' ? 'Sim' : 'N\u00e3o');
+const additiveNeedLabel = (value?: AdditiveNeedValue) => (value === 'sim' ? 'Sim' : 'Não');
 
 const Info: React.FC<{ label: string; value: string }> = ({ label, value }) => (
   <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
@@ -587,7 +587,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
           </div>
 
           <div className="space-y-3 pt-2 border-t border-slate-100">
-            <SectionTitle number="3.4" title={"Gest\u00e3o documental e registros"} />
+            <SectionTitle number="3.4" title={"Gestão documental e registros"} />
             <div className="space-y-2">
               {DOCUMENT_MANAGEMENT_CHECK_ITEMS.map((item) => (
                 <div key={item.key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/60">
@@ -602,19 +602,19 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
           </div>
 
           <div className="space-y-3 pt-2 border-t border-slate-100">
-            <SectionTitle number="3.5" title={"Avalia\u00e7\u00e3o geral do per\u00edodo"} />
+            <SectionTitle number="3.5" title={"Avaliação geral do período"} />
             <div className="space-y-2">
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/60">
                 <div>
                   <span className="text-[10px] font-medium text-emerald-700">Cumprimento do objeto</span>
-                  <p className="text-xs font-medium text-slate-800 mt-0.5">Avalia\u00e7\u00e3o do cumprimento do objeto no per\u00edodo</p>
+                  <p className="text-xs font-medium text-slate-800 mt-0.5">Avaliação do cumprimento do objeto no período</p>
                 </div>
                 <ChoiceSelector
                   value={periodEvaluation.objectFulfillment}
                   options={[
                     { value: 'total', label: 'Total' },
                     { value: 'parcial', label: 'Parcial' },
-                    { value: 'insatisfatorio', label: 'Insatisfat\u00f3rio' }
+                    { value: 'insatisfatorio', label: 'Insatisfatório' }
                   ]}
                   onChange={(value) => updatePeriodEvaluation('objectFulfillment', value)}
                 />
@@ -622,12 +622,12 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/60">
                 <div>
                   <span className="text-[10px] font-medium text-emerald-700">Desempenho da contratada</span>
-                  <p className="text-xs font-medium text-slate-800 mt-0.5">Classifica\u00e7\u00e3o do desempenho apresentado</p>
+                  <p className="text-xs font-medium text-slate-800 mt-0.5">Classificação do desempenho apresentado</p>
                 </div>
                 <ChoiceSelector
                   value={periodEvaluation.contractorPerformance}
                   options={[
-                    { value: 'otimo', label: '\u00d3timo' },
+                    { value: 'otimo', label: 'Ótimo' },
                     { value: 'bom', label: 'Bom' },
                     { value: 'regular', label: 'Regular' },
                     { value: 'ruim', label: 'Ruim' }
@@ -636,25 +636,25 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
                 />
               </div>
               <label className="block p-3 rounded-xl border border-slate-200 bg-slate-50/60">
-                <span className="text-[10px] font-medium text-emerald-700">Recomenda\u00e7\u00f5es / a\u00e7\u00f5es corretivas</span>
+                <span className="text-[10px] font-medium text-emerald-700">Recomendações / ações corretivas</span>
                 <textarea
                   value={periodEvaluation.correctiveActions}
                   onChange={(event) => updatePeriodEvaluation('correctiveActions', event.target.value)}
                   rows={4}
-                  placeholder="Descreva recomenda\u00e7\u00f5es, provid\u00eancias ou a\u00e7\u00f5es corretivas necess\u00e1rias"
+                  placeholder="Descreva recomendações, providências ou ações corretivas necessárias"
                   className="mt-2 w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 resize-y"
                 />
               </label>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/60">
                 <div>
                   <span className="text-[10px] font-medium text-emerald-700">Necessidade de aditivo contratual</span>
-                  <p className="text-xs font-medium text-slate-800 mt-0.5">Indique se h\u00e1 necessidade de formalizar aditivo</p>
+                  <p className="text-xs font-medium text-slate-800 mt-0.5">Indique se há necessidade de formalizar aditivo</p>
                 </div>
                 <ChoiceSelector
                   value={periodEvaluation.contractualAdditiveNeeded}
                   options={[
                     { value: 'sim', label: 'Sim' },
-                    { value: 'nao', label: 'N\u00e3o' }
+                    { value: 'nao', label: 'Não' }
                   ]}
                   onChange={(value) => updatePeriodEvaluation('contractualAdditiveNeeded', value)}
                   className="sm:w-36"
@@ -779,7 +779,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
           </div>
 
           <div className="space-y-3 pt-2 border-t border-slate-100">
-            <SectionTitle number="3.4" title={"Gest\u00e3o documental e registros"} />
+            <SectionTitle number="3.4" title={"Gestão documental e registros"} />
             <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">
               {DOCUMENT_MANAGEMENT_CHECK_ITEMS.map((item) => (
                 <div key={item.key} className="p-3 bg-white flex items-center justify-between gap-3">
@@ -794,15 +794,15 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
           </div>
 
           <div className="space-y-3 pt-2 border-t border-slate-100">
-            <SectionTitle number="3.5" title={"Avalia\u00e7\u00e3o geral do per\u00edodo"} />
+            <SectionTitle number="3.5" title={"Avaliação geral do período"} />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <Info label="Cumprimento do objeto" value={objectFulfillmentLabel(evaluation.objectFulfillment)} />
               <Info label="Desempenho da contratada" value={contractorPerformanceLabel(evaluation.contractorPerformance)} />
               <Info label="Necessidade de aditivo contratual" value={additiveNeedLabel(evaluation.contractualAdditiveNeeded)} />
             </div>
             <div className="space-y-1.5">
-              <span className="text-xs font-medium text-slate-700">Recomenda\u00e7\u00f5es / a\u00e7\u00f5es corretivas</span>
-              <div className="min-h-24 px-3 py-2 text-xs leading-relaxed text-slate-700 bg-slate-50 border border-slate-200 rounded-xl whitespace-pre-wrap">{evaluation.correctiveActions.trim() || 'N\u00e3o informado'}</div>
+              <span className="text-xs font-medium text-slate-700">Recomendações / ações corretivas</span>
+              <div className="min-h-24 px-3 py-2 text-xs leading-relaxed text-slate-700 bg-slate-50 border border-slate-200 rounded-xl whitespace-pre-wrap">{evaluation.correctiveActions.trim() || 'Não informado'}</div>
             </div>
           </div>
         </section>
