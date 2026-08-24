@@ -1265,6 +1265,7 @@ export default function App() {
               contracts={contracts}
               notes={filteredNotes}
               creditors={creditors}
+              fiscais={fiscais}
             />
           )}
 

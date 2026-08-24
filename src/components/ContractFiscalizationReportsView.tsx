@@ -1,11 +1,12 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Eye, FileText, Plus, Printer, Receipt, Save, Search, Trash2 } from 'lucide-react';
-import { Contract, Creditor, ServiceNote } from '../types';
+import { Contract, Creditor, FiscalPortaria, ServiceNote } from '../types';
 
 interface Props {
   contracts: Contract[];
   notes: ServiceNote[];
   creditors: Creditor[];
+  fiscais: FiscalPortaria[];
 }
 
 interface FiscalizationReport {
@@ -25,8 +26,6 @@ interface FiscalizationReport {
 }
 
 const STORAGE_KEY = 'fiscalpro_contract_fiscalization_reports';
-const DEFAULT_FISCAL_NAME = 'Alamo';
-const DEFAULT_FISCAL_ORGAN = 'Secretaria de Saude';
 
 const money = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const today = () => new Date().toLocaleDateString('pt-BR');
@@ -40,19 +39,7 @@ const Info: React.FC<{ label: string; value: string }> = ({ label, value }) => (
   </div>
 );
 
-const TextField: React.FC<{ label: string; value: string; onChange: (value: string) => void; placeholder?: string }> = ({ label, value, onChange, placeholder }) => (
-  <label className="space-y-1.5">
-    <span className="text-xs font-medium text-slate-700">{label}</span>
-    <input
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      placeholder={placeholder}
-      className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-    />
-  </label>
-);
-
-export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, notes, creditors }) => {
+export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, notes, creditors, fiscais }) => {
   const [reports, setReports] = useState<FiscalizationReport[]>(() => {
     try {
       return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -63,9 +50,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
   const [mode, setMode] = useState<'list' | 'create' | 'view'>('list');
   const [selectedContractNum, setSelectedContractNum] = useState(contracts[0]?.contractNum || '');
   const [supplyOrder, setSupplyOrder] = useState('');
-  const [fiscalName, setFiscalName] = useState(DEFAULT_FISCAL_NAME);
-  const [fiscalOrgan, setFiscalOrgan] = useState(DEFAULT_FISCAL_ORGAN);
-  const [fiscalPortaria, setFiscalPortaria] = useState('');
+  const [selectedFiscalId, setSelectedFiscalId] = useState(fiscais[0]?.id || '');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
 
@@ -76,6 +61,10 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
   useEffect(() => {
     if (!selectedContractNum && contracts[0]) setSelectedContractNum(contracts[0].contractNum);
   }, [contracts, selectedContractNum]);
+
+  useEffect(() => {
+    if (!selectedFiscalId && fiscais[0]) setSelectedFiscalId(fiscais[0].id);
+  }, [fiscais, selectedFiscalId]);
 
   const selectedContract = useMemo(
     () => contracts.find((contract) => contract.contractNum === selectedContractNum) || null,
@@ -88,6 +77,10 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
   const selectedNotes = useMemo(
     () => notes.filter((note) => norm(note.contractNum) === norm(selectedContractNum)).sort((a, b) => a.noteNumber.localeCompare(b.noteNumber, 'pt-BR', { numeric: true })),
     [notes, selectedContractNum]
+  );
+  const selectedFiscal = useMemo(
+    () => fiscais.find((fiscal) => fiscal.id === selectedFiscalId) || null,
+    [fiscais, selectedFiscalId]
   );
   const selectedNotesTotal = selectedNotes.reduce((total, note) => total + note.value, 0);
   const selectedReport = reports.find((report) => report.id === selectedReportId) || null;
@@ -102,9 +95,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
     setMode('create');
     setSelectedReportId(null);
     setSupplyOrder('');
-    setFiscalName(DEFAULT_FISCAL_NAME);
-    setFiscalOrgan(DEFAULT_FISCAL_ORGAN);
-    setFiscalPortaria('');
+    setSelectedFiscalId(fiscais[0]?.id || '');
     setSelectedContractNum(contracts[0]?.contractNum || '');
   };
 
@@ -119,9 +110,9 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
       supplyOrder: supplyOrder.trim() || 'Nao informada',
       contractor: selectedContract.creditor,
       contractorDocument: selectedCreditor?.cnpj || 'Nao informado',
-      fiscalName: fiscalName.trim() || DEFAULT_FISCAL_NAME,
-      fiscalOrgan: fiscalOrgan.trim() || DEFAULT_FISCAL_ORGAN,
-      fiscalPortaria: fiscalPortaria.trim() || 'Pendente',
+      fiscalName: selectedFiscal?.name || 'Fiscal nao selecionado',
+      fiscalOrgan: selectedFiscal?.organ || 'Secretaria de Saude',
+      fiscalPortaria: selectedFiscal?.portaria || 'Pendente',
       noteIds: selectedNotes.map((note) => note.id),
       notesTotal: selectedNotesTotal
     };
@@ -149,7 +140,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
     return <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div><button onClick={() => setMode('list')} className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-800 mb-2 cursor-pointer"><ArrowLeft className="w-3.5 h-3.5" /><span>Voltar</span></button><h1 className="text-xl font-medium text-slate-900">Criar Relatorio de Fiscalizacao</h1><p className="text-xs text-slate-500 mt-1">Dados do contrato e notas fiscais vinculadas sao preenchidos automaticamente.</p></div><button onClick={saveReport} disabled={!selectedContract} className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white text-xs font-medium rounded-xl transition-colors cursor-pointer disabled:cursor-not-allowed"><Save className="w-4 h-4" /><span>Salvar relatorio</span></button></div>
       <section className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-5"><div className="grid grid-cols-1 lg:grid-cols-2 gap-4"><label className="space-y-1.5"><span className="text-xs font-medium text-slate-700">Contrato</span><select value={selectedContractNum} onChange={(event) => setSelectedContractNum(event.target.value)} className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">{contracts.map((contract) => <option key={contract.id} value={contract.contractNum}>{contract.contractNum} - {contract.creditor}</option>)}</select></label><label className="space-y-1.5"><span className="text-xs font-medium text-slate-700">Ordem de fornecimento</span><input value={supplyOrder} onChange={(event) => setSupplyOrder(event.target.value)} placeholder="Preencher manualmente" className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" /></label></div><div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3"><Info label="N do contrato" value={selectedContract?.contractNum || '-'} /><Info label="Vigencia" value={selectedContract ? `${selectedContract.startDate} a ${selectedContract.endDate}` : '-'} /><Info label="Contratado" value={selectedContract?.creditor || '-'} /><Info label="CPF/CNPJ" value={selectedCreditor?.cnpj || 'Nao informado'} /></div><div className="space-y-1.5"><span className="text-xs font-medium text-slate-700">Objeto do contrato</span><div className="min-h-20 px-3 py-2 text-xs leading-relaxed text-slate-700 bg-slate-50 border border-slate-200 rounded-xl">{selectedContract?.object || '-'}</div></div></section>
-      <section className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-4"><h2 className="text-sm font-medium text-slate-800">Dados do fiscal</h2><div className="grid grid-cols-1 md:grid-cols-3 gap-4"><TextField label="Fiscal" value={fiscalName} onChange={setFiscalName} /><TextField label="Secretaria" value={fiscalOrgan} onChange={setFiscalOrgan} /><TextField label="Portaria" value={fiscalPortaria} onChange={setFiscalPortaria} placeholder="Preencher depois" /></div></section>
+      <section className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-4"><h2 className="text-sm font-medium text-slate-800">Dados do fiscal</h2><div className="grid grid-cols-1 md:grid-cols-3 gap-4"><label className="space-y-1.5"><span className="text-xs font-medium text-slate-700">Fiscal cadastrado</span><select value={selectedFiscalId} onChange={(event) => setSelectedFiscalId(event.target.value)} className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"><option value="">Selecione o fiscal</option>{fiscais.map((fiscal) => <option key={fiscal.id} value={fiscal.id}>{fiscal.name} - {fiscal.portaria}</option>)}</select></label><Info label="Secretaria / orgao" value={selectedFiscal?.organ || '-'} /><Info label="Portaria" value={selectedFiscal?.portaria || '-'} /></div>{fiscais.length === 0 && <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">Nenhum fiscal cadastrado. Cadastre primeiro na aba Cadastrar Fiscais / Portarias.</p>}</section>
       <section className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-4"><div className="flex items-center justify-between gap-3"><div><h2 className="text-sm font-medium text-slate-800">Notas fiscais puxadas do contrato</h2><p className="text-xs text-slate-500 mt-0.5">{selectedNotes.length} nota(s) vinculada(s)</p></div><span className="text-xs font-medium text-emerald-700">{money(selectedNotesTotal)}</span></div>{notesTable(selectedNotes)}</section>
     </div>;
   }
