@@ -814,6 +814,32 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
           </div>
           {notesTable(selectedReportNotes)}
         </section>
+
+        <section className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 space-y-6">
+          <SectionTitle number="4" title="Assinaturas" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6">
+            <div className="space-y-5">
+              <div className="border-t border-slate-400 pt-2 text-center">
+                <p className="text-xs font-medium text-slate-900">{selectedReport.fiscalName}</p>
+                <p className="text-[11px] text-slate-500">Fiscal do Contrato</p>
+              </div>
+              <div className="border-t border-slate-300 pt-2 text-center">
+                <p className="text-xs font-medium text-slate-700">Data</p>
+                <p className="text-[11px] text-slate-400">_____/_____/________</p>
+              </div>
+            </div>
+            <div className="space-y-5">
+              <div className="border-t border-slate-400 pt-2 text-center">
+                <p className="text-xs font-medium text-slate-900">Gestor do Contrato</p>
+                <p className="text-[11px] text-slate-500">Quando aplicável</p>
+              </div>
+              <div className="border-t border-slate-300 pt-2 text-center">
+                <p className="text-xs font-medium text-slate-700">Data</p>
+                <p className="text-[11px] text-slate-400">_____/_____/________</p>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     );
   }
