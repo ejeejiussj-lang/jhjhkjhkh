@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogIn, Lock, Mail, UserPlus, User, ShieldCheck } from 'lucide-react';
+import { LogIn, Lock, Mail, UserPlus, User, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { UserProfile } from '../lib/supabaseService';
 
@@ -15,13 +15,13 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onEnterSystem }) =
   const [role, setRole] = useState<'Administrador' | 'Fiscal' | 'Gestor' | 'Auditor'>('Administrador');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setErrorMessage('');
-    setSuccessMessage('');
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -59,7 +59,6 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onEnterSystem }) =
     e.preventDefault();
     setLoading(true);
     setErrorMessage('');
-    setSuccessMessage('');
 
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -91,210 +90,223 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onEnterSystem }) =
           role,
         };
 
-        setSuccessMessage('Conta criada com sucesso no Supabase!');
-        setTimeout(() => {
-          onEnterSystem(userProf);
-        }, 1000);
+        onEnterSystem(userProf);
       }
     } catch (err: any) {
       console.error('Register error:', err);
-      setErrorMessage(err.message || 'Falha ao criar usuário no Supabase.');
+      setErrorMessage(err.message || 'Falha ao criar sua conta. Tente novamente.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 flex flex-col items-center justify-center p-6 selection:bg-emerald-600 selection:text-white">
-      <div className="w-full max-w-md space-y-6 text-center">
+    <div className="min-h-screen bg-gradient-to-b from-white to-slate-100 text-slate-900 flex flex-col items-center justify-center p-6 selection:bg-[#0f5b40] selection:text-white font-sans">
+      <div className="w-full max-w-[460px] space-y-8 text-center">
         {/* System Name */}
-        <div className="space-y-1">
-          <h1 className="text-3xl font-extrabold tracking-wider text-emerald-700">SIGEC</h1>
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-            Sistema Integrado de Gestão de Contratos
-          </p>
+        <div className="space-y-3">
+          <h1 className="text-4xl font-bold tracking-tight text-[#0f5b40]">SIGEC</h1>
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-[10px] font-medium text-slate-500 uppercase tracking-[0.15em]">
+              Sistema Integrado de Gestão de Contratos
+            </p>
+            <div className="w-12 h-0.5 bg-[#8fb3a5] rounded-full"></div>
+          </div>
         </div>
 
         {/* Card */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm text-left space-y-5">
-          {/* Mode Switcher */}
-          <div className="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-xl text-xs font-bold">
-            <button
-              type="button"
-              onClick={() => {
-                setMode('login');
-                setErrorMessage('');
-                setSuccessMessage('');
-              }}
-              className={`py-2 rounded-lg transition-all cursor-pointer ${
-                mode === 'login'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-900'
-              }`}
-            >
-              Entrar
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMode('register');
-                setErrorMessage('');
-                setSuccessMessage('');
-              }}
-              className={`py-2 rounded-lg transition-all cursor-pointer ${
-                mode === 'register'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-900'
-              }`}
-            >
-              Criar Conta
-            </button>
+        <div className="bg-white border border-slate-100 rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] text-left">
+          <div className="mb-8 text-center">
+            <h2 className="text-xl font-semibold text-slate-900">
+              {mode === 'login' ? 'Entrar' : 'Criar conta'}
+            </h2>
+            <p className="mt-1.5 text-sm text-slate-500">
+              {mode === 'login' ? 'Acesse sua conta para continuar' : 'Preencha seus dados para começar'}
+            </p>
           </div>
 
           {errorMessage && (
-            <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-medium leading-relaxed">
+            <div className="mb-6 p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-medium leading-relaxed">
               {errorMessage}
             </div>
           )}
 
-          {successMessage && (
-            <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-medium">
-              {successMessage}
-            </div>
-          )}
-
           {mode === 'login' ? (
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Login / E-mail
+            <form onSubmit={handleLogin} className="space-y-5">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-[#1e293b] uppercase tracking-wide">
+                  E-mail
                 </label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                <div className="relative flex items-center">
+                  <div className="absolute left-2.5 p-1.5 bg-[#eefcf4] text-[#0f5b40] rounded-lg">
+                    <Mail className="w-4 h-4" />
+                  </div>
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="usuario@orgao.sp.gov.br"
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-emerald-600 focus:border-transparent transition-all"
+                    placeholder="Digite seu e-mail"
+                    className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0f5b40] focus:border-transparent transition-all"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-[#1e293b] uppercase tracking-wide">
                   Senha
                 </label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                <div className="relative flex items-center">
+                  <div className="absolute left-2.5 p-1.5 bg-[#eefcf4] text-[#0f5b40] rounded-lg">
+                    <Lock className="w-4 h-4" />
+                  </div>
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-emerald-600 focus:border-transparent transition-all"
+                    placeholder="Digite sua senha"
+                    className="w-full pl-12 pr-10 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0f5b40] focus:border-transparent transition-all"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center space-x-2"
-              >
-                <LogIn className="w-4 h-4" />
-                <span>{loading ? 'Entrando...' : 'Entrar'}</span>
-              </button>
+              <div className="flex items-center justify-between pt-1">
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <div className="relative flex items-center justify-center w-4 h-4">
+                    <input 
+                      type="checkbox" 
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="appearance-none w-4 h-4 bg-white border-2 border-[#0f5b40] rounded-sm checked:bg-[#0f5b40] transition-colors cursor-pointer" 
+                    />
+                    {rememberMe && <svg className="absolute w-3 h-3 text-white pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                  </div>
+                  <span className="text-xs font-semibold text-slate-700 group-hover:text-slate-900 transition-colors">Lembrar-me</span>
+                </label>
+                <a href="#" className="text-xs font-bold text-[#0f5b40] hover:underline">
+                  Esqueci minha senha
+                </a>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 bg-[#0a6c4c] hover:bg-[#075239] text-white font-bold text-sm rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center space-x-2"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>{loading ? 'Entrando...' : 'Entrar'}</span>
+                </button>
+              </div>
             </form>
           ) : (
             <form onSubmit={handleRegister} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-[#1e293b] uppercase tracking-wide">
                   Nome Completo
                 </label>
-                <div className="relative">
-                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                <div className="relative flex items-center">
+                  <div className="absolute left-2.5 p-1.5 bg-[#eefcf4] text-[#0f5b40] rounded-lg">
+                    <User className="w-4 h-4" />
+                  </div>
                   <input
                     type="text"
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Ex: João da Silva"
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-emerald-600 focus:border-transparent transition-all"
+                    placeholder="Digite seu nome completo"
+                    className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0f5b40] focus:border-transparent transition-all"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-[#1e293b] uppercase tracking-wide">
                   E-mail
                 </label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                <div className="relative flex items-center">
+                  <div className="absolute left-2.5 p-1.5 bg-[#eefcf4] text-[#0f5b40] rounded-lg">
+                    <Mail className="w-4 h-4" />
+                  </div>
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="novo.usuario@orgao.sp.gov.br"
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-emerald-600 focus:border-transparent transition-all"
+                    placeholder="Digite seu e-mail institucional"
+                    className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0f5b40] focus:border-transparent transition-all"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-[#1e293b] uppercase tracking-wide">
                   Senha
                 </label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                <div className="relative flex items-center">
+                  <div className="absolute left-2.5 p-1.5 bg-[#eefcf4] text-[#0f5b40] rounded-lg">
+                    <Lock className="w-4 h-4" />
+                  </div>
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     required
                     minLength={6}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="•••••••• (mínimo 6 caracteres)"
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-emerald-600 focus:border-transparent transition-all"
+                    placeholder="Crie uma senha com pelo menos 6 caracteres"
+                    className="w-full pl-12 pr-10 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0f5b40] focus:border-transparent transition-all"
                   />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Perfil de Acesso
-                </label>
-                <div className="relative">
-                  <ShieldCheck className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
-                  <select
-                    value={role}
-                    onChange={(e: any) => setRole(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:bg-white focus:ring-2 focus:ring-emerald-600 focus:border-transparent transition-all appearance-none cursor-pointer"
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 text-slate-400 hover:text-slate-600 cursor-pointer"
                   >
-                    <option value="Administrador">Administrador</option>
-                    <option value="Gestor">Gestor de Contrato</option>
-                    <option value="Fiscal">Fiscal de Contrato</option>
-                    <option value="Auditor">Auditor / Controle</option>
-                  </select>
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center space-x-2"
-              >
-                <UserPlus className="w-4 h-4" />
-                <span>{loading ? 'Cadastrando...' : 'Criar Usuário'}</span>
-              </button>
+              <div className="pt-4">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 bg-[#0a6c4c] hover:bg-[#075239] text-white font-medium text-sm rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center space-x-2"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>{loading ? 'Cadastrando...' : 'Criar Conta'}</span>
+                </button>
+              </div>
             </form>
           )}
+
+          <div className="mt-7 border-t border-slate-100 pt-6 text-center text-sm text-slate-500">
+            {mode === 'login' ? 'Ainda não possui uma conta?' : 'Já possui uma conta?'}{' '}
+            <button
+              type="button"
+              onClick={() => {
+                setMode(mode === 'login' ? 'register' : 'login');
+                setErrorMessage('');
+                setPassword('');
+              }}
+              className="font-semibold text-[#0f5b40] hover:underline cursor-pointer"
+            >
+              {mode === 'login' ? 'Cadastre-se' : 'Entrar'}
+            </button>
+          </div>
+
         </div>
 
-        <p className="text-[11px] text-slate-400 font-medium">
-          SIGEC © {new Date().getFullYear()} — Todos os direitos reservados
+        {/* Footer */}
+        <p className="mt-8 text-xs text-slate-500 font-medium">
+          SIGEC © {new Date().getFullYear()} — Todos os direitos reservados.
         </p>
       </div>
     </div>

@@ -60,10 +60,14 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
   const allCompanyNames = useMemo(() => registeredCompanies.map((c) => c.name).sort(), [registeredCompanies]);
   const selectedCommitment = commitments.find((commitment) => commitment.id === commitmentId);
   const selectedContract = contracts.find((contract) => contract.contractNum === contractNum);
-  const availableCommitments = useMemo(
-    () => [...commitments].sort((a, b) => a.number.localeCompare(b.number, 'pt-BR', { numeric: true })),
-    [commitments]
-  );
+  const availableCommitments = useMemo(() => {
+    let list = [...commitments];
+    if (creditor) {
+      // Filtrar apenas empenhos daquela empresa ou que não possuem vínculo
+      list = list.filter((c) => !c.creditor || c.creditor === creditor);
+    }
+    return list.sort((a, b) => a.number.localeCompare(b.number, 'pt-BR', { numeric: true }));
+  }, [commitments, creditor]);
   const getCommitmentOptionLabel = (item: Commitment) => {
     const itemCreditor = (item as Commitment & { creditor?: string }).creditor;
     return [
@@ -186,7 +190,6 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
       return a.noteNumber.localeCompare(b.noteNumber, 'pt-BR', { numeric: true });
     });
   }, [notes, searchTerm, contractFilter, creditorFilter]);
-
   const linkedContract = linkedDetailsNote
     ? contracts.find(
         (c) => c.contractNum.toLowerCase().trim() === linkedDetailsNote.contractNum.toLowerCase().trim()
@@ -199,6 +202,224 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
           (!!linkedDetailsNote.commitmentNumber && item.number === linkedDetailsNote.commitmentNumber)
       )
     : null;
+  if (showModal) {
+    return (
+      <div className="animate-fadeIn pb-12">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 w-full overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
+            <div>
+              <h3 className="text-lg font-medium text-slate-900">{editingNote ? 'Editar Nota de Serviço' : 'Lançar Nota de Serviço'}</h3>
+              <p className="text-xs text-slate-500 mt-1">O empenho selecionado preenche dotação, programa e saldo.</p>
+            </div>
+            <button
+              onClick={() => {
+                setEditingNote(null);
+                setShowModal(false);
+              }}
+              className="text-slate-400 hover:text-slate-600 p-2 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <form onSubmit={handleCreate} className="p-6 space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                Número da Nota Fiscal (NF) <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={noteNumber}
+                onChange={(e) => setNoteNumber(e.target.value)}
+                placeholder="Ex: NF-203443 ou 10452"
+                className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                Contrato <span className="text-rose-500">*</span>
+              </label>
+              <select
+                required
+                value={contractNum}
+                onChange={(e) => handleContractChange(e.target.value)}
+                className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800 cursor-pointer"
+              >
+                <option value="">-- Selecione o contrato --</option>
+                {contracts.length > 0 ? (
+                  contracts.map((c) => (
+                    <option key={c.id} value={c.contractNum}>
+                      {c.contractNum} - {c.creditor} ({c.category})
+                    </option>
+                  ))
+                ) : (
+                  <option value="" disabled>Nenhum contrato cadastrado</option>
+                )}
+              </select>
+            </div>
+
+            {selectedContract && (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs">
+                <span className="block text-[10px] font-medium uppercase text-slate-400">Nome do fiscal</span>
+                <span className="font-medium text-slate-900">{selectedContract.fiscalName || 'Fiscal não informado'}</span>
+                {selectedContract.fiscalPortaria && (
+                  <span className="ml-2 text-slate-500">Portaria {selectedContract.fiscalPortaria}</span>
+                )}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                Empresa / Credor <span className="text-rose-500">*</span>
+              </label>
+              <select
+                required
+                value={creditor}
+                onChange={(e) => setCreditor(e.target.value)}
+                className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800 cursor-pointer"
+              >
+                <option value="">-- Selecione a empresa / credor --</option>
+                {registeredCompanies.length > 0 ? (
+                  registeredCompanies.map((c) => (
+                    <option key={c.id} value={c.name}>
+                      {c.name} {c.cnpj ? `- CNPJ: ${c.cnpj}` : ''}
+                    </option>
+                  ))
+                ) : (
+                  <option value="" disabled>Nenhuma empresa cadastrada</option>
+                )}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                Empenho <span className="text-rose-500">*</span>
+              </label>
+              <select
+                required
+                value={commitmentId}
+                onChange={(e) => setCommitmentId(e.target.value)}
+                className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800 cursor-pointer"
+              >
+                <option value="">-- Selecione o empenho --</option>
+                {availableCommitments.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {getCommitmentOptionLabel(item)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {selectedCommitment ? (
+              <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 text-xs grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div>
+                  <span className="block text-[10px] font-medium uppercase text-emerald-700">Dotação</span>
+                  <span className="font-medium text-slate-900">{selectedCommitment.budgetAllocation}</span>
+                </div>
+                <div className="md:col-span-3">
+                  <span className="block text-[10px] font-medium uppercase text-emerald-700">Programa</span>
+                  <span className="font-medium text-slate-900">{selectedCommitment.program}</span>
+                </div>
+                <div>
+                  <span className="block text-[10px] font-medium uppercase text-emerald-700">Valor do empenho</span>
+                  <span className="font-medium text-slate-900">{formatCurrency(selectedCommitment.value)}</span>
+                </div>
+                <div>
+                  <span className="block text-[10px] font-medium uppercase text-emerald-700">Saldo antes</span>
+                  <span className="font-medium text-slate-900">{formatCurrency(selectedCommitment.currentBalance)}</span>
+                </div>
+                <div>
+                  <span className="block text-[10px] font-medium uppercase text-emerald-700">Desconto</span>
+                  <span className="font-medium text-slate-900">{formatCurrency(parseFloat(value) || 0)}</span>
+                </div>
+                <div>
+                  <span className="block text-[10px] font-medium uppercase text-emerald-700">Saldo atual</span>
+                  <span className={`font-medium ${previewCurrentBalance < 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
+                    {formatCurrency(previewCurrentBalance)}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 font-medium">
+                Selecione um empenho para puxar dotação, programa, valor e saldo automaticamente.
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Valor da Nota (R$) <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  value={value}
+                  onChange={(e) => setValue(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Data de Emissão</label>
+                <input
+                  type="text"
+                  value={issueDate}
+                  onChange={(e) => setIssueDate(e.target.value)}
+                  placeholder="Ex: 28/07/2026"
+                  className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Data de Atesto</label>
+                <input
+                  type="text"
+                  value={attestationDate}
+                  onChange={(e) => setAttestationDate(e.target.value)}
+                  placeholder="Ex: 29/07/2026"
+                  className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Fiscal Responsável</label>
+                <input
+                  type="text"
+                  value={fiscalName}
+                  onChange={(e) => setFiscalName(e.target.value)}
+                  placeholder="Nome do fiscal"
+                  className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingNote(null);
+                  setShowModal(false);
+                }}
+                className="px-4 py-2 text-xs text-slate-600 hover:bg-slate-100 font-medium rounded-lg cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-xs transition-colors cursor-pointer"
+              >
+                {editingNote ? 'Atualizar Nota' : 'Confirmar Lançamento'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -300,6 +521,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                   return (
                     <tr key={n.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="py-3.5 px-4 font-medium text-slate-800 whitespace-nowrap">{n.noteNumber}</td>
+
                       <td className="py-3.5 px-4 font-medium text-slate-700 whitespace-nowrap">{n.contractNum}</td>
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         {isLinked ? (
@@ -393,8 +615,6 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
           </table>
         </div>
       </div>
-
-
       {linkedDetailsNote && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 w-full max-w-lg animate-fadeIn">
@@ -445,222 +665,6 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                 <span className="col-span-2 font-medium text-slate-900">{linkedDetailsNote.attestationDate || '-'}</span>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 w-full max-w-2xl animate-fadeIn">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div>
-                <h3 className="text-base font-medium text-slate-900">{editingNote ? 'Editar Nota de Serviço' : 'Lançar Nota de Serviço'}</h3>
-                <p className="text-[11px] text-slate-500">O empenho selecionado preenche dotação, programa e saldo.</p>
-              </div>
-              <button
-                onClick={() => {
-                  setEditingNote(null);
-                  setShowModal(false);
-                }}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreate} className="mt-4 space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Número da Nota Fiscal (NF) <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={noteNumber}
-                  onChange={(e) => setNoteNumber(e.target.value)}
-                  placeholder="Ex: NF-203443 ou 10452"
-                  className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Contrato <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  required
-                  value={contractNum}
-                  onChange={(e) => handleContractChange(e.target.value)}
-                  className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800 cursor-pointer"
-                >
-                  <option value="">-- Selecione o contrato --</option>
-                  {contracts.length > 0 ? (
-                    contracts.map((c) => (
-                      <option key={c.id} value={c.contractNum}>
-                        {c.contractNum} - {c.creditor} ({c.category})
-                      </option>
-                    ))
-                  ) : (
-                    <option value="" disabled>Nenhum contrato cadastrado</option>
-                  )}
-                </select>
-              </div>
-
-              {selectedContract && (
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs">
-                  <span className="block text-[10px] font-medium uppercase text-slate-400">Nome do fiscal</span>
-                  <span className="font-medium text-slate-900">{selectedContract.fiscalName || 'Fiscal não informado'}</span>
-                  {selectedContract.fiscalPortaria && (
-                    <span className="ml-2 text-slate-500">Portaria {selectedContract.fiscalPortaria}</span>
-                  )}
-                </div>
-              )}
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Empresa / Credor <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  required
-                  value={creditor}
-                  onChange={(e) => setCreditor(e.target.value)}
-                  className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800 cursor-pointer"
-                >
-                  <option value="">-- Selecione a empresa / credor --</option>
-                  {registeredCompanies.length > 0 ? (
-                    registeredCompanies.map((c) => (
-                      <option key={c.id} value={c.name}>
-                        {c.name} {c.cnpj ? `- CNPJ: ${c.cnpj}` : ''}
-                      </option>
-                    ))
-                  ) : (
-                    <option value="" disabled>Nenhuma empresa cadastrada</option>
-                  )}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Empenho <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  required
-                  value={commitmentId}
-                  onChange={(e) => setCommitmentId(e.target.value)}
-                  className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800 cursor-pointer"
-                >
-                  <option value="">-- Selecione o empenho --</option>
-                  {availableCommitments.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {getCommitmentOptionLabel(item)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {selectedCommitment ? (
-                <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 text-xs grid grid-cols-1 md:grid-cols-4 gap-3">
-                  <div>
-                    <span className="block text-[10px] font-medium uppercase text-emerald-700">Dotação</span>
-                    <span className="font-medium text-slate-900">{selectedCommitment.budgetAllocation}</span>
-                  </div>
-                  <div className="md:col-span-3">
-                    <span className="block text-[10px] font-medium uppercase text-emerald-700">Programa</span>
-                    <span className="font-medium text-slate-900">{selectedCommitment.program}</span>
-                  </div>
-                  <div>
-                    <span className="block text-[10px] font-medium uppercase text-emerald-700">Valor do empenho</span>
-                    <span className="font-medium text-slate-900">{formatCurrency(selectedCommitment.value)}</span>
-                  </div>
-                  <div>
-                    <span className="block text-[10px] font-medium uppercase text-emerald-700">Saldo antes</span>
-                    <span className="font-medium text-slate-900">{formatCurrency(selectedCommitment.currentBalance)}</span>
-                  </div>
-                  <div>
-                    <span className="block text-[10px] font-medium uppercase text-emerald-700">Desconto</span>
-                    <span className="font-medium text-slate-900">{formatCurrency(parseFloat(value) || 0)}</span>
-                  </div>
-                  <div>
-                    <span className="block text-[10px] font-medium uppercase text-emerald-700">Saldo atual</span>
-                    <span className={`font-medium ${previewCurrentBalance < 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
-                      {formatCurrency(previewCurrentBalance)}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 font-medium">
-                  Selecione um empenho para puxar dotação, programa, valor e saldo automaticamente.
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Valor da Nota (R$) <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={value}
-                    onChange={(e) => setValue(e.target.value)}
-                    placeholder="0.00"
-                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Data de Emissão</label>
-                  <input
-                    type="text"
-                    value={issueDate}
-                    onChange={(e) => setIssueDate(e.target.value)}
-                    placeholder="Ex: 28/07/2026"
-                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Data de Atesto</label>
-                  <input
-                    type="text"
-                    value={attestationDate}
-                    onChange={(e) => setAttestationDate(e.target.value)}
-                    placeholder="Ex: 29/07/2026"
-                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Fiscal Responsável</label>
-                  <input
-                    type="text"
-                    value={fiscalName}
-                    onChange={(e) => setFiscalName(e.target.value)}
-                    placeholder="Nome do fiscal"
-                    className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-lg outline-none font-medium text-slate-800"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-2 pt-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingNote(null);
-                    setShowModal(false);
-                  }}
-                  className="px-4 py-2 text-xs text-slate-600 hover:bg-slate-100 font-medium rounded-lg cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-xs transition-colors cursor-pointer"
-                >
-                  {editingNote ? 'Atualizar Nota' : 'Confirmar Lançamento'}
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}

@@ -79,6 +79,115 @@ export const FiscaisView: React.FC<FiscaisViewProps> = ({
     );
   });
 
+  if (isModalOpen) {
+    return (
+      <div className="animate-fadeIn pb-12">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 w-full overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
+            <div>
+              <h3 className="text-lg font-medium text-slate-800">
+                {editingFiscal ? 'Editar Fiscal / Portaria' : 'Cadastrar Novo Fiscal'}
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">Preencha os dados do servidor responsável e portaria</p>
+            </div>
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="text-slate-400 hover:text-slate-600 p-2 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                Nome do Fiscal <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ex: Dr. Roberto Carlos da Silva"
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                Órgão / Categoria
+              </label>
+              <select
+                value={organ}
+                onChange={(e) => setOrgan(e.target.value as any)}
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-800"
+              >
+                <option value="Secretaria de Saúde">Secretaria de Saúde</option>
+                <option value="Fundo Municipal de Saúde">Fundo Municipal de Saúde</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                Portaria do Fiscal (Número / Ano) <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={portaria}
+                onChange={(e) => setPortaria(e.target.value)}
+                placeholder="Ex: Portaria FMS nº 042/2025"
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Data de Publicação
+                </label>
+                <input
+                  type="date"
+                  value={brDateToInputDate(publicationDate)}
+                  onChange={(e) => setPublicationDate(inputDateToBRDate(e.target.value))}
+                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Vigência da Portaria
+                </label>
+                <input
+                  type="date"
+                  value={brDateToInputDate(validity)}
+                  onChange={(e) => setValidity(inputDateToBRDate(e.target.value))}
+                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                />
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-100 flex items-center justify-end space-x-2">
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="flex items-center space-x-1.5 px-4 py-2 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-all cursor-pointer"
+              >
+                <Check className="w-4 h-4" />
+                <span>{editingFiscal ? 'Atualizar Fiscal' : 'Salvar Fiscal'}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fadeIn pb-12">
       {/* Page Header */}
@@ -187,113 +296,6 @@ export const FiscaisView: React.FC<FiscaisViewProps> = ({
         </div>
       </div>
 
-      {/* Modal Form */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-              <div>
-                <h3 className="text-sm font-medium text-slate-800">
-                  {editingFiscal ? 'Editar Fiscal / Portaria' : 'Cadastrar Novo Fiscal'}
-                </h3>
-                <p className="text-[11px] text-slate-500">Preencha os dados do servidor responsável e portaria</p>
-              </div>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Nome do Fiscal <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Ex: Dr. Roberto Carlos da Silva"
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Órgão / Categoria
-                </label>
-                <select
-                  value={organ}
-                  onChange={(e) => setOrgan(e.target.value as any)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-800"
-                >
-                  <option value="Secretaria de Saúde">Secretaria de Saúde</option>
-                  <option value="Fundo Municipal de Saúde">Fundo Municipal de Saúde</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Portaria do Fiscal (Número / Ano) <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={portaria}
-                  onChange={(e) => setPortaria(e.target.value)}
-                  placeholder="Ex: Portaria FMS nº 042/2025"
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Data de Publicação
-                  </label>
-                  <input
-                    type="date"
-                    value={brDateToInputDate(publicationDate)}
-                    onChange={(e) => setPublicationDate(inputDateToBRDate(e.target.value))}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Vigência da Portaria
-                  </label>
-                  <input
-                    type="date"
-                    value={brDateToInputDate(validity)}
-                    onChange={(e) => setValidity(inputDateToBRDate(e.target.value))}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-end space-x-2">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex items-center space-x-1.5 px-4 py-2 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-all cursor-pointer"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>{editingFiscal ? 'Atualizar Fiscal' : 'Salvar Fiscal'}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

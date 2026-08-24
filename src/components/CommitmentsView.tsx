@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Banknote, Plus, Search, Trash2, X, Check, Eye, Edit3, Link2 } from 'lucide-react';
-import { Commitment, ServiceNote } from '../types';
+import { Banknote, Plus, Search, Trash2, X, Check, Eye, Edit3, Link2, Building2 } from 'lucide-react';
+import { Commitment, ServiceNote, Creditor, Contract } from '../types';
 
 export const BUDGET_ALLOCATIONS = ['06.01', '06.06'];
 
@@ -12,13 +12,15 @@ export const PROGRAMS_BY_ALLOCATION: Record<string, string[]> = {
   ],
   '06.06': [
     'SECRETARIA DE SAÚDE',
-    'CASA DE APOIO SECRETARIA DE SAÚDE'
+    'CASA DE APOIO'
   ]
 };
 
 interface CommitmentsViewProps {
   commitments: Commitment[];
   notes?: ServiceNote[];
+  creditors?: Creditor[];
+  contracts?: Contract[];
   onAddCommitment: (commitment: Omit<Commitment, 'id' | 'currentBalance' | 'balance'>) => void;
   onUpdateCommitment?: (commitment: Commitment) => void;
   onDeleteCommitment: (id: string) => void;
@@ -27,6 +29,8 @@ interface CommitmentsViewProps {
 export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
   commitments,
   notes = [],
+  creditors = [],
+  contracts = [],
   onAddCommitment,
   onUpdateCommitment,
   onDeleteCommitment
@@ -40,6 +44,28 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
   const [program, setProgram] = useState(PROGRAMS_BY_ALLOCATION['06.01'][0]);
   const [value, setValue] = useState('');
   const [description, setDescription] = useState('');
+  const [creditor, setCreditor] = useState('');
+
+  const registeredCompanies = useMemo(() => {
+    const list: { id: string; name: string; cnpj?: string }[] = [];
+    const seenNames = new Set<string>();
+
+    creditors.forEach((c) => {
+      if (c.name && !seenNames.has(c.name)) {
+        seenNames.add(c.name);
+        list.push({ id: c.id, name: c.name, cnpj: c.cnpj });
+      }
+    });
+
+    contracts.forEach((c) => {
+      if (c.creditor && !seenNames.has(c.creditor)) {
+        seenNames.add(c.creditor);
+        list.push({ id: `contract-cred-${c.id}`, name: c.creditor, cnpj: c.cnpj });
+      }
+    });
+
+    return list;
+  }, [creditors, contracts]);
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
@@ -58,6 +84,7 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
     setProgram(PROGRAMS_BY_ALLOCATION['06.01'][0]);
     setValue('');
     setDescription('');
+    setCreditor('');
   };
 
   const handleOpen = () => {
@@ -72,6 +99,7 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
     setProgram(commitment.program);
     setValue(String(commitment.value || ''));
     setDescription(commitment.description || '');
+    setCreditor(commitment.creditor || '');
     setShowModal(true);
   };
 
@@ -89,7 +117,8 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
         value: commitmentValue,
         balance: commitmentValue,
         currentBalance: (editingCommitment.currentBalance || 0) + delta,
-        description
+        description,
+        creditor
       });
     } else {
       onAddCommitment({
@@ -97,7 +126,8 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
         budgetAllocation,
         program,
         value: commitmentValue,
-        description
+        description,
+        creditor
       });
     }
     setShowModal(false);
@@ -115,6 +145,213 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
       (commitment.description || '').toLowerCase().includes(term)
     );
   }, [commitments, searchTerm]);
+
+  if (showModal) {
+    return (
+      <div className="animate-fadeIn pb-12">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 w-full overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
+            <div>
+              <h3 className="text-lg font-medium text-slate-800">{editingCommitment ? 'Editar Empenho' : 'Cadastrar Empenho'}</h3>
+              <p className="text-xs text-slate-500 mt-1">Informe dotação, programa e valor.</p>
+            </div>
+            <button
+              onClick={() => setShowModal(false)}
+              className="text-slate-400 hover:text-slate-600 p-2 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Dotação <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  required
+                  value={budgetAllocation}
+                  onChange={(e) => handleBudgetChange(e.target.value)}
+                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
+                >
+                  {BUDGET_ALLOCATIONS.map((item) => (
+                    <option key={item} value={item}>{item}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Número do Empenho <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={number}
+                  onChange={(e) => setNumber(e.target.value)}
+                  placeholder="Ex: 000123"
+                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                Programa <span className="text-rose-500">*</span>
+              </label>
+              <select
+                required
+                value={program}
+                onChange={(e) => setProgram(e.target.value)}
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
+              >
+                {availablePrograms.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                Valor do Empenho (R$) <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                required
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                placeholder="0.00"
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
+              />
+              <p className="text-[10px] text-slate-500 mt-1">
+                O saldo atual inicia igual ao valor do empenho e diminui quando uma nota fiscal for vinculada.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">Observação</label>
+              <textarea
+                rows={3}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Descrição opcional do empenho"
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                Empresa / Credor
+              </label>
+              <select
+                value={creditor}
+                onChange={(e) => setCreditor(e.target.value)}
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
+              >
+                <option value="">-- Sem vínculo (Pode ser usado em qualquer nota) --</option>
+                {registeredCompanies.map((c) => (
+                  <option key={c.id} value={c.name}>
+                    {c.name} {c.cnpj ? `- CNPJ: ${c.cnpj}` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-all cursor-pointer"
+              >
+                <Check className="w-4 h-4" />
+                <span>{editingCommitment ? 'Atualizar Empenho' : 'Salvar Empenho'}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  if (selectedCommitment) {
+    return (
+      <div className="animate-fadeIn pb-12">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 w-full overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
+            <div>
+              <h3 className="text-lg font-medium text-slate-900">Informações do Empenho</h3>
+              <p className="text-xs text-slate-500 mt-1">Número {selectedCommitment.number}</p>
+            </div>
+            <button onClick={() => setSelectedCommitment(null)} className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="p-6 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <span className="block text-xs uppercase font-medium text-slate-400">Dotação</span>
+                <span className="font-medium text-emerald-700">{selectedCommitment.budgetAllocation}</span>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 md:col-span-3">
+                <span className="block text-xs uppercase font-medium text-slate-400">Programa</span>
+                <span className="font-medium text-slate-900">{selectedCommitment.program}</span>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <span className="block text-xs uppercase font-medium text-slate-400">Valor</span>
+                <span className="font-medium text-slate-900">{formatCurrency(selectedCommitment.value)}</span>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <span className="block text-xs uppercase font-medium text-slate-400">Saldo atual</span>
+                <span className={`font-medium ${selectedCommitment.currentBalance < 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
+                  {formatCurrency(selectedCommitment.currentBalance)}
+                </span>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 md:col-span-2">
+                <span className="block text-xs uppercase font-medium text-slate-400">Observação</span>
+                <span className="font-medium text-slate-700">{selectedCommitment.description || '-'}</span>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 md:col-span-2">
+                <span className="block text-xs uppercase font-medium text-slate-400 flex items-center gap-1"><Building2 className="w-3 h-3" /> Credor Vinculado</span>
+                <span className="font-medium text-slate-700">{selectedCommitment.creditor || 'Nenhum'}</span>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <h4 className="text-sm font-medium uppercase text-slate-500 flex items-center gap-2 mb-3">
+                <Link2 className="w-4 h-4" />
+                <span>Notas vinculadas ({getLinkedNotes(selectedCommitment).length})</span>
+              </h4>
+              <div className="space-y-3">
+                {getLinkedNotes(selectedCommitment).length === 0 ? (
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-500 font-medium">
+                    Nenhuma nota vinculada a este empenho.
+                  </div>
+                ) : (
+                  getLinkedNotes(selectedCommitment).map((note) => (
+                    <div key={note.id} className="rounded-xl border border-slate-200 bg-white p-4 grid grid-cols-1 md:grid-cols-4 gap-3 text-sm">
+                      <span className="font-medium text-slate-900">{note.noteNumber}</span>
+                      <span className="text-slate-600">Contrato: {note.contractNum || '-'}</span>
+                      <span className="text-slate-600">Atesto: {note.attestationDate || '-'}</span>
+                      <span className="font-medium text-right text-slate-900">{formatCurrency(note.value)}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fadeIn pb-12">
@@ -223,186 +460,6 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
         </div>
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-              <div>
-                <h3 className="text-sm font-medium text-slate-800">{editingCommitment ? 'Editar Empenho' : 'Cadastrar Empenho'}</h3>
-                <p className="text-[11px] text-slate-500">Informe dotação, programa e valor. O saldo atual será calculado automaticamente.</p>
-              </div>
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Dotação <span className="text-rose-500">*</span>
-                  </label>
-                  <select
-                    required
-                    value={budgetAllocation}
-                    onChange={(e) => handleBudgetChange(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
-                  >
-                    {BUDGET_ALLOCATIONS.map((item) => (
-                      <option key={item} value={item}>{item}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Número do Empenho <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={number}
-                    onChange={(e) => setNumber(e.target.value)}
-                    placeholder="Ex: 000123"
-                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Programa <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  required
-                  value={program}
-                  onChange={(e) => setProgram(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
-                >
-                  {availablePrograms.map((item) => (
-                    <option key={item} value={item}>{item}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Valor do Empenho (R$) <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  required
-                  value={value}
-                  onChange={(e) => setValue(e.target.value)}
-                  placeholder="0.00"
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
-                />
-                <p className="text-[10px] text-slate-500 mt-1">
-                  O saldo atual inicia igual ao valor do empenho e diminui quando uma nota fiscal for vinculada.
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Observação</label>
-                <textarea
-                  rows={3}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Descrição opcional do empenho"
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                />
-              </div>
-
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-all cursor-pointer"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>{editingCommitment ? 'Atualizar Empenho' : 'Salvar Empenho'}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {selectedCommitment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-2xl overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
-              <div>
-                <h3 className="text-base font-medium text-slate-900">Informações do Empenho</h3>
-                <p className="text-[11px] text-slate-500">Número {selectedCommitment.number}</p>
-              </div>
-              <button onClick={() => setSelectedCommitment(null)} className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                  <span className="block text-[10px] uppercase font-medium text-slate-400">Dotação</span>
-                  <span className="font-medium text-emerald-700">{selectedCommitment.budgetAllocation}</span>
-                </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 md:col-span-3">
-                  <span className="block text-[10px] uppercase font-medium text-slate-400">Programa</span>
-                  <span className="font-medium text-slate-900">{selectedCommitment.program}</span>
-                </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                  <span className="block text-[10px] uppercase font-medium text-slate-400">Valor</span>
-                  <span className="font-medium text-slate-900">{formatCurrency(selectedCommitment.value)}</span>
-                </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                  <span className="block text-[10px] uppercase font-medium text-slate-400">Saldo atual</span>
-                  <span className={`font-medium ${selectedCommitment.currentBalance < 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
-                    {formatCurrency(selectedCommitment.currentBalance)}
-                  </span>
-                </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 md:col-span-2">
-                  <span className="block text-[10px] uppercase font-medium text-slate-400">Observação</span>
-                  <span className="font-medium text-slate-700">{selectedCommitment.description || '-'}</span>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-xs font-medium uppercase text-slate-500 flex items-center gap-2 mb-2">
-                  <Link2 className="w-3.5 h-3.5" />
-                  <span>Notas vinculadas ({getLinkedNotes(selectedCommitment).length})</span>
-                </h4>
-                <div className="space-y-2 max-h-56 overflow-y-auto">
-                  {getLinkedNotes(selectedCommitment).length === 0 ? (
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-500 font-medium">
-                      Nenhuma nota vinculada a este empenho.
-                    </div>
-                  ) : (
-                    getLinkedNotes(selectedCommitment).map((note) => (
-                      <div key={note.id} className="rounded-xl border border-slate-200 bg-white p-3 grid grid-cols-1 md:grid-cols-4 gap-2 text-xs">
-                        <span className="font-medium text-slate-900">{note.noteNumber}</span>
-                        <span className="text-slate-600">Contrato: {note.contractNum || '-'}</span>
-                        <span className="text-slate-600">Atesto: {note.attestationDate || '-'}</span>
-                        <span className="font-medium text-right text-slate-900">{formatCurrency(note.value)}</span>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
