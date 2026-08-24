@@ -10,6 +10,9 @@ interface Props {
 }
 
 type CheckValue = 'sim' | 'nao' | 'na';
+type ObjectFulfillmentValue = 'total' | 'parcial' | 'insatisfatorio';
+type ContractorPerformanceValue = 'otimo' | 'bom' | 'regular' | 'ruim';
+type AdditiveNeedValue = 'sim' | 'nao';
 
 interface GeneralChecks {
   validVigency: CheckValue;
@@ -39,6 +42,13 @@ interface DocumentManagementChecks {
   meetingRecords: CheckValue;
 }
 
+interface PeriodEvaluation {
+  objectFulfillment: ObjectFulfillmentValue;
+  contractorPerformance: ContractorPerformanceValue;
+  correctiveActions: string;
+  contractualAdditiveNeeded: AdditiveNeedValue;
+}
+
 interface FiscalizationReport {
   id: string;
   createdAt: string;
@@ -57,6 +67,7 @@ interface FiscalizationReport {
   objectExecutionChecks?: ObjectExecutionChecks;
   invoicePaymentChecks?: InvoicePaymentChecks;
   documentManagementChecks?: DocumentManagementChecks;
+  periodEvaluation?: PeriodEvaluation;
   noteIds: string[];
   notesTotal: number;
 }
@@ -89,6 +100,13 @@ const DOCUMENT_MANAGEMENT_DEFAULT_CHECKS: DocumentManagementChecks = {
   communicationsRegistered: 'na',
   occurrencesControlUpdated: 'na',
   meetingRecords: 'na'
+};
+
+const PERIOD_EVALUATION_DEFAULT: PeriodEvaluation = {
+  objectFulfillment: 'total',
+  contractorPerformance: 'bom',
+  correctiveActions: '',
+  contractualAdditiveNeeded: 'nao'
 };
 
 const GENERAL_CHECK_ITEMS: Array<{ key: keyof GeneralChecks; number: string; label: string }> = [
@@ -190,9 +208,24 @@ const norm = (value = '') =>
 
 const answerLabel = (value?: CheckValue) => {
   if (value === 'sim') return 'Sim';
-  if (value === 'nao') return 'Não';
+  if (value === 'nao') return 'N\u00e3o';
   return 'N/A';
 };
+
+const objectFulfillmentLabel = (value?: ObjectFulfillmentValue) => {
+  if (value === 'parcial') return 'Parcial';
+  if (value === 'insatisfatorio') return 'Insatisfat\u00f3rio';
+  return 'Total';
+};
+
+const contractorPerformanceLabel = (value?: ContractorPerformanceValue) => {
+  if (value === 'otimo') return '\u00d3timo';
+  if (value === 'regular') return 'Regular';
+  if (value === 'ruim') return 'Ruim';
+  return 'Bom';
+};
+
+const additiveNeedLabel = (value?: AdditiveNeedValue) => (value === 'sim' ? 'Sim' : 'N\u00e3o');
 
 const Info: React.FC<{ label: string; value: string }> = ({ label, value }) => (
   <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
@@ -232,6 +265,36 @@ const CheckSelector: React.FC<{
   </div>
 );
 
+
+const ChoiceSelector = <T extends string>({
+  value,
+  options,
+  onChange,
+  className = 'sm:w-80'
+}: {
+  value: T;
+  options: Array<{ value: T; label: string }>;
+  onChange: (value: T) => void;
+  className?: string;
+}) => (
+  <div className={`grid gap-1.5 w-full ${className}`} style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}>
+    {options.map((option) => (
+      <button
+        key={option.value}
+        type="button"
+        onClick={() => onChange(option.value)}
+        className={`px-3 py-1.5 rounded-lg border text-[11px] font-medium transition-colors cursor-pointer ${
+          value === option.value
+            ? 'bg-emerald-600 text-white border-emerald-600'
+            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+        }`}
+      >
+        {option.label}
+      </button>
+    ))}
+  </div>
+);
+
 export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, notes, creditors, fiscais }) => {
   const [reports, setReports] = useState<FiscalizationReport[]>(() => {
     try {
@@ -250,6 +313,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
   const [objectExecutionChecks, setObjectExecutionChecks] = useState<ObjectExecutionChecks>(OBJECT_EXECUTION_DEFAULT_CHECKS);
   const [invoicePaymentChecks, setInvoicePaymentChecks] = useState<InvoicePaymentChecks>(INVOICE_PAYMENT_DEFAULT_CHECKS);
   const [documentManagementChecks, setDocumentManagementChecks] = useState<DocumentManagementChecks>(DOCUMENT_MANAGEMENT_DEFAULT_CHECKS);
+  const [periodEvaluation, setPeriodEvaluation] = useState<PeriodEvaluation>(PERIOD_EVALUATION_DEFAULT);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
 
@@ -317,6 +381,10 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
     setDocumentManagementChecks((current) => ({ ...current, [key]: value }));
   };
 
+  const updatePeriodEvaluation = <K extends keyof PeriodEvaluation>(key: K, value: PeriodEvaluation[K]) => {
+    setPeriodEvaluation((current) => ({ ...current, [key]: value }));
+  };
+
   const openCreate = () => {
     setMode('create');
     setSelectedReportId(null);
@@ -329,6 +397,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
     setObjectExecutionChecks(OBJECT_EXECUTION_DEFAULT_CHECKS);
     setInvoicePaymentChecks(INVOICE_PAYMENT_DEFAULT_CHECKS);
     setDocumentManagementChecks(DOCUMENT_MANAGEMENT_DEFAULT_CHECKS);
+    setPeriodEvaluation(PERIOD_EVALUATION_DEFAULT);
   };
 
   const saveReport = () => {
@@ -351,6 +420,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
       objectExecutionChecks,
       invoicePaymentChecks,
       documentManagementChecks,
+      periodEvaluation,
       noteIds: selectedNotes.map((note) => note.id),
       notesTotal: selectedNotesTotal
     };
@@ -530,6 +600,68 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
               ))}
             </div>
           </div>
+
+          <div className="space-y-3 pt-2 border-t border-slate-100">
+            <SectionTitle number="3.5" title={"Avalia\u00e7\u00e3o geral do per\u00edodo"} />
+            <div className="space-y-2">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/60">
+                <div>
+                  <span className="text-[10px] font-medium text-emerald-700">Cumprimento do objeto</span>
+                  <p className="text-xs font-medium text-slate-800 mt-0.5">Avalia\u00e7\u00e3o do cumprimento do objeto no per\u00edodo</p>
+                </div>
+                <ChoiceSelector
+                  value={periodEvaluation.objectFulfillment}
+                  options={[
+                    { value: 'total', label: 'Total' },
+                    { value: 'parcial', label: 'Parcial' },
+                    { value: 'insatisfatorio', label: 'Insatisfat\u00f3rio' }
+                  ]}
+                  onChange={(value) => updatePeriodEvaluation('objectFulfillment', value)}
+                />
+              </div>
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/60">
+                <div>
+                  <span className="text-[10px] font-medium text-emerald-700">Desempenho da contratada</span>
+                  <p className="text-xs font-medium text-slate-800 mt-0.5">Classifica\u00e7\u00e3o do desempenho apresentado</p>
+                </div>
+                <ChoiceSelector
+                  value={periodEvaluation.contractorPerformance}
+                  options={[
+                    { value: 'otimo', label: '\u00d3timo' },
+                    { value: 'bom', label: 'Bom' },
+                    { value: 'regular', label: 'Regular' },
+                    { value: 'ruim', label: 'Ruim' }
+                  ]}
+                  onChange={(value) => updatePeriodEvaluation('contractorPerformance', value)}
+                />
+              </div>
+              <label className="block p-3 rounded-xl border border-slate-200 bg-slate-50/60">
+                <span className="text-[10px] font-medium text-emerald-700">Recomenda\u00e7\u00f5es / a\u00e7\u00f5es corretivas</span>
+                <textarea
+                  value={periodEvaluation.correctiveActions}
+                  onChange={(event) => updatePeriodEvaluation('correctiveActions', event.target.value)}
+                  rows={4}
+                  placeholder="Descreva recomenda\u00e7\u00f5es, provid\u00eancias ou a\u00e7\u00f5es corretivas necess\u00e1rias"
+                  className="mt-2 w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 resize-y"
+                />
+              </label>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/60">
+                <div>
+                  <span className="text-[10px] font-medium text-emerald-700">Necessidade de aditivo contratual</span>
+                  <p className="text-xs font-medium text-slate-800 mt-0.5">Indique se h\u00e1 necessidade de formalizar aditivo</p>
+                </div>
+                <ChoiceSelector
+                  value={periodEvaluation.contractualAdditiveNeeded}
+                  options={[
+                    { value: 'sim', label: 'Sim' },
+                    { value: 'nao', label: 'N\u00e3o' }
+                  ]}
+                  onChange={(value) => updatePeriodEvaluation('contractualAdditiveNeeded', value)}
+                  className="sm:w-36"
+                />
+              </div>
+            </div>
+          </div>
         </section>
 
         <section className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-4">
@@ -551,6 +683,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
     const executionChecks = selectedReport.objectExecutionChecks || OBJECT_EXECUTION_DEFAULT_CHECKS;
     const paymentChecks = selectedReport.invoicePaymentChecks || INVOICE_PAYMENT_DEFAULT_CHECKS;
     const documentChecks = selectedReport.documentManagementChecks || DOCUMENT_MANAGEMENT_DEFAULT_CHECKS;
+    const evaluation = selectedReport.periodEvaluation || PERIOD_EVALUATION_DEFAULT;
     return (
       <div className="space-y-6">
         <div className="print:hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -657,6 +790,19 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
                   <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium shrink-0">{answerLabel(documentChecks[item.key])}</span>
                 </div>
               ))}
+            </div>
+          </div>
+
+          <div className="space-y-3 pt-2 border-t border-slate-100">
+            <SectionTitle number="3.5" title={"Avalia\u00e7\u00e3o geral do per\u00edodo"} />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <Info label="Cumprimento do objeto" value={objectFulfillmentLabel(evaluation.objectFulfillment)} />
+              <Info label="Desempenho da contratada" value={contractorPerformanceLabel(evaluation.contractorPerformance)} />
+              <Info label="Necessidade de aditivo contratual" value={additiveNeedLabel(evaluation.contractualAdditiveNeeded)} />
+            </div>
+            <div className="space-y-1.5">
+              <span className="text-xs font-medium text-slate-700">Recomenda\u00e7\u00f5es / a\u00e7\u00f5es corretivas</span>
+              <div className="min-h-24 px-3 py-2 text-xs leading-relaxed text-slate-700 bg-slate-50 border border-slate-200 rounded-xl whitespace-pre-wrap">{evaluation.correctiveActions.trim() || 'N\u00e3o informado'}</div>
             </div>
           </div>
         </section>
