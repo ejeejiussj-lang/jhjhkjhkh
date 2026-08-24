@@ -14,6 +14,7 @@ type CheckValue = 'sim' | 'nao' | 'na';
 type ObjectFulfillmentValue = '' | 'total' | 'parcial' | 'insatisfatorio';
 type ContractorPerformanceValue = '' | 'otimo' | 'bom' | 'regular' | 'ruim';
 type AdditiveNeedValue = '' | 'sim' | 'nao';
+type ChecklistObservations = Record<string, string>;
 
 interface GeneralChecks {
   validVigency: CheckValue;
@@ -78,6 +79,7 @@ interface FiscalizationReport {
   objectExecutionChecks?: ObjectExecutionChecks;
   invoicePaymentChecks?: InvoicePaymentChecks;
   documentManagementChecks?: DocumentManagementChecks;
+  checklistObservations?: ChecklistObservations;
   periodEvaluation?: PeriodEvaluation;
   selectedAmendment?: ReportAmendmentInfo;
   noteIds: string[];
@@ -245,6 +247,51 @@ const additiveNeedLabel = (value?: AdditiveNeedValue) => {
   return '-';
 };
 
+const checklistItemId = (section: string, key: string) => `${section}.${key}`;
+
+const ChecklistFormItem = <K extends string>({
+  section,
+  item,
+  value,
+  observation,
+  onCheckChange,
+  onObservationChange
+}: {
+  section: string;
+  item: { key: K; number: string; label: string };
+  value: CheckValue;
+  observation: string;
+  onCheckChange: (key: K, value: CheckValue) => void;
+  onObservationChange: (id: string, value: string) => void;
+}) => {
+  const id = checklistItemId(section, item.key);
+  const showObservation = value === 'sim' || value === 'nao';
+
+  return (
+    <div className="p-3 rounded-xl border border-slate-200 bg-slate-50/60 space-y-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <span className="text-[10px] font-medium text-emerald-700">Item {item.number}</span>
+          <p className="text-xs font-medium text-slate-800 mt-0.5">{item.label}</p>
+        </div>
+        <CheckSelector value={value} onChange={(nextValue) => onCheckChange(item.key, nextValue)} />
+      </div>
+      {showObservation && (
+        <label className="block space-y-1.5">
+          <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Observações</span>
+          <textarea
+            value={observation}
+            onChange={(event) => onObservationChange(id, event.target.value)}
+            rows={3}
+            placeholder="Digite a observação deste item"
+            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 resize-y"
+          />
+        </label>
+      )}
+    </div>
+  );
+};
+
 const Info: React.FC<{ label: string; value: string }> = ({ label, value }) => (
   <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
     <span className="text-[10px] uppercase tracking-wider text-slate-400">{label}</span>
@@ -328,7 +375,7 @@ const PrintInfoTable: React.FC<{ rows: Array<[string, string]> }> = ({ rows }) =
 
 const PrintChecklistTable: React.FC<{
   title: string;
-  items: Array<{ number: string; label: string; answer: string }>;
+  items: Array<{ number: string; label: string; answer: string; observation?: string }>;
 }> = ({ title, items }) => (
   <div className="break-inside-avoid">
     <h3 className="border border-slate-400 bg-slate-100 px-2 py-1.5 text-[11px] font-semibold text-slate-900">{title}</h3>
@@ -344,7 +391,10 @@ const PrintChecklistTable: React.FC<{
         {items.map((item) => (
           <tr key={item.number}>
             <td className="border border-slate-400 px-2 py-1.5 font-medium align-top">{item.number}</td>
-            <td className="border border-slate-400 px-2 py-1.5 align-top">{item.label}</td>
+            <td className="border border-slate-400 px-2 py-1.5 align-top">
+              <div>{item.label}</div>
+              {item.observation && <div className="mt-1 text-[9.5px] leading-relaxed text-slate-700"><strong>Observações:</strong> {item.observation}</div>}
+            </td>
             <td className="border border-slate-400 px-2 py-1.5 text-center font-medium align-top">{item.answer}</td>
           </tr>
         ))}
@@ -371,6 +421,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
   const [objectExecutionChecks, setObjectExecutionChecks] = useState<ObjectExecutionChecks>(OBJECT_EXECUTION_DEFAULT_CHECKS);
   const [invoicePaymentChecks, setInvoicePaymentChecks] = useState<InvoicePaymentChecks>(INVOICE_PAYMENT_DEFAULT_CHECKS);
   const [documentManagementChecks, setDocumentManagementChecks] = useState<DocumentManagementChecks>(DOCUMENT_MANAGEMENT_DEFAULT_CHECKS);
+  const [checklistObservations, setChecklistObservations] = useState<ChecklistObservations>({});
   const [periodEvaluation, setPeriodEvaluation] = useState<PeriodEvaluation>(PERIOD_EVALUATION_DEFAULT);
   const [selectedAmendmentId, setSelectedAmendmentId] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -454,6 +505,10 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
     setDocumentManagementChecks((current) => ({ ...current, [key]: value }));
   };
 
+  const updateChecklistObservation = (id: string, value: string) => {
+    setChecklistObservations((current) => ({ ...current, [id]: value }));
+  };
+
   const updatePeriodEvaluation = <K extends keyof PeriodEvaluation>(key: K, value: PeriodEvaluation[K]) => {
     setPeriodEvaluation((current) => ({ ...current, [key]: value }));
   };
@@ -470,6 +525,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
     setObjectExecutionChecks(OBJECT_EXECUTION_DEFAULT_CHECKS);
     setInvoicePaymentChecks(INVOICE_PAYMENT_DEFAULT_CHECKS);
     setDocumentManagementChecks(DOCUMENT_MANAGEMENT_DEFAULT_CHECKS);
+    setChecklistObservations({});
     setPeriodEvaluation(PERIOD_EVALUATION_DEFAULT);
     setSelectedAmendmentId('');
   };
@@ -494,6 +550,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
       objectExecutionChecks,
       invoicePaymentChecks,
       documentManagementChecks,
+      checklistObservations,
       periodEvaluation,
       selectedAmendment: selectedAmendment
         ? {
@@ -638,13 +695,15 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
             <SectionTitle number="3.1" title="Informações gerais do contrato" />
             <div className="space-y-2">
               {GENERAL_CHECK_ITEMS.map((item) => (
-                <div key={item.key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/60">
-                  <div>
-                    <span className="text-[10px] font-medium text-emerald-700">Item {item.number}</span>
-                    <p className="text-xs font-medium text-slate-800 mt-0.5">{item.label}</p>
-                  </div>
-                  <CheckSelector value={generalChecks[item.key]} onChange={(value) => updateGeneralCheck(item.key, value)} />
-                </div>
+                <ChecklistFormItem
+                  key={item.key}
+                  section="3.1"
+                  item={item}
+                  value={generalChecks[item.key]}
+                  observation={checklistObservations[checklistItemId('3.1', item.key)] || ''}
+                  onCheckChange={updateGeneralCheck}
+                  onObservationChange={updateChecklistObservation}
+                />
               ))}
             </div>
           </div>
@@ -653,13 +712,15 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
             <SectionTitle number="3.2" title="Execução do objeto" />
             <div className="space-y-2">
               {OBJECT_EXECUTION_CHECK_ITEMS.map((item) => (
-                <div key={item.key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/60">
-                  <div>
-                    <span className="text-[10px] font-medium text-emerald-700">Item {item.number}</span>
-                    <p className="text-xs font-medium text-slate-800 mt-0.5">{item.label}</p>
-                  </div>
-                  <CheckSelector value={objectExecutionChecks[item.key]} onChange={(value) => updateObjectExecutionCheck(item.key, value)} />
-                </div>
+                <ChecklistFormItem
+                  key={item.key}
+                  section="3.2"
+                  item={item}
+                  value={objectExecutionChecks[item.key]}
+                  observation={checklistObservations[checklistItemId('3.2', item.key)] || ''}
+                  onCheckChange={updateObjectExecutionCheck}
+                  onObservationChange={updateChecklistObservation}
+                />
               ))}
             </div>
           </div>
@@ -668,13 +729,15 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
             <SectionTitle number="3.3" title="Pagamentos de notas fiscais" />
             <div className="space-y-2">
               {INVOICE_PAYMENT_CHECK_ITEMS.map((item) => (
-                <div key={item.key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/60">
-                  <div>
-                    <span className="text-[10px] font-medium text-emerald-700">Item {item.number}</span>
-                    <p className="text-xs font-medium text-slate-800 mt-0.5">{item.label}</p>
-                  </div>
-                  <CheckSelector value={invoicePaymentChecks[item.key]} onChange={(value) => updateInvoicePaymentCheck(item.key, value)} />
-                </div>
+                <ChecklistFormItem
+                  key={item.key}
+                  section="3.3"
+                  item={item}
+                  value={invoicePaymentChecks[item.key]}
+                  observation={checklistObservations[checklistItemId('3.3', item.key)] || ''}
+                  onCheckChange={updateInvoicePaymentCheck}
+                  onObservationChange={updateChecklistObservation}
+                />
               ))}
             </div>
           </div>
@@ -683,13 +746,15 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
             <SectionTitle number="3.4" title={"Gestão documental e registros"} />
             <div className="space-y-2">
               {DOCUMENT_MANAGEMENT_CHECK_ITEMS.map((item) => (
-                <div key={item.key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/60">
-                  <div>
-                    <span className="text-[10px] font-medium text-emerald-700">Item {item.number}</span>
-                    <p className="text-xs font-medium text-slate-800 mt-0.5">{item.label}</p>
-                  </div>
-                  <CheckSelector value={documentManagementChecks[item.key]} onChange={(value) => updateDocumentManagementCheck(item.key, value)} />
-                </div>
+                <ChecklistFormItem
+                  key={item.key}
+                  section="3.4"
+                  item={item}
+                  value={documentManagementChecks[item.key]}
+                  observation={checklistObservations[checklistItemId('3.4', item.key)] || ''}
+                  onCheckChange={updateDocumentManagementCheck}
+                  onObservationChange={updateChecklistObservation}
+                />
               ))}
             </div>
           </div>
@@ -868,60 +933,100 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
           <div className="space-y-3 pt-2 border-t border-slate-100">
             <SectionTitle number="3.1" title="Informações gerais do contrato" />
             <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">
-              {GENERAL_CHECK_ITEMS.map((item) => (
-                <div key={item.key} className="p-3 bg-white flex items-center justify-between gap-3">
-                  <div>
-                    <span className="text-[10px] font-medium text-emerald-700">Item {item.number}</span>
-                    <p className="text-xs font-medium text-slate-800 mt-0.5">{item.label}</p>
+              {GENERAL_CHECK_ITEMS.map((item) => {
+                const observation = observationFor('3.1', item.key, checks[item.key]);
+                return (
+                  <div key={item.key} className="p-3 bg-white flex flex-col gap-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <span className="text-[10px] font-medium text-emerald-700">Item {item.number}</span>
+                        <p className="text-xs font-medium text-slate-800 mt-0.5">{item.label}</p>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium shrink-0">{answerLabel(checks[item.key])}</span>
+                    </div>
+                    {observation && (
+                      <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-700 whitespace-pre-wrap">
+                        <span className="font-medium text-slate-500">Observações: </span>{observation}
+                      </div>
+                    )}
                   </div>
-                  <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium shrink-0">{answerLabel(checks[item.key])}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
           <div className="space-y-3 pt-2 border-t border-slate-100">
             <SectionTitle number="3.2" title="Execução do objeto" />
             <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">
-              {OBJECT_EXECUTION_CHECK_ITEMS.map((item) => (
-                <div key={item.key} className="p-3 bg-white flex items-center justify-between gap-3">
-                  <div>
-                    <span className="text-[10px] font-medium text-emerald-700">Item {item.number}</span>
-                    <p className="text-xs font-medium text-slate-800 mt-0.5">{item.label}</p>
+              {OBJECT_EXECUTION_CHECK_ITEMS.map((item) => {
+                const observation = observationFor('3.2', item.key, executionChecks[item.key]);
+                return (
+                  <div key={item.key} className="p-3 bg-white flex flex-col gap-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <span className="text-[10px] font-medium text-emerald-700">Item {item.number}</span>
+                        <p className="text-xs font-medium text-slate-800 mt-0.5">{item.label}</p>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium shrink-0">{answerLabel(executionChecks[item.key])}</span>
+                    </div>
+                    {observation && (
+                      <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-700 whitespace-pre-wrap">
+                        <span className="font-medium text-slate-500">Observações: </span>{observation}
+                      </div>
+                    )}
                   </div>
-                  <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium shrink-0">{answerLabel(executionChecks[item.key])}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
           <div className="space-y-3 pt-2 border-t border-slate-100">
             <SectionTitle number="3.3" title="Pagamentos de notas fiscais" />
             <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">
-              {INVOICE_PAYMENT_CHECK_ITEMS.map((item) => (
-                <div key={item.key} className="p-3 bg-white flex items-center justify-between gap-3">
-                  <div>
-                    <span className="text-[10px] font-medium text-emerald-700">Item {item.number}</span>
-                    <p className="text-xs font-medium text-slate-800 mt-0.5">{item.label}</p>
+              {INVOICE_PAYMENT_CHECK_ITEMS.map((item) => {
+                const observation = observationFor('3.3', item.key, paymentChecks[item.key]);
+                return (
+                  <div key={item.key} className="p-3 bg-white flex flex-col gap-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <span className="text-[10px] font-medium text-emerald-700">Item {item.number}</span>
+                        <p className="text-xs font-medium text-slate-800 mt-0.5">{item.label}</p>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium shrink-0">{answerLabel(paymentChecks[item.key])}</span>
+                    </div>
+                    {observation && (
+                      <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-700 whitespace-pre-wrap">
+                        <span className="font-medium text-slate-500">Observações: </span>{observation}
+                      </div>
+                    )}
                   </div>
-                  <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium shrink-0">{answerLabel(paymentChecks[item.key])}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
           <div className="space-y-3 pt-2 border-t border-slate-100">
             <SectionTitle number="3.4" title={"Gestão documental e registros"} />
             <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">
-              {DOCUMENT_MANAGEMENT_CHECK_ITEMS.map((item) => (
-                <div key={item.key} className="p-3 bg-white flex items-center justify-between gap-3">
-                  <div>
-                    <span className="text-[10px] font-medium text-emerald-700">Item {item.number}</span>
-                    <p className="text-xs font-medium text-slate-800 mt-0.5">{item.label}</p>
+              {DOCUMENT_MANAGEMENT_CHECK_ITEMS.map((item) => {
+                const observation = observationFor('3.4', item.key, documentChecks[item.key]);
+                return (
+                  <div key={item.key} className="p-3 bg-white flex flex-col gap-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <span className="text-[10px] font-medium text-emerald-700">Item {item.number}</span>
+                        <p className="text-xs font-medium text-slate-800 mt-0.5">{item.label}</p>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium shrink-0">{answerLabel(documentChecks[item.key])}</span>
+                    </div>
+                    {observation && (
+                      <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-700 whitespace-pre-wrap">
+                        <span className="font-medium text-slate-500">Observações: </span>{observation}
+                      </div>
+                    )}
                   </div>
-                  <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium shrink-0">{answerLabel(documentChecks[item.key])}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
