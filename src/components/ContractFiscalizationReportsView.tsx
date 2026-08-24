@@ -25,6 +25,13 @@ interface ObjectExecutionChecks {
   measurementsMade: CheckValue;
 }
 
+interface InvoicePaymentChecks {
+  invoicesMatchDelivery: CheckValue;
+  liquidationProof: CheckValue;
+  legalPaymentDeadlines: CheckValue;
+  taxWithholdingsRegistered: CheckValue;
+}
+
 interface FiscalizationReport {
   id: string;
   createdAt: string;
@@ -41,6 +48,7 @@ interface FiscalizationReport {
   inspectionEndDate?: string;
   generalChecks?: GeneralChecks;
   objectExecutionChecks?: ObjectExecutionChecks;
+  invoicePaymentChecks?: InvoicePaymentChecks;
   noteIds: string[];
   notesTotal: number;
 }
@@ -59,6 +67,13 @@ const OBJECT_EXECUTION_DEFAULT_CHECKS: ObjectExecutionChecks = {
   hasFailures: 'na',
   sanctionsApplied: 'na',
   measurementsMade: 'na'
+};
+
+const INVOICE_PAYMENT_DEFAULT_CHECKS: InvoicePaymentChecks = {
+  invoicesMatchDelivery: 'na',
+  liquidationProof: 'na',
+  legalPaymentDeadlines: 'na',
+  taxWithholdingsRegistered: 'na'
 };
 
 const GENERAL_CHECK_ITEMS: Array<{ key: keyof GeneralChecks; number: string; label: string }> = [
@@ -104,6 +119,29 @@ const OBJECT_EXECUTION_CHECK_ITEMS: Array<{ key: keyof ObjectExecutionChecks; nu
     key: 'measurementsMade',
     number: '3.2.5',
     label: 'Foram realizadas medições ou relatórios de execução física e financeira?'
+  }
+];
+
+const INVOICE_PAYMENT_CHECK_ITEMS: Array<{ key: keyof InvoicePaymentChecks; number: string; label: string }> = [
+  {
+    key: 'invoicesMatchDelivery',
+    number: '3.3.1',
+    label: 'As notas fiscais correspondem aos servi\u00e7os/produtos efetivamente entregues?'
+  },
+  {
+    key: 'liquidationProof',
+    number: '3.3.2',
+    label: 'H\u00e1 comprova\u00e7\u00e3o da liquida\u00e7\u00e3o da despesa?'
+  },
+  {
+    key: 'legalPaymentDeadlines',
+    number: '3.3.3',
+    label: 'Foram observados os prazos legais de pagamento?'
+  },
+  {
+    key: 'taxWithholdingsRegistered',
+    number: '3.3.4',
+    label: 'H\u00e1 reten\u00e7\u00f5es de INSS, ISS, IR, PIS/COFINS e CSLL devidamente registradas?'
   }
 ];
 
@@ -172,6 +210,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
   const [inspectionEndDate, setInspectionEndDate] = useState('');
   const [generalChecks, setGeneralChecks] = useState<GeneralChecks>(DEFAULT_CHECKS);
   const [objectExecutionChecks, setObjectExecutionChecks] = useState<ObjectExecutionChecks>(OBJECT_EXECUTION_DEFAULT_CHECKS);
+  const [invoicePaymentChecks, setInvoicePaymentChecks] = useState<InvoicePaymentChecks>(INVOICE_PAYMENT_DEFAULT_CHECKS);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
 
@@ -231,6 +270,10 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
     setObjectExecutionChecks((current) => ({ ...current, [key]: value }));
   };
 
+  const updateInvoicePaymentCheck = (key: keyof InvoicePaymentChecks, value: CheckValue) => {
+    setInvoicePaymentChecks((current) => ({ ...current, [key]: value }));
+  };
+
   const openCreate = () => {
     setMode('create');
     setSelectedReportId(null);
@@ -241,6 +284,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
     setInspectionEndDate('');
     setGeneralChecks(DEFAULT_CHECKS);
     setObjectExecutionChecks(OBJECT_EXECUTION_DEFAULT_CHECKS);
+    setInvoicePaymentChecks(INVOICE_PAYMENT_DEFAULT_CHECKS);
   };
 
   const saveReport = () => {
@@ -261,6 +305,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
       inspectionEndDate,
       generalChecks,
       objectExecutionChecks,
+      invoicePaymentChecks,
       noteIds: selectedNotes.map((note) => note.id),
       notesTotal: selectedNotesTotal
     };
@@ -410,6 +455,21 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
               ))}
             </div>
           </div>
+
+          <div className="space-y-3 pt-2 border-t border-slate-100">
+            <SectionTitle number="3.3" title="Pagamentos de notas fiscais" />
+            <div className="space-y-2">
+              {INVOICE_PAYMENT_CHECK_ITEMS.map((item) => (
+                <div key={item.key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/60">
+                  <div>
+                    <span className="text-[10px] font-medium text-emerald-700">Item {item.number}</span>
+                    <p className="text-xs font-medium text-slate-800 mt-0.5">{item.label}</p>
+                  </div>
+                  <CheckSelector value={invoicePaymentChecks[item.key]} onChange={(value) => updateInvoicePaymentCheck(item.key, value)} />
+                </div>
+              ))}
+            </div>
+          </div>
         </section>
 
         <section className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-4">
@@ -429,6 +489,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
   if (mode === 'view' && selectedReport) {
     const checks = selectedReport.generalChecks || DEFAULT_CHECKS;
     const executionChecks = selectedReport.objectExecutionChecks || OBJECT_EXECUTION_DEFAULT_CHECKS;
+    const paymentChecks = selectedReport.invoicePaymentChecks || INVOICE_PAYMENT_DEFAULT_CHECKS;
     return (
       <div className="space-y-6">
         <div className="print:hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -503,6 +564,21 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
                     <p className="text-xs font-medium text-slate-800 mt-0.5">{item.label}</p>
                   </div>
                   <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium shrink-0">{answerLabel(executionChecks[item.key])}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3 pt-2 border-t border-slate-100">
+            <SectionTitle number="3.3" title="Pagamentos de notas fiscais" />
+            <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">
+              {INVOICE_PAYMENT_CHECK_ITEMS.map((item) => (
+                <div key={item.key} className="p-3 bg-white flex items-center justify-between gap-3">
+                  <div>
+                    <span className="text-[10px] font-medium text-emerald-700">Item {item.number}</span>
+                    <p className="text-xs font-medium text-slate-800 mt-0.5">{item.label}</p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium shrink-0">{answerLabel(paymentChecks[item.key])}</span>
                 </div>
               ))}
             </div>
