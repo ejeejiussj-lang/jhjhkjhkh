@@ -10,7 +10,7 @@ export interface UserProfile {
 }
 
 export const SUPABASE_SQL_SCHEMA = `-- SCHEMA COMPLETO PARA O SISTEMA NO SUPABASE
--- Acesse o SQL Editor do Supabase (https://supabase.com/dashboard/project/mbqjxajmnmeiuvcwzdhg/sql) e execute os comandos abaixo:
+-- Acesse o SQL Editor do Supabase (https://supabase.com/dashboard/project/kbvriyicbkekxfnjceia/sql) e execute os comandos abaixo:
 
 -- 1. Tabela de Perfil / Login de Usuários
 CREATE TABLE IF NOT EXISTS public.profiles (

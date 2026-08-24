@@ -148,7 +148,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <div>
               <h2 className="text-base font-medium tracking-tight">SIGEC — Autenticação & Banco Supabase</h2>
               <p className="text-[11px] text-slate-400">
-                Conectado: <span className="font-mono text-emerald-400">mbqjxajmnmeiuvcwzdhg.supabase.co</span>
+                Conectado: <span className="font-mono text-emerald-400">kbvriyicbkekxfnjceia.supabase.co</span>
               </p>
             </div>
           </div>
