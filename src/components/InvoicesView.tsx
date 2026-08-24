@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Receipt, Plus, Link2, Link2Off, X, Search, Building2, Landmark, Trash2, Edit3 } from 'lucide-react';
+import { Plus, Link2, Link2Off, X, Search, Building2, Landmark, Trash2, Edit3 } from 'lucide-react';
 import { ServiceNote, Contract, Creditor, Commitment } from '../types';
 
 interface InvoicesViewProps {
@@ -34,6 +34,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [contractFilter, setContractFilter] = useState('ALL');
   const [creditorFilter, setCreditorFilter] = useState('ALL');
+  const [linkedDetailsNote, setLinkedDetailsNote] = useState<ServiceNote | null>(null);
 
   const registeredCompanies = useMemo(() => {
     const list: { id: string; name: string; cnpj?: string }[] = [];
@@ -63,6 +64,18 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
     () => [...commitments].sort((a, b) => a.number.localeCompare(b.number, 'pt-BR', { numeric: true })),
     [commitments]
   );
+  const getCommitmentOptionLabel = (item: Commitment) => {
+    const itemCreditor = (item as Commitment & { creditor?: string }).creditor;
+    return [
+      item.number,
+      item.description || item.program,
+      itemCreditor || creditor || selectedContract?.creditor,
+      item.budgetAllocation,
+      `saldo ${formatCurrency(item.currentBalance)}`
+    ]
+      .filter(Boolean)
+      .join(' - ');
+  };
 
   useEffect(() => {
     if (showModal) {
@@ -167,8 +180,25 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
       const matchesCreditor = creditorFilter === 'ALL' || n.creditor === creditorFilter;
 
       return matchesSearch && matchesContract && matchesCreditor;
-    }).sort((a, b) => parseDateValue(a.attestationDate) - parseDateValue(b.attestationDate));
+    }).sort((a, b) => {
+      const byAttestationDate = parseDateValue(a.attestationDate) - parseDateValue(b.attestationDate);
+      if (byAttestationDate !== 0) return byAttestationDate;
+      return a.noteNumber.localeCompare(b.noteNumber, 'pt-BR', { numeric: true });
+    });
   }, [notes, searchTerm, contractFilter, creditorFilter]);
+
+  const linkedContract = linkedDetailsNote
+    ? contracts.find(
+        (c) => c.contractNum.toLowerCase().trim() === linkedDetailsNote.contractNum.toLowerCase().trim()
+      )
+    : null;
+  const linkedCommitment = linkedDetailsNote
+    ? commitments.find(
+        (item) =>
+          item.id === linkedDetailsNote.commitmentId ||
+          (!!linkedDetailsNote.commitmentNumber && item.number === linkedDetailsNote.commitmentNumber)
+      )
+    : null;
 
   return (
     <div className="space-y-6">
@@ -176,7 +206,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
         <div>
           <h2 className="text-xl font-medium text-slate-900">Notas de Serviço</h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Lançamento de notas vinculadas ao contrato, fiscal e empenho.
+            Lançamento de notas vinculadas ao contrato, fiscal e empenho, ordenadas por data de atesto.
           </p>
         </div>
         <button
@@ -269,19 +299,19 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 
                   return (
                     <tr key={n.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-3.5 px-4 font-medium text-purple-700 whitespace-nowrap">
-                        <span className="flex items-center space-x-1.5">
-                          <Receipt className="w-3.5 h-3.5 text-purple-500" />
-                          <span>{n.noteNumber}</span>
-                        </span>
-                      </td>
+                      <td className="py-3.5 px-4 font-medium text-slate-800 whitespace-nowrap">{n.noteNumber}</td>
                       <td className="py-3.5 px-4 font-medium text-slate-700 whitespace-nowrap">{n.contractNum}</td>
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         {isLinked ? (
-                          <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                          <button
+                            type="button"
+                            onClick={() => setLinkedDetailsNote(n)}
+                            className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/60 hover:bg-emerald-100 transition-colors cursor-pointer"
+                            title="Ver vínculos da nota"
+                          >
                             <Link2 className="w-3 h-3" />
                             <span>VINCULADA</span>
-                          </span>
+                          </button>
                         ) : (
                           <span className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-full text-[10px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
                             <Link2Off className="w-3 h-3" />
@@ -364,6 +394,60 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
         </div>
       </div>
 
+
+      {linkedDetailsNote && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 w-full max-w-lg animate-fadeIn">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <h3 className="text-base font-medium text-slate-900">Vínculos da Nota {linkedDetailsNote.noteNumber}</h3>
+                <p className="text-[11px] text-slate-500">Contrato, empresa, fiscal, empenho, dotação e programa vinculados.</p>
+              </div>
+              <button
+                onClick={() => setLinkedDetailsNote(null)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="mt-4 divide-y divide-slate-100 text-xs">
+              <div className="grid grid-cols-3 gap-3 py-2.5">
+                <span className="text-slate-500">Contrato</span>
+                <span className="col-span-2 font-medium text-slate-900">{linkedDetailsNote.contractNum || '-'}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-3 py-2.5">
+                <span className="text-slate-500">Empresa</span>
+                <span className="col-span-2 font-medium text-slate-900">{linkedDetailsNote.creditor || linkedContract?.creditor || '-'}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-3 py-2.5">
+                <span className="text-slate-500">Fiscal</span>
+                <span className="col-span-2 font-medium text-slate-900">{linkedDetailsNote.fiscalName || linkedContract?.fiscalName || '-'}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-3 py-2.5">
+                <span className="text-slate-500">Empenho</span>
+                <span className="col-span-2 font-medium text-slate-900">{linkedDetailsNote.commitmentNumber || linkedCommitment?.number || '-'}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-3 py-2.5">
+                <span className="text-slate-500">Descrição</span>
+                <span className="col-span-2 font-medium text-slate-900">{linkedCommitment?.description || linkedDetailsNote.program || '-'}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-3 py-2.5">
+                <span className="text-slate-500">Dotação</span>
+                <span className="col-span-2 font-medium text-slate-900">{linkedDetailsNote.budgetAllocation || linkedCommitment?.budgetAllocation || '-'}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-3 py-2.5">
+                <span className="text-slate-500">Programa</span>
+                <span className="col-span-2 font-medium text-slate-900">{linkedDetailsNote.program || linkedCommitment?.program || '-'}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-3 py-2.5">
+                <span className="text-slate-500">Atesto</span>
+                <span className="col-span-2 font-medium text-slate-900">{linkedDetailsNote.attestationDate || '-'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 p-6 w-full max-w-2xl animate-fadeIn">
@@ -467,7 +551,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                   <option value="">-- Selecione o empenho --</option>
                   {availableCommitments.map((item) => (
                     <option key={item.id} value={item.id}>
-                      {item.number} - {item.budgetAllocation} - saldo {formatCurrency(item.currentBalance)}
+                      {getCommitmentOptionLabel(item)}
                     </option>
                   ))}
                 </select>
