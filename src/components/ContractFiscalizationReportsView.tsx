@@ -32,6 +32,13 @@ interface InvoicePaymentChecks {
   taxWithholdingsRegistered: CheckValue;
 }
 
+interface DocumentManagementChecks {
+  reportsArchived: CheckValue;
+  communicationsRegistered: CheckValue;
+  occurrencesControlUpdated: CheckValue;
+  meetingRecords: CheckValue;
+}
+
 interface FiscalizationReport {
   id: string;
   createdAt: string;
@@ -49,6 +56,7 @@ interface FiscalizationReport {
   generalChecks?: GeneralChecks;
   objectExecutionChecks?: ObjectExecutionChecks;
   invoicePaymentChecks?: InvoicePaymentChecks;
+  documentManagementChecks?: DocumentManagementChecks;
   noteIds: string[];
   notesTotal: number;
 }
@@ -74,6 +82,13 @@ const INVOICE_PAYMENT_DEFAULT_CHECKS: InvoicePaymentChecks = {
   liquidationProof: 'na',
   legalPaymentDeadlines: 'na',
   taxWithholdingsRegistered: 'na'
+};
+
+const DOCUMENT_MANAGEMENT_DEFAULT_CHECKS: DocumentManagementChecks = {
+  reportsArchived: 'na',
+  communicationsRegistered: 'na',
+  occurrencesControlUpdated: 'na',
+  meetingRecords: 'na'
 };
 
 const GENERAL_CHECK_ITEMS: Array<{ key: keyof GeneralChecks; number: string; label: string }> = [
@@ -145,6 +160,29 @@ const INVOICE_PAYMENT_CHECK_ITEMS: Array<{ key: keyof InvoicePaymentChecks; numb
   }
 ];
 
+const DOCUMENT_MANAGEMENT_CHECK_ITEMS: Array<{ key: keyof DocumentManagementChecks; number: string; label: string }> = [
+  {
+    key: 'reportsArchived',
+    number: '3.4.1',
+    label: 'Os relat\u00f3rios de acompanhamento est\u00e3o sendo arquivados no processo do contrato?'
+  },
+  {
+    key: 'communicationsRegistered',
+    number: '3.4.2',
+    label: 'As comunica\u00e7\u00f5es entre fiscal e contratada est\u00e3o registradas por of\u00edcio ou e-mail?'
+  },
+  {
+    key: 'occurrencesControlUpdated',
+    number: '3.4.3',
+    label: 'Existe controle atualizado de ocorr\u00eancias em planilha ou sistema?'
+  },
+  {
+    key: 'meetingRecords',
+    number: '3.4.4',
+    label: 'H\u00e1 registro de reuni\u00f5es de acompanhamento, quando realizadas?'
+  }
+];
+
 const money = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const today = () => new Date().toLocaleDateString('pt-BR');
 const norm = (value = '') =>
@@ -211,6 +249,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
   const [generalChecks, setGeneralChecks] = useState<GeneralChecks>(DEFAULT_CHECKS);
   const [objectExecutionChecks, setObjectExecutionChecks] = useState<ObjectExecutionChecks>(OBJECT_EXECUTION_DEFAULT_CHECKS);
   const [invoicePaymentChecks, setInvoicePaymentChecks] = useState<InvoicePaymentChecks>(INVOICE_PAYMENT_DEFAULT_CHECKS);
+  const [documentManagementChecks, setDocumentManagementChecks] = useState<DocumentManagementChecks>(DOCUMENT_MANAGEMENT_DEFAULT_CHECKS);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
 
@@ -274,6 +313,10 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
     setInvoicePaymentChecks((current) => ({ ...current, [key]: value }));
   };
 
+  const updateDocumentManagementCheck = (key: keyof DocumentManagementChecks, value: CheckValue) => {
+    setDocumentManagementChecks((current) => ({ ...current, [key]: value }));
+  };
+
   const openCreate = () => {
     setMode('create');
     setSelectedReportId(null);
@@ -285,6 +328,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
     setGeneralChecks(DEFAULT_CHECKS);
     setObjectExecutionChecks(OBJECT_EXECUTION_DEFAULT_CHECKS);
     setInvoicePaymentChecks(INVOICE_PAYMENT_DEFAULT_CHECKS);
+    setDocumentManagementChecks(DOCUMENT_MANAGEMENT_DEFAULT_CHECKS);
   };
 
   const saveReport = () => {
@@ -306,6 +350,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
       generalChecks,
       objectExecutionChecks,
       invoicePaymentChecks,
+      documentManagementChecks,
       noteIds: selectedNotes.map((note) => note.id),
       notesTotal: selectedNotesTotal
     };
@@ -470,6 +515,21 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
               ))}
             </div>
           </div>
+
+          <div className="space-y-3 pt-2 border-t border-slate-100">
+            <SectionTitle number="3.4" title={"Gest\u00e3o documental e registros"} />
+            <div className="space-y-2">
+              {DOCUMENT_MANAGEMENT_CHECK_ITEMS.map((item) => (
+                <div key={item.key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/60">
+                  <div>
+                    <span className="text-[10px] font-medium text-emerald-700">Item {item.number}</span>
+                    <p className="text-xs font-medium text-slate-800 mt-0.5">{item.label}</p>
+                  </div>
+                  <CheckSelector value={documentManagementChecks[item.key]} onChange={(value) => updateDocumentManagementCheck(item.key, value)} />
+                </div>
+              ))}
+            </div>
+          </div>
         </section>
 
         <section className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 space-y-4">
@@ -490,6 +550,7 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
     const checks = selectedReport.generalChecks || DEFAULT_CHECKS;
     const executionChecks = selectedReport.objectExecutionChecks || OBJECT_EXECUTION_DEFAULT_CHECKS;
     const paymentChecks = selectedReport.invoicePaymentChecks || INVOICE_PAYMENT_DEFAULT_CHECKS;
+    const documentChecks = selectedReport.documentManagementChecks || DOCUMENT_MANAGEMENT_DEFAULT_CHECKS;
     return (
       <div className="space-y-6">
         <div className="print:hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -579,6 +640,21 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
                     <p className="text-xs font-medium text-slate-800 mt-0.5">{item.label}</p>
                   </div>
                   <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium shrink-0">{answerLabel(paymentChecks[item.key])}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3 pt-2 border-t border-slate-100">
+            <SectionTitle number="3.4" title={"Gest\u00e3o documental e registros"} />
+            <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">
+              {DOCUMENT_MANAGEMENT_CHECK_ITEMS.map((item) => (
+                <div key={item.key} className="p-3 bg-white flex items-center justify-between gap-3">
+                  <div>
+                    <span className="text-[10px] font-medium text-emerald-700">Item {item.number}</span>
+                    <p className="text-xs font-medium text-slate-800 mt-0.5">{item.label}</p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium shrink-0">{answerLabel(documentChecks[item.key])}</span>
                 </div>
               ))}
             </div>
