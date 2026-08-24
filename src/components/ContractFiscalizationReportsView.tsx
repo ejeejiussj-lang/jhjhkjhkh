@@ -295,6 +295,46 @@ const ChoiceSelector = <T extends string>({
   </div>
 );
 
+const PrintInfoTable: React.FC<{ rows: Array<[string, string]> }> = ({ rows }) => (
+  <table className="w-full border-collapse text-[10.5px]">
+    <tbody>
+      {rows.map(([label, value]) => (
+        <tr key={label}>
+          <th className="w-44 border border-slate-400 bg-slate-100 px-2 py-1.5 text-left font-semibold text-slate-800 align-top">{label}</th>
+          <td className="border border-slate-400 px-2 py-1.5 text-slate-900 align-top">{value || '-'}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+);
+
+const PrintChecklistTable: React.FC<{
+  title: string;
+  items: Array<{ number: string; label: string; answer: string }>;
+}> = ({ title, items }) => (
+  <div className="break-inside-avoid">
+    <h3 className="border border-slate-400 bg-slate-100 px-2 py-1.5 text-[11px] font-semibold text-slate-900">{title}</h3>
+    <table className="w-full border-collapse text-[10.5px]">
+      <thead>
+        <tr>
+          <th className="w-16 border border-slate-400 px-2 py-1.5 text-left font-semibold">Item</th>
+          <th className="border border-slate-400 px-2 py-1.5 text-left font-semibold">Critério avaliado</th>
+          <th className="w-20 border border-slate-400 px-2 py-1.5 text-center font-semibold">Resposta</th>
+        </tr>
+      </thead>
+      <tbody>
+        {items.map((item) => (
+          <tr key={item.number}>
+            <td className="border border-slate-400 px-2 py-1.5 font-medium align-top">{item.number}</td>
+            <td className="border border-slate-400 px-2 py-1.5 align-top">{item.label}</td>
+            <td className="border border-slate-400 px-2 py-1.5 text-center font-medium align-top">{item.answer}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
+
 export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, notes, creditors, fiscais }) => {
   const [reports, setReports] = useState<FiscalizationReport[]>(() => {
     try {
@@ -640,8 +680,8 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
                 <textarea
                   value={periodEvaluation.correctiveActions}
                   onChange={(event) => updatePeriodEvaluation('correctiveActions', event.target.value)}
-                  rows={4}
-                  placeholder="Descreva recomendações, providências ou ações corretivas necessárias"
+                  rows={12}
+                  placeholder="Digite livremente as recomendações, providências ou ações corretivas necessárias. Este campo não possui limite de caracteres."
                   className="mt-2 w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 resize-y"
                 />
               </label>
@@ -684,8 +724,14 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
     const paymentChecks = selectedReport.invoicePaymentChecks || INVOICE_PAYMENT_DEFAULT_CHECKS;
     const documentChecks = selectedReport.documentManagementChecks || DOCUMENT_MANAGEMENT_DEFAULT_CHECKS;
     const evaluation = selectedReport.periodEvaluation || PERIOD_EVALUATION_DEFAULT;
+    const recommendationsText = evaluation.correctiveActions.trim() || 'Não informado';
+    const printGeneralItems = GENERAL_CHECK_ITEMS.map((item) => ({ number: item.number, label: item.label, answer: answerLabel(checks[item.key]) }));
+    const printExecutionItems = OBJECT_EXECUTION_CHECK_ITEMS.map((item) => ({ number: item.number, label: item.label, answer: answerLabel(executionChecks[item.key]) }));
+    const printPaymentItems = INVOICE_PAYMENT_CHECK_ITEMS.map((item) => ({ number: item.number, label: item.label, answer: answerLabel(paymentChecks[item.key]) }));
+    const printDocumentItems = DOCUMENT_MANAGEMENT_CHECK_ITEMS.map((item) => ({ number: item.number, label: item.label, answer: answerLabel(documentChecks[item.key]) }));
     return (
-      <div className="space-y-6">
+      <>
+      <div className="space-y-6 print:hidden">
         <div className="print:hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <button onClick={() => setMode('list')} className="flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-800 mb-2 cursor-pointer">
@@ -841,6 +887,114 @@ export const ContractFiscalizationReportsView: React.FC<Props> = ({ contracts, n
           </div>
         </section>
       </div>
+
+      <section className="hidden print:block text-slate-950">
+        <div className="text-center border-b-2 border-slate-900 pb-3 mb-4">
+          <h1 className="text-base font-bold uppercase tracking-wide">Relatório de Fiscalização de Contratos</h1>
+          <p className="text-[10px] mt-1">Secretaria de Saúde - Sistema Integrado de Gestão de Contratos</p>
+          <p className="text-[10px]">Emitido em {today()} - Relatório criado em {selectedReport.createdAt}</p>
+        </div>
+
+        <div className="space-y-3">
+          <div className="break-inside-avoid">
+            <h2 className="mb-1.5 text-xs font-bold uppercase">1. Dados do contrato</h2>
+            <PrintInfoTable rows={[
+              ['Nº do contrato', selectedReport.contractNum],
+              ['Vigência', selectedReport.validity],
+              ['Ordem de fornecimento', selectedReport.supplyOrder],
+              ['Contratado', selectedReport.contractor],
+              ['CPF/CNPJ', selectedReport.contractorDocument],
+              ['Total das notas fiscais', money(selectedReport.notesTotal)],
+              ['Objeto do contrato', selectedReport.contractObject]
+            ]} />
+          </div>
+
+          <div className="break-inside-avoid">
+            <h2 className="mb-1.5 text-xs font-bold uppercase">2. Dados do fiscal</h2>
+            <PrintInfoTable rows={[
+              ['Fiscal do contrato', selectedReport.fiscalName],
+              ['Secretaria / órgão', selectedReport.fiscalOrgan],
+              ['Portaria', selectedReport.fiscalPortaria]
+            ]} />
+          </div>
+
+          <div className="break-inside-avoid">
+            <h2 className="mb-1.5 text-xs font-bold uppercase">3. Dados da fiscalização</h2>
+            <PrintInfoTable rows={[
+              ['Período de', selectedReport.inspectionStartDate || '-'],
+              ['Período a', selectedReport.inspectionEndDate || '-']
+            ]} />
+          </div>
+
+          <PrintChecklistTable title="3.1 Informações gerais do contrato" items={printGeneralItems} />
+          <PrintChecklistTable title="3.2 Execução do objeto" items={printExecutionItems} />
+          <PrintChecklistTable title="3.3 Pagamentos de notas fiscais" items={printPaymentItems} />
+          <PrintChecklistTable title="3.4 Gestão documental e registros" items={printDocumentItems} />
+
+          <div className="break-inside-avoid">
+            <h2 className="mb-1.5 text-xs font-bold uppercase">3.5 Avaliação geral do período</h2>
+            <PrintInfoTable rows={[
+              ['Cumprimento do objeto', objectFulfillmentLabel(evaluation.objectFulfillment)],
+              ['Desempenho da contratada', contractorPerformanceLabel(evaluation.contractorPerformance)],
+              ['Necessidade de aditivo contratual', additiveNeedLabel(evaluation.contractualAdditiveNeeded)]
+            ]} />
+          </div>
+
+          <div className="print-page-break-before">
+            <h2 className="mb-2 text-xs font-bold uppercase">Recomendações e ações corretivas</h2>
+            <div className="min-h-[900px] whitespace-pre-wrap border border-slate-400 p-3 text-[11px] leading-relaxed">{recommendationsText}</div>
+          </div>
+
+          <div className="print-page-break-before">
+            <h2 className="mb-1.5 text-xs font-bold uppercase">Notas fiscais vinculadas</h2>
+            <table className="w-full border-collapse text-[10px]">
+              <thead>
+                <tr>
+                  <th className="border border-slate-400 px-1.5 py-1 text-left">Nota fiscal</th>
+                  <th className="border border-slate-400 px-1.5 py-1 text-left">Emissão</th>
+                  <th className="border border-slate-400 px-1.5 py-1 text-left">Atesto</th>
+                  <th className="border border-slate-400 px-1.5 py-1 text-left">Status</th>
+                  <th className="border border-slate-400 px-1.5 py-1 text-right">Valor</th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedReportNotes.map((note) => (
+                  <tr key={note.id}>
+                    <td className="border border-slate-400 px-1.5 py-1">{note.noteNumber}</td>
+                    <td className="border border-slate-400 px-1.5 py-1">{note.issueDate || '-'}</td>
+                    <td className="border border-slate-400 px-1.5 py-1">{note.attestationDate || '-'}</td>
+                    <td className="border border-slate-400 px-1.5 py-1">{note.status}</td>
+                    <td className="border border-slate-400 px-1.5 py-1 text-right">{money(note.value)}</td>
+                  </tr>
+                ))}
+                <tr>
+                  <td className="border border-slate-400 px-1.5 py-1 text-right font-bold" colSpan={4}>Total</td>
+                  <td className="border border-slate-400 px-1.5 py-1 text-right font-bold">{money(selectedReport.notesTotal)}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h2 className="mt-10 mb-8 text-xs font-bold uppercase">4. Assinaturas</h2>
+            <div className="grid grid-cols-2 gap-12 text-center text-[11px]">
+              <div>
+                <div className="border-t border-slate-900 pt-2">
+                  <p className="font-semibold">{selectedReport.fiscalName}</p>
+                  <p>Fiscal do Contrato</p>
+                </div>
+                <div className="mt-8 border-t border-slate-500 pt-2">Data: _____/_____/________</div>
+              </div>
+              <div>
+                <div className="border-t border-slate-900 pt-2">
+                  <p className="font-semibold">Gestor do Contrato</p>
+                  <p>Quando aplicável</p>
+                </div>
+                <div className="mt-8 border-t border-slate-500 pt-2">Data: _____/_____/________</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      </>
     );
   }
 
