@@ -108,7 +108,7 @@ export const PurchaseOrdersView: React.FC<PurchaseOrdersViewProps> = ({
     const days = getDaysUntil(order.expectedDeliveryDate);
     if (order.status === 'Entregue') return 'Entregue';
     if (order.status === 'Cancelada') return 'Cancelada';
-    if (days === null) return 'Data invalida';
+    if (days === null) return 'Data inválida';
     if (days < 0) return 'Atrasada';
     if (days === 0) return 'Entrega hoje';
     if (days <= 7) return 'Vence em ' + days + 'd';
@@ -133,7 +133,7 @@ export const PurchaseOrdersView: React.FC<PurchaseOrdersViewProps> = ({
           className="inline-flex items-center space-x-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-xl shadow-xs transition-all cursor-pointer self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
-          <span>Lancar Ordem</span>
+          <span>Lançar Ordem</span>
         </button>
       </div>
 
@@ -159,11 +159,11 @@ export const PurchaseOrdersView: React.FC<PurchaseOrdersViewProps> = ({
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-medium uppercase text-slate-600 tracking-wider">
                 <th className="py-3.5 px-4">Ordem</th>
-                <th className="py-3.5 px-4">Razao Social</th>
+                <th className="py-3.5 px-4">Razão Social</th>
                 <th className="py-3.5 px-4">CNPJ</th>
                 <th className="py-3.5 px-4">Data Prevista da Entrega</th>
                 <th className="py-3.5 px-4">Status</th>
-                <th className="py-3.5 px-4 text-right">Acoes</th>
+                <th className="py-3.5 px-4 text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -221,7 +221,7 @@ export const PurchaseOrdersView: React.FC<PurchaseOrdersViewProps> = ({
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
               <div>
                 <h3 className="text-base font-medium text-slate-900">
-                  {editingOrder ? 'Editar Ordem de Compras' : 'Lancar Ordem de Compras'}
+                  {editingOrder ? 'Editar Ordem de Compras' : 'Lançar Ordem de Compras'}
                 </h3>
                 <p className="text-[11px] text-slate-500">Informe fornecedor e prazo previsto de entrega</p>
               </div>
@@ -232,7 +232,7 @@ export const PurchaseOrdersView: React.FC<PurchaseOrdersViewProps> = ({
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Nome / Numero da Ordem <span className="text-rose-500">*</span></label>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Nome / Número da Ordem <span className="text-rose-500">*</span></label>
                 <input
                   type="text"
                   required
@@ -244,13 +244,13 @@ export const PurchaseOrdersView: React.FC<PurchaseOrdersViewProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Razao Social <span className="text-rose-500">*</span></label>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Razão Social <span className="text-rose-500">*</span></label>
                 <input
                   type="text"
                   required
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  placeholder="Digite a razao social"
+                  placeholder="Digite a razão social"
                   className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-900"
                 />
               </div>

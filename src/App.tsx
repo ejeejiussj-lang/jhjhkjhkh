@@ -726,7 +726,7 @@ export default function App() {
       {
         id: `act-${Date.now()}`,
         type: 'purchase',
-        title: `Ordem de compras ${order.orderNumber} foi lancada`,
+        title: `Ordem de compras ${order.orderNumber} foi lançada`,
         time: 'Agora',
         iconColor: 'amber'
       },
@@ -1079,12 +1079,12 @@ export default function App() {
       }
     });
 
-    // 4. Ordens de Compras com entrega proxima ou atrasada
+    // 4. Ordens de Compras com entrega próxima ou atrasada
     purchaseOrdersDeliveryAlerts.forEach((order) => {
       const overdue = (order.daysRemaining ?? 0) < 0;
       items.push({
         id: `purchase-delivery-${order.id}`,
-        title: overdue ? `Ordem de Compras Atrasada: ${order.orderNumber}` : `Entrega de Ordem de Compras Proxima: ${order.orderNumber}`,
+        title: overdue ? `Ordem de Compras Atrasada: ${order.orderNumber}` : `Entrega de Ordem de Compras Próxima: ${order.orderNumber}`,
         desc: `${order.companyName} | CNPJ: ${order.cnpj} | Entrega: ${formatBRDate(order.expectedDeliveryDate)}`,
         time: overdue ? 'Entrega atrasada' : `Vence em ${order.daysRemaining}d`,
         type: 'purchase',
@@ -1093,7 +1093,7 @@ export default function App() {
       });
     });
 
-    // 5. Lancamentos Recentes de Atividades
+    // 5. Lançamentos Recentes de Atividades
     activities.slice(0, 4).forEach((act) => {
       items.push({
         id: `act-${act.id}`,
@@ -1266,11 +1266,12 @@ export default function App() {
                 )}
               </div>
 
+              {purchaseOrdersDeliveryAlerts.length > 0 && (
               <div className="bg-amber-50 rounded-2xl border border-amber-200 shadow-2xs p-5 space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-100 pb-3">
                   <div>
                     <h3 className="text-sm font-medium text-amber-800">Entregas de Ordens de Compras</h3>
-                    <p className="text-xs text-amber-700/80 mt-0.5">Ordens pendentes com entrega atrasada ou prevista para os pr?ximos 7 dias</p>
+                    <p className="text-xs text-amber-700/80 mt-0.5">Ordens pendentes com entrega atrasada ou prevista para os próximos 7 dias</p>
                   </div>
                   <span className="text-xs font-medium text-amber-700 bg-white/70 border border-amber-100 px-2 py-0.5 rounded-full">
                     {purchaseOrdersDeliveryAlerts.length} alerta(s)
@@ -1279,7 +1280,7 @@ export default function App() {
 
                 {purchaseOrdersDeliveryAlerts.length === 0 ? (
                   <div className="py-5 text-center">
-                    <p className="font-medium text-amber-700 text-xs">Nenhuma ordem com entrega proxima</p>
+                    <p className="font-medium text-amber-700 text-xs">Nenhuma ordem com entrega próxima</p>
                   </div>
                 ) : (
                   <div className="divide-y divide-amber-100">
@@ -1302,6 +1303,7 @@ export default function App() {
                 )}
               </div>
 
+              )}
               {/* Vis?o de Execu??o de Saldos (Contratos Lan?ados) */}
               <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
