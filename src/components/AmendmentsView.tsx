@@ -47,7 +47,8 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
   const matchedContract = contracts.find((c) => c.contractNum === selectedContractNum);
   const treatsValueAsMonthlyRebalance = type === 'Reajuste / Repactua\u00e7\u00e3o';
   const editableItems = matchedContract?.items || [];
-  const updatedItems = treatsValueAsMonthlyRebalance && editableItems.length > 0
+  const hasEditableItems = editableItems.length > 0;
+  const updatedItems = hasEditableItems
     ? editableItems.map((item) => ({
         ...item,
         unitValue: parseFloat(itemUnitValues[item.id] || String(item.unitValue)) || 0
@@ -510,7 +511,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
                 </div>
               </div>
 
-              {treatsValueAsMonthlyRebalance && editableItems.length > 0 && (
+              {hasEditableItems && (
                 <div className="rounded-xl border border-slate-200 bg-slate-50/70 overflow-hidden">
                   <div className="px-3.5 py-2 border-b border-slate-200 flex items-center justify-between gap-3">
                     <span className="text-xs font-medium text-slate-700">Valores dos itens do contrato</span>
