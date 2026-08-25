@@ -13,6 +13,7 @@ interface NewContractViewProps {
   onAddContract: (contract: Omit<Contract, 'id'>) => void;
   onUpdateContract?: (contract: Contract) => void;
   onCancel: () => void;
+  canManageDocumentLinks?: boolean;
 }
 
 export const NewContractView: React.FC<NewContractViewProps> = ({
@@ -23,7 +24,8 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
   onAddCategory,
   onAddContract,
   onUpdateContract,
-  onCancel
+  onCancel,
+  canManageDocumentLinks = false
 }) => {
   const isEditing = Boolean(editingContract);
   const [contractNum, setContractNum] = useState(editingContract?.contractNum || '');
@@ -120,13 +122,13 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!contractNum || !creditor || !object || !contractLink.trim()) return;
+    if (!contractNum || !creditor || !object || (canManageDocumentLinks && !contractLink.trim())) return;
 
     const contractData = {
       contractNum,
       creditor,
       object,
-      contractLink: contractLink.trim(),
+      contractLink: canManageDocumentLinks ? contractLink.trim() : editingContract?.contractLink || '',
       startDate,
       endDate,
       totalValue: parseFloat(totalValue) || 0,
@@ -300,6 +302,7 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
                 className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 leading-relaxed text-slate-800"
               />
             </div>
+            {canManageDocumentLinks && (
 
             <div>
               <label className="block text-xs font-medium text-slate-700 mb-1.5">
@@ -317,6 +320,7 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
                 />
               </div>
             </div>
+            )}
           </div>
 
           {/* SECTION 2: Vigência e Valor */}

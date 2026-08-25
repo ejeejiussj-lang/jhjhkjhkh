@@ -32,6 +32,7 @@ interface ContractTableProps {
   onDeleteContract?: (id: string) => void;
   onAddAmendment?: (amendment: Omit<ContractAmendment, 'id'>, updateContract?: boolean) => void;
   onViewAllContracts?: () => void;
+  canViewDocuments?: boolean;
 }
 
 export const ContractTable: React.FC<ContractTableProps> = ({
@@ -41,7 +42,8 @@ export const ContractTable: React.FC<ContractTableProps> = ({
   onViewContractDetails,
   onEditContract,
   onDeleteContract,
-  onAddAmendment
+  onAddAmendment,
+  canViewDocuments = false
 }) => {
   const [activeActionId, setActiveActionId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'Todos' | ContractStatus>('Todos');
@@ -119,13 +121,13 @@ export const ContractTable: React.FC<ContractTableProps> = ({
 
   const submitAmendment = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!amendmentContract || !onAddAmendment || !amendmentLink.trim()) return;
+    if (!amendmentContract || !onAddAmendment || (canViewDocuments && !amendmentLink.trim())) return;
 
     const detail = scopeChange.trim() ? `${justification}\n\nAlterações: ${scopeChange}` : justification;
     onAddAmendment(
       {
         amendmentNum,
-        amendmentLink: amendmentLink.trim(),
+        amendmentLink: canViewDocuments ? amendmentLink.trim() : '',
         contractNum: amendmentContract.contractNum,
         creditor: amendmentContract.creditor,
         type: amendmentType,
@@ -178,7 +180,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
         c.contractNum.toLowerCase().includes(localSearch.toLowerCase()) ||
         c.creditor.toLowerCase().includes(localSearch.toLowerCase()) ||
         c.object.toLowerCase().includes(localSearch.toLowerCase()) ||
-        (c.contractLink && c.contractLink.toLowerCase().includes(localSearch.toLowerCase())) ||
+        (canViewDocuments && c.contractLink && c.contractLink.toLowerCase().includes(localSearch.toLowerCase())) ||
         (c.fiscalName && c.fiscalName.toLowerCase().includes(localSearch.toLowerCase())) ||
         (c.fiscalPortaria && c.fiscalPortaria.toLowerCase().includes(localSearch.toLowerCase()));
 
@@ -232,7 +234,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
       `"${c.creditor}"`,
       c.category || 'Geral',
       `"${c.object.replace(/"/g, '""')}"`,
-      c.contractLink || '',
+      canViewDocuments ? c.contractLink || '' : '',
       c.startDate,
       c.endDate,
       c.totalValue,
@@ -471,7 +473,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                             <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
                               {c.category || 'Geral'}
                             </span>
-                            {c.contractLink && (
+                            {canViewDocuments && c.contractLink && (
                               <a
                                 href={getExternalUrl(c.contractLink)}
                                 target="_blank"
@@ -625,7 +627,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                             <span>Notas de Serviço ({linkedNotesCount})</span>
                           </button>
 
-                          {c.contractLink && (
+                          {canViewDocuments && c.contractLink && (
                             <a
                               href={getExternalUrl(c.contractLink)}
                               target="_blank"
@@ -892,6 +894,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
               <div className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-xs text-amber-900 font-medium">
                 {getAmendmentGuidance()}
               </div>
+              {canViewDocuments && (
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">
                   Link do Aditivo <span className="text-rose-500">*</span>
@@ -908,6 +911,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                   />
                 </div>
               </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>

@@ -9,6 +9,7 @@ interface AmendmentsViewProps {
   onAddAmendment: (amendment: Omit<ContractAmendment, 'id'>, updateContract?: boolean) => void;
   onUpdateAmendment: (amendment: ContractAmendment, updateContract?: boolean) => void;
   onDeleteAmendment: (id: string) => void;
+  canViewDocuments?: boolean;
 }
 
 export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
@@ -16,7 +17,8 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
   contracts,
   onAddAmendment,
   onUpdateAmendment,
-  onDeleteAmendment
+  onDeleteAmendment,
+  canViewDocuments = false
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>('todos');
@@ -93,7 +95,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedContractNum || !amendmentLink.trim()) return;
+    if (!selectedContractNum || (canViewDocuments && !amendmentLink.trim())) return;
 
     const currentContract = contracts.find((c) => c.contractNum === selectedContractNum);
     const creditorName = currentContract ? currentContract.creditor : 'Credor Desconhecido';
@@ -106,7 +108,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
           contractNum: selectedContractNum,
           creditor: creditorName,
           amendmentNum,
-          amendmentLink: amendmentLink.trim(),
+          amendmentLink: canViewDocuments ? amendmentLink.trim() : editingAmendment?.amendmentLink || '',
           type,
           valueChange: numVal,
           newEndDate: newEndDate || undefined,
@@ -123,7 +125,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
           contractNum: selectedContractNum,
           creditor: creditorName,
           amendmentNum,
-          amendmentLink: amendmentLink.trim(),
+          amendmentLink: canViewDocuments ? amendmentLink.trim() : '',
           type,
           valueChange: numVal,
           newEndDate: newEndDate || undefined,
@@ -146,7 +148,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
       a.contractNum.toLowerCase().includes(term) ||
       a.creditor.toLowerCase().includes(term) ||
       a.justification.toLowerCase().includes(term) ||
-      (a.amendmentLink && a.amendmentLink.toLowerCase().includes(term));
+      (canViewDocuments && a.amendmentLink && a.amendmentLink.toLowerCase().includes(term));
 
     const matchesType = selectedType === 'todos' || a.type === selectedType;
 
@@ -240,7 +242,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
                     <td className="py-3.5 px-4 font-medium text-slate-900 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         <span>{item.amendmentNum}</span>
-                        {item.amendmentLink && (
+                        {canViewDocuments && item.amendmentLink && (
                           <a
                             href={getExternalUrl(item.amendmentLink)}
                             target="_blank"
@@ -422,6 +424,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
                   </select>
                 </div>
               </div>
+              {canViewDocuments && (
 
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">
@@ -439,6 +442,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
                   />
                 </div>
               </div>
+              )}
 
               {/* Value change and New End Date */}
               <div className="grid grid-cols-2 gap-4">

@@ -427,7 +427,7 @@ export async function fetchAmendmentsFromSupabase(): Promise<ContractAmendment[]
       contractNum: item.contract_num,
       creditor: item.creditor,
       type: item.type as any,
-      valueChange: item.value_change ? Number(item.value_change) : undefined,
+      valueChange: item.value_change ? Number(item.value_change) : 0,
       newEndDate: item.new_end_date || undefined,
       signatureDate: item.signature_date || '',
       publicationDate: item.publication_date || '',

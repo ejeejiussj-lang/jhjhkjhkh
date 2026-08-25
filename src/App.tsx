@@ -160,6 +160,8 @@ export default function App() {
     return !currentUser;
   });
 
+  const canViewDocuments = currentUser?.role === 'Administrador';
+
   // Supabase Auth and Sync Effect
   useEffect(() => {
     supabase.auth
@@ -514,7 +516,7 @@ export default function App() {
 
   // Global search filters
   const filteredContracts = contracts.filter((c) =>
-    matchesSearch(globalSearchTerm, [c.contractNum, c.creditor, c.object, c.contractLink, c.category, c.status])
+    matchesSearch(globalSearchTerm, [c.contractNum, c.creditor, c.object, canViewDocuments ? c.contractLink : '', c.category, c.status])
   );
   const filteredCreditors = creditors.filter((c) =>
     matchesSearch(globalSearchTerm, [c.name, c.cnpj, c.category, c.status])
@@ -529,7 +531,7 @@ export default function App() {
     matchesSearch(globalSearchTerm, [f.name, f.portaria, f.organ, f.publicationDate, f.validity])
   );
   const filteredAmendments = amendments.filter((a) =>
-    matchesSearch(globalSearchTerm, [a.amendmentNum, a.amendmentLink, a.contractNum, a.creditor, a.type, a.status, a.justification])
+    matchesSearch(globalSearchTerm, [a.amendmentNum, canViewDocuments ? a.amendmentLink : '', a.contractNum, a.creditor, a.type, a.status, a.justification])
   );
 
   const handleHeaderSearch = (term: string) => {
@@ -548,7 +550,7 @@ export default function App() {
       setActiveTab('fiscais');
     } else if (commitments.some((c) => matchesSearch(q, [c.number, c.budgetAllocation, c.program, c.description]))) {
       setActiveTab('empenhos');
-    } else if (amendments.some((a) => matchesSearch(q, [a.amendmentNum, a.amendmentLink, a.contractNum, a.creditor, a.type, a.status]))) {
+    } else if (amendments.some((a) => matchesSearch(q, [a.amendmentNum, canViewDocuments ? a.amendmentLink : '', a.contractNum, a.creditor, a.type, a.status]))) {
       setActiveTab('aditivos');
     }
   };
@@ -778,18 +780,27 @@ export default function App() {
   };
 
   const handleUpdateAmendment = (updated: ContractAmendment, updateContract: boolean = false) => {
+    const previous = amendments.find((a) => a.id === updated.id);
     setAmendments(amendments.map((a) => (a.id === updated.id ? updated : a)));
     saveAmendmentToSupabase(updated);
 
     if (updateContract) {
       setContracts(contracts.map((c) => {
-        if (c.contractNum === updated.contractNum) {
-          const updatedValue = updated.valueChange ? c.totalValue + updated.valueChange : c.totalValue;
-          const updatedEndDate = updated.newEndDate ? updated.newEndDate : c.endDate;
+        const previousValueChange = previous?.contractNum === c.contractNum ? Number(previous.valueChange || 0) : 0;
+        const nextValueChange = updated.contractNum === c.contractNum ? Number(updated.valueChange || 0) : 0;
+        const touchesContract = previousValueChange !== 0 || nextValueChange !== 0 || updated.contractNum === c.contractNum;
+
+        if (touchesContract) {
+          const updatedValue = c.totalValue - previousValueChange + nextValueChange;
+          const updatedEndDate = updated.contractNum === c.contractNum && updated.newEndDate ? updated.newEndDate : c.endDate;
+          const updatedStatus = updated.contractNum === c.contractNum && normalizeSearchValue(updated.type).includes('rescis')
+            ? 'Encerrado'
+            : c.status;
           const updatedContract = {
             ...c,
             totalValue: updatedValue,
-            endDate: updatedEndDate
+            endDate: updatedEndDate,
+            status: updatedStatus as Contract['status']
           };
           saveContractToSupabase(updatedContract);
           return updatedContract;
@@ -1179,6 +1190,7 @@ export default function App() {
                   onDeleteContract={handleDeleteContract}
                   onAddAmendment={handleAddAmendment}
                   onViewAllContracts={() => setActiveTab('contratos-lancados')}
+                  canViewDocuments={canViewDocuments}
                 />
               </div>
             </>
@@ -1204,6 +1216,7 @@ export default function App() {
               creditors={creditors}
               categories={categories}
               onAddCategory={handleAddCategory}
+            canManageDocumentLinks={canViewDocuments}
             />
           )}
 
@@ -1256,6 +1269,7 @@ export default function App() {
               onAddAmendment={handleAddAmendment}
               onUpdateAmendment={handleUpdateAmendment}
               onDeleteAmendment={handleDeleteAmendment}
+              canViewDocuments={canViewDocuments}
             />
           )}
 
@@ -1382,7 +1396,7 @@ export default function App() {
                   </div>
                 </div>
 
-                {(selectedContractDetail.contractLink || linkedAmendments.some((am) => am.amendmentLink)) && (
+                {canViewDocuments && (selectedContractDetail.contractLink || linkedAmendments.some((am) => am.amendmentLink)) && (
                   <div className="pt-3 border-t border-slate-100 space-y-2">
                     <span className="text-slate-500 font-medium text-xs uppercase tracking-wider">
                       Documentos
@@ -1513,7 +1527,7 @@ export default function App() {
                             <div className="flex items-center space-x-1.5 font-medium text-slate-800">
                               <Layers className="w-3.5 h-3.5 text-emerald-600" />
                               <span>{am.amendmentNum}</span>
-                              {am.amendmentLink && (
+                              {canViewDocuments && am.amendmentLink && (
                                 <a
                                   href={getExternalUrl(am.amendmentLink)}
                                   target="_blank"
