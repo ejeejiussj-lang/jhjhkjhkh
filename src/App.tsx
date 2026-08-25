@@ -444,6 +444,65 @@ export default function App() {
   }, [categories]);
 
   useEffect(() => {
+    let isActive = true;
+
+    const syncRemoteData = async () => {
+      try {
+        const [remoteContracts, remoteCreditors, remoteNotes, remoteCommitments, remoteFiscais, remoteAmendments] = await Promise.all([
+          fetchContractsFromSupabase().catch((error) => { console.warn('Supabase contratos indisponivel; mantendo dados locais.', error); return null; }),
+          fetchCreditorsFromSupabase().catch((error) => { console.warn('Supabase credores indisponivel; mantendo dados locais.', error); return null; }),
+          fetchNotesFromSupabase().catch((error) => { console.warn('Supabase notas indisponivel; mantendo dados locais.', error); return null; }),
+          fetchCommitmentsFromSupabase().catch((error) => { console.warn('Supabase empenhos indisponivel; mantendo dados locais.', error); return null; }),
+          fetchFiscaisFromSupabase().catch((error) => { console.warn('Supabase fiscais indisponivel; mantendo dados locais.', error); return null; }),
+          fetchAmendmentsFromSupabase().catch((error) => { console.warn('Supabase aditivos indisponivel; mantendo dados locais.', error); return null; })
+        ]);
+
+        if (!isActive) return;
+
+        if (remoteContracts) {
+          setContracts((currentContracts) =>
+            remoteContracts.map((remoteContract) => {
+              const localContract = currentContracts.find(
+                (contract) =>
+                  contract.id === remoteContract.id ||
+                  contract.contractNum.toLowerCase().trim() === remoteContract.contractNum.toLowerCase().trim()
+              );
+              return {
+                ...remoteContract,
+                items: remoteContract.items?.length ? remoteContract.items : localContract?.items || []
+              };
+            })
+          );
+        }
+        if (remoteCreditors) setCreditors(remoteCreditors);
+        if (remoteNotes) setNotes(remoteNotes);
+        if (remoteCommitments) setCommitments(remoteCommitments);
+        if (remoteFiscais) setFiscais(remoteFiscais);
+        if (remoteAmendments) setAmendments(remoteAmendments);
+      } catch (error) {
+        console.warn('Sincronizacao automatica indisponivel; mantendo dados locais.', error);
+      }
+    };
+
+    const handleFocusSync = () => syncRemoteData();
+    const handleVisibilitySync = () => {
+      if (!document.hidden) syncRemoteData();
+    };
+
+    syncRemoteData();
+    const intervalId = window.setInterval(syncRemoteData, 15000);
+    window.addEventListener('focus', handleFocusSync);
+    document.addEventListener('visibilitychange', handleVisibilitySync);
+
+    return () => {
+      isActive = false;
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocusSync);
+      document.removeEventListener('visibilitychange', handleVisibilitySync);
+    };
+  }, []);
+
+  useEffect(() => {
     if (commitments.length === 0) return;
 
     const seenNoteKeys = new Set<string>();
