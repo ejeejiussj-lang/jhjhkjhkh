@@ -461,8 +461,9 @@ export default function App() {
         if (!isActive) return;
 
         if (remoteContracts) {
-          setContracts((currentContracts) =>
-            remoteContracts.map((remoteContract) => {
+          setContracts((currentContracts) => {
+            if (remoteContracts.length === 0 && currentContracts.length > 0) return currentContracts;
+            return remoteContracts.map((remoteContract) => {
               const localContract = currentContracts.find(
                 (contract) =>
                   contract.id === remoteContract.id ||
@@ -472,14 +473,14 @@ export default function App() {
                 ...remoteContract,
                 items: remoteContract.items?.length ? remoteContract.items : localContract?.items || []
               };
-            })
-          );
+            });
+          });
         }
-        if (remoteCreditors) setCreditors(remoteCreditors);
-        if (remoteNotes) setNotes(remoteNotes);
-        if (remoteCommitments) setCommitments(remoteCommitments);
-        if (remoteFiscais) setFiscais(remoteFiscais);
-        if (remoteAmendments) setAmendments(remoteAmendments);
+        if (remoteCreditors) setCreditors((current) => remoteCreditors.length === 0 && current.length > 0 ? current : remoteCreditors);
+        if (remoteNotes) setNotes((current) => remoteNotes.length === 0 && current.length > 0 ? current : remoteNotes);
+        if (remoteCommitments) setCommitments((current) => remoteCommitments.length === 0 && current.length > 0 ? current : remoteCommitments);
+        if (remoteFiscais) setFiscais((current) => remoteFiscais.length === 0 && current.length > 0 ? current : remoteFiscais);
+        if (remoteAmendments) setAmendments((current) => remoteAmendments.length === 0 && current.length > 0 ? current : remoteAmendments);
       } catch (error) {
         console.warn('Sincronizacao automatica indisponivel; mantendo dados locais.', error);
       }
