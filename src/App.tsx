@@ -5,6 +5,7 @@ import {
   Users,
   Receipt,
   Calendar,
+  ShoppingCart,
   X,
   FileCheck2,
   Building2,
@@ -34,6 +35,7 @@ import { ContractFiscalizationReportsView } from './components/ContractFiscaliza
 import { AlertsView } from './components/AlertsView';
 import { FiscaisView } from './components/FiscaisView';
 import { AmendmentsView } from './components/AmendmentsView';
+import { PurchaseOrdersView } from './components/PurchaseOrdersView';
 import { CommitmentsView } from './components/CommitmentsView';
 import { AiAssistantView } from './components/AiAssistantView';
 import { AuthModal } from './components/AuthModal';
@@ -61,7 +63,7 @@ import {
   deleteAmendmentFromSupabase
 } from './lib/supabaseService';
 
-import { Contract, ActiveTab, Creditor, ServiceNote, FiscalPortaria, ContractAmendment, SystemNotification, Commitment, ContractItem } from './types';
+import { Contract, ActiveTab, Creditor, ServiceNote, FiscalPortaria, ContractAmendment, SystemNotification, Commitment, ContractItem, PurchaseOrder } from './types';
 import { formatBRDate, parseBRDate } from './utils/dateFormat';
 
 const DEFAULT_CATEGORIES = [
@@ -181,6 +183,7 @@ const ACTIVE_TABS: ActiveTab[] = [
   'empenhos',
   'notas',
   'aditivos',
+  'ordens-compra',
   'relatorios',
   'relatorio-fiscalizacao',
   'alertas',
@@ -407,6 +410,19 @@ export default function App() {
     return [];
   });
 
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>(() => {
+    try {
+      const saved = localStorage.getItem('fiscalpro_purchase_orders');
+      if (saved !== null) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return [];
+  });
+
   // Automatically sync changes to LocalStorage
   useEffect(() => {
     localStorage.setItem('fiscalpro_contracts', JSON.stringify(contracts));
@@ -439,6 +455,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('fiscalpro_amendments', JSON.stringify(amendments));
   }, [amendments]);
+
+  useEffect(() => {
+    localStorage.setItem('fiscalpro_purchase_orders', JSON.stringify(purchaseOrders));
+  }, [purchaseOrders]);
 
   useEffect(() => {
     localStorage.setItem('fiscalpro_categories', JSON.stringify(categories));
@@ -607,6 +627,7 @@ export default function App() {
       setCommitments([]);
       setFiscais([]);
       setAmendments([]);
+      setPurchaseOrders([]);
       localStorage.removeItem('fiscalpro_contracts');
       localStorage.removeItem('fiscalpro_activities');
       localStorage.removeItem('fiscalpro_ai_alerts');
@@ -615,6 +636,7 @@ export default function App() {
       localStorage.removeItem('fiscalpro_commitments');
       localStorage.removeItem('fiscalpro_fiscais');
       localStorage.removeItem('fiscalpro_amendments');
+      localStorage.removeItem('fiscalpro_purchase_orders');
     }
   };
 
@@ -653,6 +675,9 @@ export default function App() {
   const filteredAmendments = amendments.filter((a) =>
     matchesSearch(globalSearchTerm, [a.amendmentNum, canViewDocuments ? a.amendmentLink : '', a.contractNum, a.creditor, a.type, a.status, a.justification])
   );
+  const filteredPurchaseOrders = purchaseOrders.filter((order) =>
+    matchesSearch(globalSearchTerm, [order.orderNumber, order.companyName, order.cnpj, order.expectedDeliveryDate, order.status])
+  );
 
   const handleHeaderSearch = (term: string) => {
     setSearchTerm(term);
@@ -672,6 +697,8 @@ export default function App() {
       setActiveTab('empenhos');
     } else if (amendments.some((a) => matchesSearch(q, [a.amendmentNum, canViewDocuments ? a.amendmentLink : '', a.contractNum, a.creditor, a.type, a.status]))) {
       setActiveTab('aditivos');
+    } else if (purchaseOrders.some((order) => matchesSearch(q, [order.orderNumber, order.companyName, order.cnpj, order.expectedDeliveryDate, order.status]))) {
+      setActiveTab('ordens-compra');
     }
   };
 
@@ -686,7 +713,35 @@ export default function App() {
     return daysRemaining !== null && daysRemaining >= 0 && daysRemaining <= 60;
   });
 
+  const purchaseOrdersDeliveryAlerts = purchaseOrders
+    .filter((order) => order.status === 'Pendente')
+    .map((order) => ({ ...order, daysRemaining: getDaysUntilDate(order.expectedDeliveryDate) }))
+    .filter((order) => order.daysRemaining !== null && order.daysRemaining <= 7)
+    .sort((a, b) => (a.daysRemaining ?? 0) - (b.daysRemaining ?? 0));
+
   // Handlers
+  const handleAddPurchaseOrder = (order: PurchaseOrder) => {
+    setPurchaseOrders([order, ...purchaseOrders]);
+    setActivities([
+      {
+        id: `act-${Date.now()}`,
+        type: 'purchase',
+        title: `Ordem de compras ${order.orderNumber} foi lancada`,
+        time: 'Agora',
+        iconColor: 'amber'
+      },
+      ...activities
+    ]);
+  };
+
+  const handleUpdatePurchaseOrder = (order: PurchaseOrder) => {
+    setPurchaseOrders(purchaseOrders.map((item) => (item.id === order.id ? order : item)));
+  };
+
+  const handleDeletePurchaseOrder = (id: string) => {
+    setPurchaseOrders(purchaseOrders.filter((order) => order.id !== id));
+  };
+
   const handleAddContract = (newContract: Omit<Contract, 'id'>) => {
     const contract: Contract = {
       ...newContract,
@@ -1024,7 +1079,21 @@ export default function App() {
       }
     });
 
-    // 4. Lançamentos Recentes de Atividades
+    // 4. Ordens de Compras com entrega proxima ou atrasada
+    purchaseOrdersDeliveryAlerts.forEach((order) => {
+      const overdue = (order.daysRemaining ?? 0) < 0;
+      items.push({
+        id: `purchase-delivery-${order.id}`,
+        title: overdue ? `Ordem de Compras Atrasada: ${order.orderNumber}` : `Entrega de Ordem de Compras Proxima: ${order.orderNumber}`,
+        desc: `${order.companyName} | CNPJ: ${order.cnpj} | Entrega: ${formatBRDate(order.expectedDeliveryDate)}`,
+        time: overdue ? 'Entrega atrasada' : `Vence em ${order.daysRemaining}d`,
+        type: 'purchase',
+        read: readNotificationIds.includes(`purchase-delivery-${order.id}`),
+        linkTab: 'ordens-compra'
+      });
+    });
+
+    // 5. Lancamentos Recentes de Atividades
     activities.slice(0, 4).forEach((act) => {
       items.push({
         id: `act-${act.id}`,
@@ -1038,7 +1107,7 @@ export default function App() {
     });
 
     return items;
-  }, [contracts, notes, amendments, activities, aiAlerts, readNotificationIds]);
+  }, [contracts, notes, amendments, purchaseOrdersDeliveryAlerts, activities, aiAlerts, readNotificationIds]);
 
   const unreadNotificationsCount = realNotifications.filter((n) => !n.read).length;
 
@@ -1058,6 +1127,7 @@ export default function App() {
   // Compute live KPI counters
   const activeContractsCount = contracts.filter((c) => c.status === 'Ativo').length;
   const expiringContractsCount = expiringContracts60Days.length;
+  const purchaseOrdersAlertCount = purchaseOrdersDeliveryAlerts.length;
 
   const handleLogout = () => {
     supabase.auth.signOut();
@@ -1125,7 +1195,7 @@ export default function App() {
 
 
               {/* Key Metric Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                 <MetricCard
                   title="Contratos Ativos"
                   value={String(activeContractsCount)}
@@ -1139,6 +1209,13 @@ export default function App() {
                   icon={Clock}
                   variant="amber"
                   onClick={() => setActiveTab('controle-contratos')}
+                />
+                <MetricCard
+                  title="Entregas de Ordens"
+                  value={String(purchaseOrdersAlertCount)}
+                  icon={ShoppingCart}
+                  variant="blue"
+                  onClick={() => setActiveTab('ordens-compra')}
                 />
               </div>
 
@@ -1189,7 +1266,43 @@ export default function App() {
                 )}
               </div>
 
-              {/* Visão de Execução de Saldos (Contratos Lançados) */}
+              <div className="bg-amber-50 rounded-2xl border border-amber-200 shadow-2xs p-5 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-100 pb-3">
+                  <div>
+                    <h3 className="text-sm font-medium text-amber-800">Entregas de Ordens de Compras</h3>
+                    <p className="text-xs text-amber-700/80 mt-0.5">Ordens pendentes com entrega atrasada ou prevista para os pr?ximos 7 dias</p>
+                  </div>
+                  <span className="text-xs font-medium text-amber-700 bg-white/70 border border-amber-100 px-2 py-0.5 rounded-full">
+                    {purchaseOrdersDeliveryAlerts.length} alerta(s)
+                  </span>
+                </div>
+
+                {purchaseOrdersDeliveryAlerts.length === 0 ? (
+                  <div className="py-5 text-center">
+                    <p className="font-medium text-amber-700 text-xs">Nenhuma ordem com entrega proxima</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-amber-100">
+                    {purchaseOrdersDeliveryAlerts.map((order) => (
+                      <button
+                        key={order.id}
+                        onClick={() => setActiveTab('ordens-compra')}
+                        className="w-full py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-left hover:bg-amber-100/60 rounded-lg px-2 -mx-2 transition-colors cursor-pointer"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium text-amber-950 truncate" title={order.companyName}>{order.companyName}</p>
+                          <p className="text-xs text-amber-800/80 font-mono truncate" title={order.orderNumber}>Ordem {order.orderNumber}</p>
+                        </div>
+                        <span className="text-[11px] font-medium text-amber-700 bg-white/75 border border-amber-100 px-2 py-0.5 rounded-full shrink-0">
+                          {(order.daysRemaining ?? 0) < 0 ? 'Atrasada' : `Entrega em ${order.daysRemaining}d`}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Vis?o de Execu??o de Saldos (Contratos Lan?ados) */}
               <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-5 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
                   <div>
@@ -1423,6 +1536,15 @@ export default function App() {
               canViewDocuments={canViewDocuments}
               initialEditingAmendment={editingAmendmentFromDetails}
               onInitialEditHandled={() => setEditingAmendmentFromDetails(null)}
+            />
+          )}
+
+          {activeTab === 'ordens-compra' && (
+            <PurchaseOrdersView
+              purchaseOrders={filteredPurchaseOrders}
+              onAddPurchaseOrder={handleAddPurchaseOrder}
+              onUpdatePurchaseOrder={handleUpdatePurchaseOrder}
+              onDeletePurchaseOrder={handleDeletePurchaseOrder}
             />
           )}
 

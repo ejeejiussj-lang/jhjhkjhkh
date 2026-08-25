@@ -29,10 +29,20 @@ export interface ContractItem {
 
 export interface ActivityItem {
   id: string;
-  type: 'contract' | 'creditor' | 'invoice' | 'alert' | 'additive' | 'report';
+  type: 'contract' | 'creditor' | 'invoice' | 'alert' | 'additive' | 'report' | 'purchase';
   title: string;
   time: string;
   iconColor: 'green' | 'blue' | 'purple' | 'amber' | 'teal';
+}
+
+export interface PurchaseOrder {
+  id: string;
+  orderNumber: string;
+  companyName: string;
+  cnpj: string;
+  expectedDeliveryDate: string;
+  status: 'Pendente' | 'Entregue' | 'Cancelada';
+  createdAt?: string;
 }
 
 export interface Creditor {
@@ -122,6 +132,7 @@ export type ActiveTab =
   | 'empenhos'
   | 'notas'
   | 'aditivos'
+  | 'ordens-compra'
   | 'relatorios'
   | 'relatorio-fiscalizacao'
   | 'alertas'
@@ -132,7 +143,7 @@ export interface SystemNotification {
   title: string;
   desc: string;
   time: string;
-  type: 'contract' | 'note' | 'amendment' | 'fiscal' | 'info';
+  type: 'contract' | 'note' | 'amendment' | 'fiscal' | 'purchase' | 'info';
   read: boolean;
   linkTab?: ActiveTab;
 }
