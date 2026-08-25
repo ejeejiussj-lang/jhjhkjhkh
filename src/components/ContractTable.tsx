@@ -175,6 +175,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
         c.contractNum.toLowerCase().includes(localSearch.toLowerCase()) ||
         c.creditor.toLowerCase().includes(localSearch.toLowerCase()) ||
         c.object.toLowerCase().includes(localSearch.toLowerCase()) ||
+        (c.contractLink && c.contractLink.toLowerCase().includes(localSearch.toLowerCase())) ||
         (c.fiscalName && c.fiscalName.toLowerCase().includes(localSearch.toLowerCase())) ||
         (c.fiscalPortaria && c.fiscalPortaria.toLowerCase().includes(localSearch.toLowerCase()));
 
@@ -199,6 +200,12 @@ export const ContractTable: React.FC<ContractTableProps> = ({
     }).format(val);
   };
 
+  const getExternalUrl = (url: string) => {
+    const trimmed = url.trim();
+    if (!trimmed) return '';
+    return /^https?:\/\//i.test(trimmed) ? trimmed : 'https://' + trimmed;
+  };
+
   const calculateProgress = (startStr: string, endStr: string) => {
     const startDate = parseBRDate(startStr);
     const endDate = parseBRDate(endStr);
@@ -216,12 +223,13 @@ export const ContractTable: React.FC<ContractTableProps> = ({
   };
 
   const handleExportCSV = () => {
-    const headers = ['Nº Contrato', 'Credor', 'Categoria', 'Objeto', 'Início', 'Fim', 'Valor Total', 'Status'];
+    const headers = ['Nº Contrato', 'Credor', 'Categoria', 'Objeto', 'Link', 'Início', 'Fim', 'Valor Total', 'Status'];
     const rows = filteredContracts.map((c) => [
       c.contractNum,
       `"${c.creditor}"`,
       c.category || 'Geral',
       `"${c.object.replace(/"/g, '""')}"`,
+      c.contractLink || '',
       c.startDate,
       c.endDate,
       c.totalValue,
@@ -460,6 +468,18 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                             <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
                               {c.category || 'Geral'}
                             </span>
+                            {c.contractLink && (
+                              <a
+                                href={getExternalUrl(c.contractLink)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="inline-flex items-center justify-center w-6 h-6 rounded-md text-emerald-700 bg-emerald-50 border border-emerald-100 hover:bg-emerald-100 hover:text-emerald-800 transition-colors"
+                                title="Abrir link do contrato"
+                              >
+                                <Link2 className="w-3.5 h-3.5" />
+                              </a>
+                            )}
                             {linkedNotesCount > 0 && (
                               <button
                                 onClick={(e) => {
@@ -602,7 +622,18 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                             <span>Notas de Serviço ({linkedNotesCount})</span>
                           </button>
 
-
+                          {c.contractLink && (
+                            <a
+                              href={getExternalUrl(c.contractLink)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={() => setActiveActionId(null)}
+                              className="w-full flex items-center space-x-2 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                            >
+                              <Link2 className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>Abrir Link do Contrato</span>
+                            </a>
+                          )}
 
                           <button
                             onClick={() => {

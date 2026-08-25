@@ -5,6 +5,7 @@ export interface Contract {
   contractNum: string;
   creditor: string;
   object: string;
+  contractLink?: string;
   startDate: string;
   endDate: string;
   totalValue: number;

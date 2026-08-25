@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS public.contracts (
   contract_num TEXT NOT NULL,
   creditor TEXT NOT NULL,
   object TEXT,
+  contract_link TEXT,
   start_date TEXT,
   end_date TEXT,
   total_value NUMERIC DEFAULT 0,
@@ -48,6 +49,7 @@ CREATE TABLE IF NOT EXISTS public.contracts (
 );
 
 ALTER TABLE public.contracts ADD COLUMN IF NOT EXISTS items JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.contracts ADD COLUMN IF NOT EXISTS contract_link TEXT;
 
 ALTER TABLE public.contracts ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Permitir tudo em contracts" ON public.contracts FOR ALL USING (true);
@@ -164,6 +166,7 @@ export async function fetchContractsFromSupabase(): Promise<Contract[] | null> {
       contractNum: item.contract_num,
       creditor: item.creditor,
       object: item.object || '',
+      contractLink: item.contract_link || '',
       startDate: item.start_date || '',
       endDate: item.end_date || '',
       totalValue: Number(item.total_value || 0),
@@ -189,6 +192,7 @@ export async function saveContractToSupabase(contract: Contract) {
       contract_num: contract.contractNum,
       creditor: contract.creditor,
       object: contract.object,
+      contract_link: contract.contractLink || '',
       start_date: contract.startDate,
       end_date: contract.endDate,
       total_value: contract.totalValue,

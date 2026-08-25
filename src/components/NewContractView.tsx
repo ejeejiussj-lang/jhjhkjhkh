@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FilePlus, Check, ArrowLeft, RotateCcw, UserCheck, ShieldCheck, FileCheck, Landmark, Users, Plus, Tag, Trash2 } from 'lucide-react';
+import { FilePlus, Check, ArrowLeft, RotateCcw, UserCheck, ShieldCheck, FileCheck, Landmark, Users, Plus, Tag, Trash2, Link2 } from 'lucide-react';
 import { Contract, ContractItem, ContractStatus, FiscalPortaria, Creditor } from '../types';
 import { brDateToInputDate, inputDateToBRDate } from '../utils/dateFormat';
 
@@ -29,6 +29,7 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
   const [contractNum, setContractNum] = useState(editingContract?.contractNum || '');
   const [creditor, setCreditor] = useState(editingContract?.creditor || '');
   const [object, setObject] = useState(editingContract?.object || '');
+  const [contractLink, setContractLink] = useState(editingContract?.contractLink || '');
   const [startDate, setStartDate] = useState(editingContract?.startDate || '');
   const [endDate, setEndDate] = useState(editingContract?.endDate || '');
   const [totalValue, setTotalValue] = useState(editingContract ? String(editingContract.totalValue) : '');
@@ -119,12 +120,13 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!contractNum || !creditor || !object) return;
+    if (!contractNum || !creditor || !object || !contractLink.trim()) return;
 
     const contractData = {
       contractNum,
       creditor,
       object,
+      contractLink: contractLink.trim(),
       startDate,
       endDate,
       totalValue: parseFloat(totalValue) || 0,
@@ -159,6 +161,7 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
     setContractNum('');
     setCreditor('');
     setObject('');
+    setContractLink('');
     setStartDate('');
     setEndDate('');
     setTotalValue('');
@@ -296,6 +299,23 @@ export const NewContractView: React.FC<NewContractViewProps> = ({
                 placeholder="Descreva detalhadamente o objeto, serviços contratados ou fornecimento de materiais..."
                 className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 leading-relaxed text-slate-800"
               />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                Link do Contrato <span className="text-rose-500">*</span>
+              </label>
+              <div className="relative">
+                <Link2 className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  required
+                  value={contractLink}
+                  onChange={(e) => setContractLink(e.target.value)}
+                  placeholder="https://exemplo.gov.br/contratos/012-2025"
+                  className="w-full pl-9 pr-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-900"
+                />
+              </div>
             </div>
           </div>
 

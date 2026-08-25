@@ -507,7 +507,7 @@ export default function App() {
 
   // Global search filters
   const filteredContracts = contracts.filter((c) =>
-    matchesSearch(globalSearchTerm, [c.contractNum, c.creditor, c.object, c.category, c.status])
+    matchesSearch(globalSearchTerm, [c.contractNum, c.creditor, c.object, c.contractLink, c.category, c.status])
   );
   const filteredCreditors = creditors.filter((c) =>
     matchesSearch(globalSearchTerm, [c.name, c.cnpj, c.category, c.status])
