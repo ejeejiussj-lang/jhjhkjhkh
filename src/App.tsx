@@ -112,6 +112,64 @@ const matchesSearch = (term: string, values: unknown[]) => {
   return values.some((value) => normalizeSearchValue(value).includes(needle));
 };
 
+const getInclusiveMonthCount = (start?: string, end?: string) => {
+  const startDate = parseBRDate(start);
+  const endDate = parseBRDate(end);
+  if (!startDate || !endDate) return 0;
+  const count = (endDate.getFullYear() - startDate.getFullYear()) * 12 + endDate.getMonth() - startDate.getMonth() + 1;
+  return Math.max(0, count);
+};
+
+const isMonthlyRebalanceAmendment = (type: ContractAmendment['type']) => {
+  const normalizedType = normalizeSearchValue(type);
+  return normalizedType.includes('realinhamento') || normalizedType.includes('reajuste') || normalizedType.includes('repactuacao');
+};
+
+const isExecutedNote = (note: ServiceNote) => note.status === 'Paga' || note.status === 'Concluido' || note.status === 'Emitida';
+
+const getMonthStart = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1);
+
+const getValueRebalance = (
+  contract: Contract,
+  amendment: Omit<ContractAmendment, 'id'> | ContractAmendment,
+  contractNotes: ServiceNote[]
+) => {
+  if (!isMonthlyRebalanceAmendment(amendment.type)) return null;
+
+  const newMonthlyValue = Number(amendment.valueChange || 0);
+  if (newMonthlyValue <= 0) return null;
+
+  const effectiveDate = parseBRDate(amendment.signatureDate) || parseBRDate(amendment.publicationDate);
+  const endDateText = amendment.newEndDate || contract.endDate;
+  const totalMonths = getInclusiveMonthCount(contract.startDate, endDateText);
+  const adjustedMonths = effectiveDate ? getInclusiveMonthCount(formatBRDate(amendment.signatureDate || amendment.publicationDate), endDateText) : 0;
+  if (totalMonths <= 0 || adjustedMonths <= 0) return null;
+
+  const effectiveMonthStart = getMonthStart(effectiveDate!);
+  const paidNotesBeforeBreak = contractNotes.filter((note) => {
+    if (note.contractNum !== contract.contractNum || !isExecutedNote(note)) return false;
+    const noteDate = parseBRDate(note.attestationDate || note.issueDate);
+    return !!noteDate && noteDate.getTime() < effectiveMonthStart.getTime();
+  });
+
+  const oldMonthlyValue = contract.totalValue / totalMonths;
+  const paidBeforeBreak = paidNotesBeforeBreak.length > 0
+    ? paidNotesBeforeBreak.reduce((sum, note) => sum + Number(note.value || 0), 0)
+    : Math.max(0, totalMonths - adjustedMonths) * oldMonthlyValue;
+  const targetTotalValue = paidBeforeBreak + adjustedMonths * newMonthlyValue;
+  const impact = targetTotalValue - contract.totalValue;
+
+  if (!Number.isFinite(impact) || Math.abs(impact) < 0.01) return null;
+
+  return {
+    adjustedMonths,
+    impact,
+    newMonthlyValue,
+    paidBeforeBreak,
+    targetTotalValue
+  };
+};
+
 const ACTIVE_TABS: ActiveTab[] = [
   'dashboard',
   'contratos-lancados',
@@ -743,17 +801,27 @@ export default function App() {
   };
 
   const handleAddAmendment = (newAmend: Omit<ContractAmendment, 'id'>, updateContract: boolean = true) => {
+    const targetContract = contracts.find((c) => c.contractNum === newAmend.contractNum);
+    const valueRebalance = targetContract ? getValueRebalance(targetContract, newAmend, notes) : null;
+    const amendmentToSave: Omit<ContractAmendment, 'id'> = valueRebalance
+      ? {
+          ...newAmend,
+          valueChange: valueRebalance.impact,
+          justification: `${newAmend.justification}\n\nRecálculo automático: novo valor mensal de ${valueRebalance.newMonthlyValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} aplicado a ${valueRebalance.adjustedMonths} competência(s) a partir do aditivo.`
+        }
+      : newAmend;
+
     const id = 'a' + Date.now();
-    const createdItem: ContractAmendment = { ...newAmend, id };
+    const createdItem: ContractAmendment = { ...amendmentToSave, id };
     setAmendments([createdItem, ...amendments]);
     saveAmendmentToSupabase(createdItem);
 
     if (updateContract) {
       setContracts(contracts.map((c) => {
-        if (c.contractNum === newAmend.contractNum) {
-          const updatedValue = newAmend.valueChange ? c.totalValue + newAmend.valueChange : c.totalValue;
-          const updatedEndDate = newAmend.newEndDate ? newAmend.newEndDate : c.endDate;
-          const updatedStatus = newAmend.type === 'Aditivo por Rescisão' ? 'Encerrado' : c.status;
+        if (c.contractNum === amendmentToSave.contractNum) {
+          const updatedValue = valueRebalance ? valueRebalance.targetTotalValue : amendmentToSave.valueChange ? c.totalValue + amendmentToSave.valueChange : c.totalValue;
+          const updatedEndDate = amendmentToSave.newEndDate ? amendmentToSave.newEndDate : c.endDate;
+          const updatedStatus = normalizeSearchValue(amendmentToSave.type).includes('rescis') ? 'Encerrado' : c.status;
           const updatedContract = {
             ...c,
             totalValue: updatedValue,
@@ -771,7 +839,7 @@ export default function App() {
       {
         id: 'act-' + Date.now(),
         type: 'additive',
-        title: `${newAmend.amendmentNum} registrado para o Contrato ${newAmend.contractNum}`,
+        title: `${amendmentToSave.amendmentNum} registrado para o Contrato ${amendmentToSave.contractNum}`,
         time: 'Agora mesmo',
         iconColor: 'teal'
       },

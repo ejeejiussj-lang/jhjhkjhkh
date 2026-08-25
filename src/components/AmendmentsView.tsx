@@ -40,6 +40,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
 
   // Computed selected contract helper
   const matchedContract = contracts.find((c) => c.contractNum === selectedContractNum);
+  const treatsValueAsMonthlyRebalance = type === 'Reajuste / Repactuação';
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
@@ -448,17 +449,17 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Valor da Alteração (R$)
+                    {treatsValueAsMonthlyRebalance ? 'Novo Valor Mensal (R$)' : 'Valor da Alteração (R$)'}
                   </label>
                   <input
                     type="number"
                     step="0.01"
                     value={valueChange}
                     onChange={(e) => setValueChange(e.target.value)}
-                    placeholder="Ex: 15000 (positivo) ou -5000 (redução)"
+                    placeholder={treatsValueAsMonthlyRebalance ? 'Ex: 2000' : 'Ex: 15000 (positivo) ou -5000 (redução)'}
                     className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
                   />
-                  <span className="text-[10px] text-slate-400 block mt-0.5">Use valores positivos para acréscimo ou negativo para redução</span>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">{treatsValueAsMonthlyRebalance ? 'Informe o novo valor mensal para recalcular as competências restantes.' : 'Use valores positivos para acréscimo ou negativo para redução'}</span>
                 </div>
 
                 <div>

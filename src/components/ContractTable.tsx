@@ -91,6 +91,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
   const requiresNewEndDate = amendmentType === 'Prorrogação Contratual' || amendmentType === 'Aditivo por Diversas Alterações';
   const requiresValue = ['Realinhamento', 'Aditivo de Redução de Valor', 'Acréscimo de Valor', 'Aditivo por Diversas Alterações'].includes(amendmentType);
   const requiresScope = ['Aditivo por Rescisão', 'Aditivo por Diversas Alterações'].includes(amendmentType);
+  const treatsValueAsMonthlyRebalance = amendmentType === 'Realinhamento';
 
   const getSignedValueChange = () => {
     const parsed = parseFloat(amendmentValue) || 0;
@@ -916,7 +917,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Valor da Alteração (R$) {requiresValue && <span className="text-rose-500">*</span>}
+                    {treatsValueAsMonthlyRebalance ? 'Novo Valor Mensal (R$)' : 'Valor da Alteração (R$)'} {requiresValue && <span className="text-rose-500">*</span>}
                   </label>
                   <input
                     type="number"
@@ -924,10 +925,10 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                     required={requiresValue}
                     value={amendmentValue}
                     onChange={(e) => setAmendmentValue(e.target.value)}
-                    placeholder={amendmentType === 'Aditivo de Redução de Valor' ? 'Ex: 5000' : 'Ex: 15000'}
+                    placeholder={treatsValueAsMonthlyRebalance ? 'Ex: 2000' : amendmentType === 'Aditivo de Redução de Valor' ? 'Ex: 5000' : 'Ex: 15000'}
                     className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-900"
                   />
-                  <p className="text-[10px] text-slate-400 mt-1">Redução e rescisão são gravadas como impacto negativo.</p>
+                  <p className="text-[10px] text-slate-400 mt-1">{treatsValueAsMonthlyRebalance ? 'No realinhamento, informe o novo valor mensal para recalcular as competências restantes.' : 'Redução e rescisão são gravadas como impacto negativo.'}</p>
                 </div>
 
                 <div>
