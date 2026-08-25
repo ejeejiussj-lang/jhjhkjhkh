@@ -61,7 +61,7 @@ import {
   deleteAmendmentFromSupabase
 } from './lib/supabaseService';
 
-import { Contract, ActiveTab, Creditor, ServiceNote, FiscalPortaria, ContractAmendment, SystemNotification, Commitment } from './types';
+import { Contract, ActiveTab, Creditor, ServiceNote, FiscalPortaria, ContractAmendment, SystemNotification, Commitment, ContractItem } from './types';
 import { formatBRDate, parseBRDate } from './utils/dateFormat';
 
 const DEFAULT_CATEGORIES = [
@@ -862,14 +862,14 @@ export default function App() {
     deleteFiscalFromSupabase(id);
   };
 
-  const handleAddAmendment = (newAmend: Omit<ContractAmendment, 'id'>, updateContract: boolean = true) => {
+  const handleAddAmendment = (newAmend: Omit<ContractAmendment, 'id'>, updateContract: boolean = true, updatedItems?: ContractItem[]) => {
     const targetContract = contracts.find((c) => c.contractNum === newAmend.contractNum);
     const valueRebalance = targetContract ? getValueRebalance(targetContract, newAmend, notes) : null;
     const amendmentToSave: Omit<ContractAmendment, 'id'> = valueRebalance
       ? {
           ...newAmend,
           valueChange: valueRebalance.impact,
-          justification: `${newAmend.justification}\n\nRecálculo automático: novo valor mensal de ${valueRebalance.newMonthlyValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} aplicado a ${valueRebalance.adjustedMonths} competência(s) a partir do aditivo.`
+          justification: `${newAmend.justification}\n\nRec\u00e1lculo autom\u00e1tico: novo valor mensal de ${valueRebalance.newMonthlyValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} aplicado a ${valueRebalance.adjustedMonths} compet\u00eancia(s) a partir do aditivo.`
         }
       : newAmend;
 
@@ -888,7 +888,8 @@ export default function App() {
             ...c,
             totalValue: updatedValue,
             endDate: updatedEndDate,
-            status: updatedStatus as Contract['status']
+            status: updatedStatus as Contract['status'],
+            items: updatedItems || c.items
           };
           saveContractToSupabase(updatedContract);
           return updatedContract;
@@ -909,28 +910,47 @@ export default function App() {
     ]);
   };
 
-  const handleUpdateAmendment = (updated: ContractAmendment, updateContract: boolean = false) => {
+  const handleUpdateAmendment = (updated: ContractAmendment, updateContract: boolean = false, updatedItems?: ContractItem[]) => {
     const previous = amendments.find((a) => a.id === updated.id);
-    setAmendments(amendments.map((a) => (a.id === updated.id ? updated : a)));
-    saveAmendmentToSupabase(updated);
+    let amendmentToSave = updated;
+
+    if (updateContract && isMonthlyRebalanceAmendment(updated.type)) {
+      const targetContract = contracts.find((c) => c.contractNum === updated.contractNum);
+      const previousImpact = previous?.contractNum === updated.contractNum ? Number(previous.valueChange || 0) : 0;
+      const baseContract = targetContract ? { ...targetContract, totalValue: targetContract.totalValue - previousImpact } : undefined;
+      const valueRebalance = baseContract ? getValueRebalance(baseContract, updated, notes) : null;
+
+      if (valueRebalance) {
+        const cleanJustification = updated.justification.split('\n\nRec\u00e1lculo autom\u00e1tico:')[0];
+        amendmentToSave = {
+          ...updated,
+          valueChange: valueRebalance.impact,
+          justification: `${cleanJustification}\n\nRec\u00e1lculo autom\u00e1tico: novo valor mensal de ${valueRebalance.newMonthlyValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} aplicado a ${valueRebalance.adjustedMonths} compet\u00eancia(s) a partir do aditivo.`
+        };
+      }
+    }
+
+    setAmendments(amendments.map((a) => (a.id === amendmentToSave.id ? amendmentToSave : a)));
+    saveAmendmentToSupabase(amendmentToSave);
 
     if (updateContract) {
       setContracts(contracts.map((c) => {
         const previousValueChange = previous?.contractNum === c.contractNum ? Number(previous.valueChange || 0) : 0;
-        const nextValueChange = updated.contractNum === c.contractNum ? Number(updated.valueChange || 0) : 0;
-        const touchesContract = previousValueChange !== 0 || nextValueChange !== 0 || updated.contractNum === c.contractNum;
+        const nextValueChange = amendmentToSave.contractNum === c.contractNum ? Number(amendmentToSave.valueChange || 0) : 0;
+        const touchesContract = previousValueChange !== 0 || nextValueChange !== 0 || amendmentToSave.contractNum === c.contractNum;
 
         if (touchesContract) {
           const updatedValue = c.totalValue - previousValueChange + nextValueChange;
-          const updatedEndDate = updated.contractNum === c.contractNum && updated.newEndDate ? updated.newEndDate : c.endDate;
-          const updatedStatus = updated.contractNum === c.contractNum && normalizeSearchValue(updated.type).includes('rescis')
+          const updatedEndDate = amendmentToSave.contractNum === c.contractNum && amendmentToSave.newEndDate ? amendmentToSave.newEndDate : c.endDate;
+          const updatedStatus = amendmentToSave.contractNum === c.contractNum && normalizeSearchValue(amendmentToSave.type).includes('rescis')
             ? 'Encerrado'
             : c.status;
           const updatedContract = {
             ...c,
             totalValue: updatedValue,
             endDate: updatedEndDate,
-            status: updatedStatus as Contract['status']
+            status: updatedStatus as Contract['status'],
+            items: amendmentToSave.contractNum === c.contractNum ? updatedItems || c.items : c.items
           };
           saveContractToSupabase(updatedContract);
           return updatedContract;

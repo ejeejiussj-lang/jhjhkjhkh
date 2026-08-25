@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Layers, Plus, Search, Trash2, Edit3, Check, X, FileText, Calendar, DollarSign, ArrowUpRight, ArrowDownRight, Clock, ShieldCheck, CheckCircle2, Link2 } from 'lucide-react';
-import { Contract, ContractAmendment } from '../types';
+import { Contract, ContractAmendment, ContractItem } from '../types';
 import { brDateToInputDate, inputDateToBRDate } from '../utils/dateFormat';
 
 interface AmendmentsViewProps {
   amendments: ContractAmendment[];
   contracts: Contract[];
-  onAddAmendment: (amendment: Omit<ContractAmendment, 'id'>, updateContract?: boolean) => void;
-  onUpdateAmendment: (amendment: ContractAmendment, updateContract?: boolean) => void;
+  onAddAmendment: (amendment: Omit<ContractAmendment, 'id'>, updateContract?: boolean, updatedItems?: ContractItem[]) => void;
+  onUpdateAmendment: (amendment: ContractAmendment, updateContract?: boolean, updatedItems?: ContractItem[]) => void;
   onDeleteAmendment: (id: string) => void;
   canViewDocuments?: boolean;
   initialEditingAmendment?: ContractAmendment | null;
@@ -41,10 +41,19 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
   const [justification, setJustification] = useState('');
   const [status, setStatus] = useState<ContractAmendment['status']>('Vigente');
   const [autoUpdateContract, setAutoUpdateContract] = useState(true);
+  const [itemUnitValues, setItemUnitValues] = useState<Record<string, string>>({});
 
   // Computed selected contract helper
   const matchedContract = contracts.find((c) => c.contractNum === selectedContractNum);
-  const treatsValueAsMonthlyRebalance = type === 'Reajuste / Repactuação';
+  const treatsValueAsMonthlyRebalance = type === 'Reajuste / Repactua\u00e7\u00e3o';
+  const editableItems = matchedContract?.items || [];
+  const updatedItems = treatsValueAsMonthlyRebalance && editableItems.length > 0
+    ? editableItems.map((item) => ({
+        ...item,
+        unitValue: parseFloat(itemUnitValues[item.id] || String(item.unitValue)) || 0
+      }))
+    : undefined;
+  const itemsMonthlyTotal = updatedItems?.reduce((sum, item) => sum + item.unitValue, 0) || 0;
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
@@ -56,9 +65,20 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
     return /^https?:\/\//i.test(trimmed) ? trimmed : 'https://' + trimmed;
   };
 
+  const loadItemUnitValues = (contractNum: string) => {
+    const contract = contracts.find((c) => c.contractNum === contractNum);
+    const values = (contract?.items || []).reduce<Record<string, string>>((acc, item) => {
+      acc[item.id] = String(item.unitValue || '');
+      return acc;
+    }, {});
+    setItemUnitValues(values);
+  };
+
   const openNewModal = () => {
     setEditingAmendment(null);
-    setSelectedContractNum(contracts[0]?.contractNum || '');
+    const firstContractNum = contracts[0]?.contractNum || '';
+    setSelectedContractNum(firstContractNum);
+    loadItemUnitValues(firstContractNum);
     setAmendmentNum('');
     setAmendmentLink('');
     setType('Acréscimo de Valor');
@@ -75,6 +95,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
   const openEditModal = (item: ContractAmendment) => {
     setEditingAmendment(item);
     setSelectedContractNum(item.contractNum);
+    loadItemUnitValues(item.contractNum);
     setAmendmentNum(item.amendmentNum);
     setAmendmentLink(item.amendmentLink || '');
     setType(item.type);
@@ -84,7 +105,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
     setPublicationDate(item.publicationDate || '');
     setJustification(item.justification);
     setStatus(item.status);
-    setAutoUpdateContract(false);
+    setAutoUpdateContract(true);
     setIsModalOpen(true);
   };
 
@@ -96,6 +117,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
 
   const handleContractSelect = (num: string) => {
     setSelectedContractNum(num);
+    loadItemUnitValues(num);
     const target = contracts.find((c) => c.contractNum === num);
     if (target) {
       if (type === 'Prorrogação de Prazo' && !newEndDate) {
@@ -110,7 +132,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
 
     const currentContract = contracts.find((c) => c.contractNum === selectedContractNum);
     const creditorName = currentContract ? currentContract.creditor : 'Credor Desconhecido';
-    const numVal = parseFloat(valueChange) || 0;
+    const numVal = treatsValueAsMonthlyRebalance && itemsMonthlyTotal > 0 ? itemsMonthlyTotal : parseFloat(valueChange) || 0;
 
     if (editingAmendment) {
       onUpdateAmendment(
@@ -128,7 +150,8 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
           justification,
           status
         },
-        autoUpdateContract
+        autoUpdateContract,
+        updatedItems
       );
     } else {
       onAddAmendment(
@@ -145,7 +168,8 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
           justification,
           status
         },
-        autoUpdateContract
+        autoUpdateContract,
+        updatedItems
       );
     }
 
@@ -485,6 +509,34 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
                   <span className="text-[10px] text-slate-400 block mt-0.5">Preencha se houver prorrogação de prazo</span>
                 </div>
               </div>
+
+              {treatsValueAsMonthlyRebalance && editableItems.length > 0 && (
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 overflow-hidden">
+                  <div className="px-3.5 py-2 border-b border-slate-200 flex items-center justify-between gap-3">
+                    <span className="text-xs font-medium text-slate-700">Valores dos itens do contrato</span>
+                    <span className="text-[10px] font-medium text-emerald-700">Novo mensal: {formatCurrency(itemsMonthlyTotal)}</span>
+                  </div>
+                  <div className="divide-y divide-slate-200">
+                    {editableItems.map((item) => (
+                      <div key={item.id} className="grid grid-cols-[1fr_90px_130px] gap-3 items-center px-3.5 py-2.5 bg-white text-xs">
+                        <div className="min-w-0">
+                          <p className="font-medium text-slate-800 truncate">{item.description}</p>
+                          <p className="text-[10px] text-slate-500">{item.quantity.toLocaleString('pt-BR')} {item.unit} mantido</p>
+                        </div>
+                        <span className="text-[11px] text-slate-500 font-medium text-right">{formatCurrency(item.unitValue)}</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={itemUnitValues[item.id] || ''}
+                          onChange={(e) => setItemUnitValues((prev) => ({ ...prev, [item.id]: e.target.value }))}
+                          className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Dates: Signature & Publication */}
               <div className="grid grid-cols-2 gap-4">
