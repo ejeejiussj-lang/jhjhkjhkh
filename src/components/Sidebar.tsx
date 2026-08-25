@@ -14,6 +14,7 @@ import {
   FileText,
   UserCheck,
   ClipboardList,
+  ShoppingCart,
   Layers,
   ChevronRight,
   X
