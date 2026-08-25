@@ -218,7 +218,7 @@ export default function App() {
     return !currentUser;
   });
 
-  const canViewDocuments = currentUser?.role === 'Administrador';
+  const canViewDocuments = Boolean(currentUser);
 
   // Supabase Auth and Sync Effect
   useEffect(() => {
