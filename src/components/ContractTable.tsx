@@ -26,6 +26,7 @@ import { brDateToInputDate, formatBRDate, inputDateToBRDate, parseBRDate } from 
 interface ContractTableProps {
   contracts: Contract[];
   notes?: ServiceNote[];
+  amendments?: ContractAmendment[];
   onOpenNewContractModal: () => void;
   onViewContractDetails?: (contract: Contract) => void;
   onEditContract?: (contract: Contract) => void;
@@ -38,6 +39,7 @@ interface ContractTableProps {
 export const ContractTable: React.FC<ContractTableProps> = ({
   contracts,
   notes = [],
+  amendments = [],
   onOpenNewContractModal,
   onViewContractDetails,
   onEditContract,
@@ -442,6 +444,9 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                   : [];
                 const notesSum = matchedNotes.reduce((sum, n) => sum + n.value, 0);
                 const linkedNotesCount = matchedNotes.length;
+                const linkedAmendmentsWithLinks = amendments.filter((am) =>
+                  am.contractNum.toLowerCase().trim() === c.contractNum.toLowerCase().trim() && am.amendmentLink
+                );
 
                 const used = Math.max(c.usedValue || 0, notesSum);
                 const remaining = Math.max(0, c.totalValue - used);
@@ -503,6 +508,19 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                                 <span>{linkedNotesCount} {linkedNotesCount === 1 ? 'Nota' : 'Notas'}</span>
                                 <span className="text-[9px] opacity-75">{isExpanded ? '▲' : '▼'}</span>
                               </button>
+                            )}
+                            {canViewDocuments && linkedAmendmentsWithLinks.length > 0 && (
+                              <a
+                                href={getExternalUrl(linkedAmendmentsWithLinks[0].amendmentLink || '')}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-100 hover:bg-emerald-100 transition-colors"
+                                title={linkedAmendmentsWithLinks.length === 1 ? 'Abrir link do aditivo' : 'Abrir primeiro link de aditivo'}
+                              >
+                                <Link2 className="w-2.5 h-2.5" />
+                                <span>{linkedAmendmentsWithLinks.length} {linkedAmendmentsWithLinks.length === 1 ? 'Aditivo' : 'Aditivos'}</span>
+                              </a>
                             )}
                           </div>
                         </div>
@@ -640,6 +658,20 @@ export const ContractTable: React.FC<ContractTableProps> = ({
                               <span>Abrir Link do Contrato</span>
                             </a>
                           )}
+
+                          {canViewDocuments && linkedAmendmentsWithLinks.map((am) => (
+                            <a
+                              key={am.id}
+                              href={getExternalUrl(am.amendmentLink || '')}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={() => setActiveActionId(null)}
+                              className="w-full flex items-center space-x-2 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                            >
+                              <Link2 className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>Abrir Link do Aditivo {am.amendmentNum}</span>
+                            </a>
+                          ))}
 
                           <button
                             onClick={() => {

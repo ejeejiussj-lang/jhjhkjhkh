@@ -1328,6 +1328,7 @@ export default function App() {
                 <ContractTable
                   contracts={filteredContracts}
                   notes={notes}
+                  amendments={amendments}
                   onOpenNewContractModal={() => {
                     setEditingContract(null);
                     setActiveTab('lancar-contrato');
