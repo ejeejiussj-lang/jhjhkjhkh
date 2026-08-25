@@ -17,7 +17,8 @@ import {
   RotateCcw,
   AlertTriangle,
   AlertCircle,
-  Link2
+  Link2,
+  Edit3
 } from 'lucide-react';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
@@ -620,6 +621,7 @@ export default function App() {
   const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
   const [selectedContractDetail, setSelectedContractDetail] = useState<Contract | null>(null);
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
+  const [editingAmendmentFromDetails, setEditingAmendmentFromDetails] = useState<ContractAmendment | null>(null);
 
   // Handle Tab Switch
   const handleTabChange = (tab: ActiveTab) => {
@@ -1397,6 +1399,8 @@ export default function App() {
               onUpdateAmendment={handleUpdateAmendment}
               onDeleteAmendment={handleDeleteAmendment}
               canViewDocuments={canViewDocuments}
+              initialEditingAmendment={editingAmendmentFromDetails}
+              onInitialEditHandled={() => setEditingAmendmentFromDetails(null)}
             />
           )}
 
@@ -1671,9 +1675,23 @@ export default function App() {
                               Assinatura: {am.signatureDate} {am.valueChange ? `• Impacto: R$ ${am.valueChange.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''}
                             </div>
                           </div>
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
-                            {am.status}
-                          </span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingAmendmentFromDetails(am);
+                                setSelectedContractDetail(null);
+                                setActiveTab('aditivos');
+                              }}
+                              className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 transition-colors cursor-pointer"
+                              title="Editar Termo Aditivo"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
+                              {am.status}
+                            </span>
+                          </div>
                         </div>
                       ))}
                     </div>

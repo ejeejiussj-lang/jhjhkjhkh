@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Layers, Plus, Search, Trash2, Edit3, Check, X, FileText, Calendar, DollarSign, ArrowUpRight, ArrowDownRight, Clock, ShieldCheck, CheckCircle2, Link2 } from 'lucide-react';
 import { Contract, ContractAmendment } from '../types';
 import { brDateToInputDate, inputDateToBRDate } from '../utils/dateFormat';
@@ -10,6 +10,8 @@ interface AmendmentsViewProps {
   onUpdateAmendment: (amendment: ContractAmendment, updateContract?: boolean) => void;
   onDeleteAmendment: (id: string) => void;
   canViewDocuments?: boolean;
+  initialEditingAmendment?: ContractAmendment | null;
+  onInitialEditHandled?: () => void;
 }
 
 export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
@@ -18,7 +20,9 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
   onAddAmendment,
   onUpdateAmendment,
   onDeleteAmendment,
-  canViewDocuments = false
+  canViewDocuments = false,
+  initialEditingAmendment = null,
+  onInitialEditHandled
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>('todos');
@@ -83,6 +87,12 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
     setAutoUpdateContract(false);
     setIsModalOpen(true);
   };
+
+  useEffect(() => {
+    if (!initialEditingAmendment) return;
+    openEditModal(initialEditingAmendment);
+    onInitialEditHandled?.();
+  }, [initialEditingAmendment?.id]);
 
   const handleContractSelect = (num: string) => {
     setSelectedContractNum(num);
