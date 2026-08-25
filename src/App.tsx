@@ -16,7 +16,8 @@ import {
   Trash2,
   RotateCcw,
   AlertTriangle,
-  AlertCircle
+  AlertCircle,
+  Link2
 } from 'lucide-react';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
@@ -98,6 +99,12 @@ const normalizeSearchValue = (value: unknown) =>
     .toLocaleLowerCase('pt-BR')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
+
+const getExternalUrl = (url: string) => {
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+  return /^https?:\/\//i.test(trimmed) ? trimmed : 'https://' + trimmed;
+};
 
 const matchesSearch = (term: string, values: unknown[]) => {
   const needle = normalizeSearchValue(term);
@@ -522,7 +529,7 @@ export default function App() {
     matchesSearch(globalSearchTerm, [f.name, f.portaria, f.organ, f.publicationDate, f.validity])
   );
   const filteredAmendments = amendments.filter((a) =>
-    matchesSearch(globalSearchTerm, [a.amendmentNum, a.contractNum, a.creditor, a.type, a.status, a.justification])
+    matchesSearch(globalSearchTerm, [a.amendmentNum, a.amendmentLink, a.contractNum, a.creditor, a.type, a.status, a.justification])
   );
 
   const handleHeaderSearch = (term: string) => {
@@ -541,7 +548,7 @@ export default function App() {
       setActiveTab('fiscais');
     } else if (commitments.some((c) => matchesSearch(q, [c.number, c.budgetAllocation, c.program, c.description]))) {
       setActiveTab('empenhos');
-    } else if (amendments.some((a) => matchesSearch(q, [a.amendmentNum, a.contractNum, a.creditor, a.type, a.status]))) {
+    } else if (amendments.some((a) => matchesSearch(q, [a.amendmentNum, a.amendmentLink, a.contractNum, a.creditor, a.type, a.status]))) {
       setActiveTab('aditivos');
     }
   };
@@ -1375,6 +1382,41 @@ export default function App() {
                   </div>
                 </div>
 
+                {(selectedContractDetail.contractLink || linkedAmendments.some((am) => am.amendmentLink)) && (
+                  <div className="pt-3 border-t border-slate-100 space-y-2">
+                    <span className="text-slate-500 font-medium text-xs uppercase tracking-wider">
+                      Documentos
+                    </span>
+                    <div className="border border-slate-200/60 rounded-xl divide-y divide-slate-100 bg-slate-50/50 overflow-hidden">
+                      {selectedContractDetail.contractLink && (
+                        <a
+                          href={getExternalUrl(selectedContractDetail.contractLink)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-between gap-3 p-2.5 text-xs bg-white hover:bg-emerald-50/60 transition-colors"
+                        >
+                          <span className="font-medium text-slate-800">Contrato principal</span>
+                          <Link2 className="w-4 h-4 text-emerald-700 shrink-0" />
+                        </a>
+                      )}
+                      {linkedAmendments
+                        .filter((am) => am.amendmentLink)
+                        .map((am) => (
+                          <a
+                            key={am.id}
+                            href={getExternalUrl(am.amendmentLink || '')}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between gap-3 p-2.5 text-xs bg-white hover:bg-emerald-50/60 transition-colors"
+                          >
+                            <span className="font-medium text-slate-800">{am.amendmentNum}</span>
+                            <Link2 className="w-4 h-4 text-emerald-700 shrink-0" />
+                          </a>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="pt-3 border-t border-slate-100 space-y-2">
                   <span className="text-slate-500 font-medium text-xs uppercase tracking-wider flex items-center justify-between">
                     <span>Itens do Contrato</span>
@@ -1471,6 +1513,17 @@ export default function App() {
                             <div className="flex items-center space-x-1.5 font-medium text-slate-800">
                               <Layers className="w-3.5 h-3.5 text-emerald-600" />
                               <span>{am.amendmentNum}</span>
+                              {am.amendmentLink && (
+                                <a
+                                  href={getExternalUrl(am.amendmentLink)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center justify-center w-6 h-6 rounded-md text-emerald-700 bg-emerald-50 border border-emerald-100 hover:bg-emerald-100 hover:text-emerald-800 transition-colors"
+                                  title="Abrir link do aditivo"
+                                >
+                                  <Link2 className="w-3.5 h-3.5" />
+                                </a>
+                              )}
                               <span className="text-[10px] font-medium text-slate-500">({am.type})</span>
                             </div>
                             <div className="text-[10px] text-slate-500">

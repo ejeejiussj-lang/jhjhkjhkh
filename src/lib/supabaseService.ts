@@ -140,6 +140,7 @@ CREATE POLICY "Permitir tudo em fiscais" ON public.fiscais FOR ALL USING (true);
 CREATE TABLE IF NOT EXISTS public.contract_amendments (
   id TEXT PRIMARY KEY,
   amendment_num TEXT NOT NULL,
+  amendment_link TEXT,
   contract_num TEXT NOT NULL,
   creditor TEXT NOT NULL,
   type TEXT NOT NULL,
@@ -151,6 +152,8 @@ CREATE TABLE IF NOT EXISTS public.contract_amendments (
   status TEXT DEFAULT 'Vigente',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+
+ALTER TABLE public.contract_amendments ADD COLUMN IF NOT EXISTS amendment_link TEXT;
 
 ALTER TABLE public.contract_amendments ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Permitir tudo em contract_amendments" ON public.contract_amendments FOR ALL USING (true);
@@ -420,6 +423,7 @@ export async function fetchAmendmentsFromSupabase(): Promise<ContractAmendment[]
     return data.map((item) => ({
       id: item.id,
       amendmentNum: item.amendment_num,
+      amendmentLink: item.amendment_link || '',
       contractNum: item.contract_num,
       creditor: item.creditor,
       type: item.type as any,
@@ -441,6 +445,7 @@ export async function saveAmendmentToSupabase(amendment: ContractAmendment) {
     await supabase.from('contract_amendments').upsert({
       id: amendment.id,
       amendment_num: amendment.amendmentNum,
+      amendment_link: amendment.amendmentLink || '',
       contract_num: amendment.contractNum,
       creditor: amendment.creditor,
       type: amendment.type,

@@ -53,6 +53,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
   const [expandedContracts, setExpandedContracts] = useState<Record<string, boolean>>({});
   const [amendmentContract, setAmendmentContract] = useState<Contract | null>(null);
   const [amendmentNum, setAmendmentNum] = useState('');
+  const [amendmentLink, setAmendmentLink] = useState('');
   const [amendmentType, setAmendmentType] = useState<ContractAmendment['type']>('Prorrogação Contratual');
   const [amendmentValue, setAmendmentValue] = useState('');
   const [newEndDate, setNewEndDate] = useState('');
@@ -74,6 +75,7 @@ export const ContractTable: React.FC<ContractTableProps> = ({
   const resetAmendmentForm = (contract?: Contract) => {
     setAmendmentContract(contract || null);
     setAmendmentNum('');
+    setAmendmentLink('');
     setAmendmentType('Prorrogação Contratual');
     setAmendmentValue('');
     setNewEndDate(contract?.endDate || '');
@@ -117,12 +119,13 @@ export const ContractTable: React.FC<ContractTableProps> = ({
 
   const submitAmendment = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!amendmentContract || !onAddAmendment) return;
+    if (!amendmentContract || !onAddAmendment || !amendmentLink.trim()) return;
 
     const detail = scopeChange.trim() ? `${justification}\n\nAlterações: ${scopeChange}` : justification;
     onAddAmendment(
       {
         amendmentNum,
+        amendmentLink: amendmentLink.trim(),
         contractNum: amendmentContract.contractNum,
         creditor: amendmentContract.creditor,
         type: amendmentType,
@@ -888,6 +891,22 @@ export const ContractTable: React.FC<ContractTableProps> = ({
 
               <div className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-xs text-amber-900 font-medium">
                 {getAmendmentGuidance()}
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Link do Aditivo <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <Link2 className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    required
+                    value={amendmentLink}
+                    onChange={(e) => setAmendmentLink(e.target.value)}
+                    placeholder="https://exemplo.gov.br/aditivos/001-2025"
+                    className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium text-slate-900"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

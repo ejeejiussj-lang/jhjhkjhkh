@@ -89,6 +89,7 @@ export interface FiscalPortaria {
 export interface ContractAmendment {
   id: string;
   amendmentNum: string;
+  amendmentLink?: string;
   contractNum: string;
   creditor: string;
   type:

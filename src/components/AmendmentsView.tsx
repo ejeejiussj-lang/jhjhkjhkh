@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layers, Plus, Search, Trash2, Edit3, Check, X, FileText, Calendar, DollarSign, ArrowUpRight, ArrowDownRight, Clock, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Layers, Plus, Search, Trash2, Edit3, Check, X, FileText, Calendar, DollarSign, ArrowUpRight, ArrowDownRight, Clock, ShieldCheck, CheckCircle2, Link2 } from 'lucide-react';
 import { Contract, ContractAmendment } from '../types';
 import { brDateToInputDate, inputDateToBRDate } from '../utils/dateFormat';
 
@@ -26,6 +26,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
   // Form states
   const [selectedContractNum, setSelectedContractNum] = useState('');
   const [amendmentNum, setAmendmentNum] = useState('');
+  const [amendmentLink, setAmendmentLink] = useState('');
   const [type, setType] = useState<ContractAmendment['type']>('Acréscimo de Valor');
   const [valueChange, setValueChange] = useState('');
   const [newEndDate, setNewEndDate] = useState('');
@@ -42,10 +43,17 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
   };
 
+  const getExternalUrl = (url: string) => {
+    const trimmed = url.trim();
+    if (!trimmed) return '';
+    return /^https?:\/\//i.test(trimmed) ? trimmed : 'https://' + trimmed;
+  };
+
   const openNewModal = () => {
     setEditingAmendment(null);
     setSelectedContractNum(contracts[0]?.contractNum || '');
     setAmendmentNum('');
+    setAmendmentLink('');
     setType('Acréscimo de Valor');
     setValueChange('');
     setNewEndDate('');
@@ -61,6 +69,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
     setEditingAmendment(item);
     setSelectedContractNum(item.contractNum);
     setAmendmentNum(item.amendmentNum);
+    setAmendmentLink(item.amendmentLink || '');
     setType(item.type);
     setValueChange(item.valueChange.toString());
     setNewEndDate(item.newEndDate || '');
@@ -84,7 +93,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedContractNum) return;
+    if (!selectedContractNum || !amendmentLink.trim()) return;
 
     const currentContract = contracts.find((c) => c.contractNum === selectedContractNum);
     const creditorName = currentContract ? currentContract.creditor : 'Credor Desconhecido';
@@ -97,6 +106,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
           contractNum: selectedContractNum,
           creditor: creditorName,
           amendmentNum,
+          amendmentLink: amendmentLink.trim(),
           type,
           valueChange: numVal,
           newEndDate: newEndDate || undefined,
@@ -113,6 +123,7 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
           contractNum: selectedContractNum,
           creditor: creditorName,
           amendmentNum,
+          amendmentLink: amendmentLink.trim(),
           type,
           valueChange: numVal,
           newEndDate: newEndDate || undefined,
@@ -134,7 +145,8 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
       a.amendmentNum.toLowerCase().includes(term) ||
       a.contractNum.toLowerCase().includes(term) ||
       a.creditor.toLowerCase().includes(term) ||
-      a.justification.toLowerCase().includes(term);
+      a.justification.toLowerCase().includes(term) ||
+      (a.amendmentLink && a.amendmentLink.toLowerCase().includes(term));
 
     const matchesType = selectedType === 'todos' || a.type === selectedType;
 
@@ -226,7 +238,20 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
                 filteredAmendments.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="py-3.5 px-4 font-medium text-slate-900 whitespace-nowrap">
-                      {item.amendmentNum}
+                      <div className="flex items-center gap-2">
+                        <span>{item.amendmentNum}</span>
+                        {item.amendmentLink && (
+                          <a
+                            href={getExternalUrl(item.amendmentLink)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center w-6 h-6 rounded-md text-emerald-700 bg-emerald-50 border border-emerald-100 hover:bg-emerald-100 hover:text-emerald-800 transition-colors"
+                            title="Abrir link do aditivo"
+                          >
+                            <Link2 className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3.5 px-4">
                       <div className="font-medium text-slate-900">{item.contractNum}</div>
@@ -395,6 +420,23 @@ export const AmendmentsView: React.FC<AmendmentsViewProps> = ({
                     <option value="Alteração Qualitativa">Alteração Qualitativa</option>
                     <option value="Outros">Outros</option>
                   </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Link do Aditivo <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <Link2 className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    required
+                    value={amendmentLink}
+                    onChange={(e) => setAmendmentLink(e.target.value)}
+                    placeholder="https://exemplo.gov.br/aditivos/001-2025"
+                    className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
+                  />
                 </div>
               </div>
 
