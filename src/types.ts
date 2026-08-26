@@ -45,6 +45,18 @@ export interface PurchaseOrder {
   createdAt?: string;
 }
 
+export interface GeneratedAdministrativeNotification {
+  id: string;
+  orderId?: string;
+  orderNumber: string;
+  companyName: string;
+  cnpj: string;
+  sentDate: string;
+  responseDeadline: string;
+  deadlineDays: number;
+  status: 'Pendente' | 'Concluido' | 'Sem resposta';
+  createdAt: string;
+}
 export interface Creditor {
   id: string;
   cnpj: string;
@@ -134,6 +146,7 @@ export type ActiveTab =
   | 'aditivos'
   | 'ordens-compra'
   | 'notificacao-administrativa'
+  | 'notificacoes-geradas'
   | 'relatorios'
   | 'relatorio-fiscalizacao'
   | 'alertas'

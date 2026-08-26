@@ -1,6 +1,6 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, FileText, Plus, Printer, RefreshCw, Trash2 } from 'lucide-react';
-import { PurchaseOrder } from '../types';
+import { GeneratedAdministrativeNotification, PurchaseOrder } from '../types';
 import { formatBRDate, parseBRDate } from '../utils/dateFormat';
 const notificationHeader = '/notification-header.png';
 
@@ -8,6 +8,7 @@ interface AdministrativeNotificationViewProps {
   purchaseOrders: PurchaseOrder[];
   initialOrder?: PurchaseOrder | null;
   onInitialOrderHandled?: () => void;
+  onRegisterGeneratedNotification?: (notification: GeneratedAdministrativeNotification) => void;
 }
 
 interface PendingItem {
@@ -68,6 +69,15 @@ const getDaysUntil = (dateText: string) => {
   return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 };
 
+const formatDate = (date: Date) =>
+  `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+
+const addDays = (date: Date, days: number) => {
+  const result = new Date(date);
+  result.setHours(0, 0, 0, 0);
+  result.setDate(result.getDate() + days);
+  return result;
+};
 const escapeHtml = (value: string) =>
   value
     .replace(/&/g, '&amp;')
@@ -173,7 +183,8 @@ const buildItemsTable = (items: PendingItem[]) => {
 export const AdministrativeNotificationView: React.FC<AdministrativeNotificationViewProps> = ({
   purchaseOrders,
   initialOrder,
-  onInitialOrderHandled
+  onInitialOrderHandled,
+  onRegisterGeneratedNotification
 }) => {
   const overdueOrders = useMemo(
     () => purchaseOrders
@@ -208,7 +219,9 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
   const companyName = selectedOrder?.companyName || manualCompanyName;
   const cnpj = selectedOrder?.cnpj || manualCnpj;
   const deliveryDate = selectedOrder?.expectedDeliveryDate ? formatBRDate(selectedOrder.expectedDeliveryDate) : manualDeliveryDate;
-  const today = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+  const todayDate = new Date();
+  const todayBr = formatDate(todayDate);
+  const todayDisplay = todayDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
 
   const fillDefaultTexts = (order: PurchaseOrder | null = selectedOrder) => {
     const defaults = buildDefaultTexts(order, prazoDias, orgao, manualCompanyName, manualCnpj, manualOrderNumber, representante);
@@ -327,7 +340,7 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
     <section>${paragraphHtml(textoAntesItens)}</section>
     ${buildItemsTable(pendingItems)}
     <section>${paragraphHtml(textoDepoisItens)}</section>
-    <p class="date">Pereiro/CE, em ${escapeHtml(today)}.</p>
+    <p class="date">Pereiro/CE, em ${escapeHtml(todayDisplay)}.</p>
     <div class="signature">
       <p>${escapeHtml(fiscal || '[responsável pela notificação]')}</p>
       <p>Fiscal de contrato</p>
@@ -338,6 +351,20 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
 </body>
 </html>`);
     printWindow.document.close();
+
+    const deadlineDays = Math.max(1, Number(prazoDias) || 1);
+    onRegisterGeneratedNotification?.({
+      id: `not-adm-${Date.now()}`,
+      orderId: selectedOrder?.id,
+      orderNumber: orderNumber || 'Manual',
+      companyName: companyName || 'Empresa nao informada',
+      cnpj: cnpj || '',
+      sentDate: todayBr,
+      responseDeadline: formatDate(addDays(todayDate, deadlineDays)),
+      deadlineDays,
+      status: 'Pendente',
+      createdAt: new Date().toISOString()
+    });
   };
 
   return (
@@ -398,9 +425,6 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
 
         <section className="bg-slate-200/70 border border-slate-300 rounded-2xl p-3 sm:p-6 overflow-x-auto">
           <div className="mx-auto bg-white text-black shadow-lg border border-slate-300 w-full max-w-[900px] min-h-[1180px] px-8 sm:px-16 py-10 text-[15px] leading-[1.35]" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
-            <div className="text-center mb-4">
-              <img src={notificationHeader} alt="Prefeitura Municipal de Pereiro" className="w-72 mx-auto object-contain" />
-            </div>
             <h2 className="text-center uppercase font-bold text-sm mb-7">Notificação Administrativa</h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-5 font-bold uppercase text-[13px]">
@@ -474,7 +498,7 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
               className="mt-4"
             />
 
-            <p className="text-right mt-8">Pereiro/CE, em {today}.</p>
+            <p className="text-right mt-8">Pereiro/CE, em {todayDisplay}.</p>
             <div className="text-center font-bold mt-8 leading-snug">
               <input value={fiscal} onChange={(e) => setFiscal(e.target.value)} className="text-center font-bold border-0 border-b border-dashed border-slate-300 px-2 py-1 outline-none focus:border-slate-700" />
               <p>Fiscal de contrato</p>

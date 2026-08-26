@@ -114,10 +114,12 @@ CREATE TABLE IF NOT EXISTS public.commitments (
   current_balance NUMERIC DEFAULT 0,
   description TEXT,
   creditor TEXT,
+  created_by UUID DEFAULT auth.uid(),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
 ALTER TABLE public.commitments ADD COLUMN IF NOT EXISTS creditor TEXT;
+ALTER TABLE public.commitments ADD COLUMN IF NOT EXISTS created_by UUID DEFAULT auth.uid();
 
 ALTER TABLE public.commitments ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Permitir tudo em commitments" ON public.commitments FOR ALL USING (true);
@@ -349,7 +351,8 @@ export async function fetchCommitmentsFromSupabase(): Promise<Commitment[] | nul
 
 export async function saveCommitmentToSupabase(commitment: Commitment) {
   try {
-    const { error } = await supabase.from('commitments').upsert({
+    const { data: authData } = await supabase.auth.getUser();
+    const payload: Record<string, unknown> = {
       id: commitment.id,
       number: commitment.number,
       budget_allocation: commitment.budgetAllocation,
@@ -357,9 +360,15 @@ export async function saveCommitmentToSupabase(commitment: Commitment) {
       value: commitment.value,
       balance: commitment.balance,
       current_balance: commitment.currentBalance,
-      description: commitment.description,
-      creditor: commitment.creditor,
-    });
+      description: commitment.description || '',
+      creditor: commitment.creditor || '',
+    };
+
+    if (authData.user?.id) {
+      payload.created_by = authData.user.id;
+    }
+
+    const { error } = await supabase.from('commitments').upsert(payload);
     if (error) throw error;
   } catch (err) {
     console.error('Erro ao salvar empenho no Supabase:', err);

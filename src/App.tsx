@@ -37,6 +37,7 @@ import { FiscaisView } from './components/FiscaisView';
 import { AmendmentsView } from './components/AmendmentsView';
 import { PurchaseOrdersView } from './components/PurchaseOrdersView';
 import { AdministrativeNotificationView } from './components/AdministrativeNotificationView';
+import { GeneratedNotificationsView } from './components/GeneratedNotificationsView';
 import { CommitmentsView } from './components/CommitmentsView';
 import { AiAssistantView } from './components/AiAssistantView';
 import { AuthModal } from './components/AuthModal';
@@ -67,7 +68,7 @@ import {
   deletePurchaseOrderFromSupabase
 } from './lib/supabaseService';
 
-import { Contract, ActiveTab, Creditor, ServiceNote, FiscalPortaria, ContractAmendment, SystemNotification, Commitment, ContractItem, PurchaseOrder } from './types';
+import { Contract, ActiveTab, Creditor, ServiceNote, FiscalPortaria, ContractAmendment, SystemNotification, Commitment, ContractItem, PurchaseOrder, GeneratedAdministrativeNotification } from './types';
 import { formatBRDate, parseBRDate } from './utils/dateFormat';
 
 const DEFAULT_CATEGORIES = [
@@ -87,6 +88,8 @@ const getDaysUntilDate = (endDate: string) => {
   return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 };
 
+const formatDate = (date: Date) =>
+  `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
 const parseNoteCompetencyDate = (note: ServiceNote) => {
   const value = note.attestationDate || note.issueDate || '';
   const br = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
@@ -101,6 +104,30 @@ const isNoteLinkedToCommitment = (note: ServiceNote, commitment: Commitment) =>
 const getNoteUniqueKey = (note: ServiceNote) =>
   `${note.noteNumber || ''}|${note.contractNum || ''}`.toLowerCase().trim();
 
+const getCommitmentMergeKey = (commitment: Commitment) =>
+  (commitment.id || commitment.number || '').toLowerCase().trim();
+
+const mergeCommitmentsPreservingLocal = (localCommitments: Commitment[], remoteCommitments: Commitment[]) => {
+  const merged = new Map<string, Commitment>();
+
+  remoteCommitments.forEach((commitment) => {
+    merged.set(getCommitmentMergeKey(commitment), commitment);
+  });
+
+  localCommitments.forEach((commitment) => {
+    const key = getCommitmentMergeKey(commitment);
+    if (!merged.has(key)) {
+      merged.set(key, commitment);
+    }
+  });
+
+  return Array.from(merged.values());
+};
+
+const getCommitmentsMissingRemotely = (localCommitments: Commitment[], remoteCommitments: Commitment[]) => {
+  const remoteKeys = new Set(remoteCommitments.map(getCommitmentMergeKey));
+  return localCommitments.filter((commitment) => !remoteKeys.has(getCommitmentMergeKey(commitment)));
+};
 const normalizeSearchValue = (value: unknown) =>
   String(value ?? '')
     .toLocaleLowerCase('pt-BR')
@@ -189,6 +216,7 @@ const ACTIVE_TABS: ActiveTab[] = [
   'aditivos',
   'ordens-compra',
   'notificacao-administrativa',
+  'notificacoes-geradas',
   'relatorios',
   'relatorio-fiscalizacao',
   'alertas',
@@ -291,7 +319,10 @@ export default function App() {
 
     fetchCommitmentsFromSupabase().catch((error) => { console.warn('Supabase empenhos indisponivel; mantendo dados locais.', error); return null; }).then((remoteCommitments) => {
       if (remoteCommitments) {
-        setCommitments(remoteCommitments);
+        setCommitments((currentCommitments) => {
+          getCommitmentsMissingRemotely(currentCommitments, remoteCommitments).forEach((commitment) => saveCommitmentToSupabase(commitment));
+          return mergeCommitmentsPreservingLocal(currentCommitments, remoteCommitments);
+        });
       }
     });
 
@@ -385,10 +416,15 @@ export default function App() {
   const [commitments, setCommitments] = useState<Commitment[]>(() => {
     try {
       const saved = localStorage.getItem('fiscalpro_commitments');
-      if (saved !== null) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+      const backup = localStorage.getItem('fiscalpro_commitments_backup');
+      const parsedSaved = saved !== null ? JSON.parse(saved) : [];
+      const parsedBackup = backup !== null ? JSON.parse(backup) : [];
+
+      if (Array.isArray(parsedSaved) && Array.isArray(parsedBackup)) {
+        return mergeCommitmentsPreservingLocal(parsedBackup, parsedSaved);
       }
+      if (Array.isArray(parsedSaved)) return parsedSaved;
+      if (Array.isArray(parsedBackup)) return parsedBackup;
     } catch (e) {
       console.error(e);
     }
@@ -427,6 +463,18 @@ export default function App() {
     }
     return [];
   });
+  const [generatedAdministrativeNotifications, setGeneratedAdministrativeNotifications] = useState<GeneratedAdministrativeNotification[]>(() => {
+    try {
+      const saved = localStorage.getItem('fiscalpro_generated_administrative_notifications');
+      if (saved !== null) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return [];
+  });
 
   // Automatically sync changes to LocalStorage
   useEffect(() => {
@@ -451,6 +499,9 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem('fiscalpro_commitments', JSON.stringify(commitments));
+    if (commitments.length > 0) {
+      localStorage.setItem('fiscalpro_commitments_backup', JSON.stringify(commitments));
+    }
   }, [commitments]);
 
   useEffect(() => {
@@ -464,6 +515,25 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('fiscalpro_purchase_orders', JSON.stringify(purchaseOrders));
   }, [purchaseOrders]);
+  useEffect(() => {
+    localStorage.setItem('fiscalpro_generated_administrative_notifications', JSON.stringify(generatedAdministrativeNotifications));
+  }, [generatedAdministrativeNotifications]);
+
+  useEffect(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    setGeneratedAdministrativeNotifications((current) => {
+      let changed = false;
+      const next = current.map((notification) => {
+        const deadline = parseBRDate(notification.responseDeadline);
+        if (notification.status !== 'Pendente' || !deadline || deadline.getTime() >= today.getTime()) return notification;
+        changed = true;
+        return { ...notification, status: 'Sem resposta' as const };
+      });
+      return changed ? next : current;
+    });
+  }, [generatedAdministrativeNotifications]);
 
   useEffect(() => {
     localStorage.setItem('fiscalpro_categories', JSON.stringify(categories));
@@ -504,7 +574,10 @@ export default function App() {
         }
         if (remoteCreditors) setCreditors((current) => remoteCreditors.length === 0 && current.length > 0 ? current : remoteCreditors);
         if (remoteNotes) setNotes((current) => remoteNotes.length === 0 && current.length > 0 ? current : remoteNotes);
-        if (remoteCommitments) setCommitments((current) => remoteCommitments.length === 0 && current.length > 0 ? current : remoteCommitments);
+        if (remoteCommitments) setCommitments((current) => {
+          getCommitmentsMissingRemotely(current, remoteCommitments).forEach((commitment) => saveCommitmentToSupabase(commitment));
+          return mergeCommitmentsPreservingLocal(current, remoteCommitments);
+        });
         if (remoteFiscais) setFiscais((current) => remoteFiscais.length === 0 && current.length > 0 ? current : remoteFiscais);
         if (remoteAmendments) setAmendments((current) => remoteAmendments.length === 0 && current.length > 0 ? current : remoteAmendments);
         if (remotePurchaseOrders) setPurchaseOrders((current) => remotePurchaseOrders.length === 0 && current.length > 0 ? current : remotePurchaseOrders);
@@ -641,9 +714,11 @@ export default function App() {
       localStorage.removeItem('fiscalpro_creditors');
       localStorage.removeItem('fiscalpro_notes');
       localStorage.removeItem('fiscalpro_commitments');
+      localStorage.removeItem('fiscalpro_commitments_backup');
       localStorage.removeItem('fiscalpro_fiscais');
       localStorage.removeItem('fiscalpro_amendments');
       localStorage.removeItem('fiscalpro_purchase_orders');
+      localStorage.removeItem('fiscalpro_generated_administrative_notifications');
     }
   };
 
@@ -756,6 +831,18 @@ export default function App() {
   const handleNotifyPurchaseOrder = (order: PurchaseOrder) => {
     setAdministrativeNotificationOrder(order);
     setActiveTab('notificacao-administrativa');
+  };
+  const handleRegisterGeneratedNotification = (notification: GeneratedAdministrativeNotification) => {
+    setGeneratedAdministrativeNotifications((current) => [notification, ...current].slice(0, 100));
+    setActiveTab('notificacoes-geradas');
+  };
+
+  const handleUpdateGeneratedNotification = (notification: GeneratedAdministrativeNotification) => {
+    setGeneratedAdministrativeNotifications((current) => current.map((item) => item.id === notification.id ? notification : item));
+  };
+
+  const handleDeleteGeneratedNotification = (id: string) => {
+    setGeneratedAdministrativeNotifications((current) => current.filter((item) => item.id !== id));
   };
 
   const handleAddContract = (newContract: Omit<Contract, 'id'>) => {
@@ -1109,6 +1196,31 @@ export default function App() {
     });
 
     // 5. Lançamentos Recentes de Atividades
+
+    generatedAdministrativeNotifications
+      .filter((notification) => notification.status !== 'Concluido')
+      .forEach((notification) => {
+        const daysRemaining = getDaysUntilDate(notification.responseDeadline);
+        const time = notification.status === 'Sem resposta'
+          ? 'Sem resposta'
+          : daysRemaining === null
+            ? 'Prazo invalido'
+            : daysRemaining < 0
+              ? `Vencida ha ${Math.abs(daysRemaining)}d`
+              : daysRemaining === 0
+                ? 'Vence hoje'
+                : `Vence em ${daysRemaining}d`;
+
+        items.push({
+          id: `generated-notification-${notification.id}`,
+          title: `Resposta da notificacao: ${notification.orderNumber}`,
+          desc: `${notification.companyName} | Prazo: ${formatBRDate(notification.responseDeadline)} | Status: ${notification.status}`,
+          time,
+          type: 'purchase',
+          read: readNotificationIds.includes(`generated-notification-${notification.id}`),
+          linkTab: 'notificacoes-geradas'
+        });
+      });
     activities.slice(0, 4).forEach((act) => {
       items.push({
         id: `act-${act.id}`,
@@ -1122,7 +1234,7 @@ export default function App() {
     });
 
     return items;
-  }, [contracts, notes, amendments, purchaseOrdersDeliveryAlerts, activities, aiAlerts, readNotificationIds]);
+  }, [contracts, notes, amendments, purchaseOrdersDeliveryAlerts, generatedAdministrativeNotifications, activities, aiAlerts, readNotificationIds]);
 
   const unreadNotificationsCount = realNotifications.filter((n) => !n.read).length;
 
@@ -1571,9 +1683,17 @@ export default function App() {
               purchaseOrders={purchaseOrders}
               initialOrder={administrativeNotificationOrder}
               onInitialOrderHandled={() => setAdministrativeNotificationOrder(null)}
+              onRegisterGeneratedNotification={handleRegisterGeneratedNotification}
             />
           )}
 
+          {activeTab === 'notificacoes-geradas' && (
+            <GeneratedNotificationsView
+              notifications={generatedAdministrativeNotifications}
+              onUpdateNotification={handleUpdateGeneratedNotification}
+              onDeleteNotification={handleDeleteGeneratedNotification}
+            />
+          )}
           {activeTab === 'relatorios' && (
             <ReportsView
               contracts={contracts}
