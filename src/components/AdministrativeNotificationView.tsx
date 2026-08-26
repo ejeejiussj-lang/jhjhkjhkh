@@ -18,6 +18,11 @@ interface PendingItem {
   quantity: string;
 }
 
+interface DefaultTexts {
+  beforeItems: string;
+  afterItems: string;
+}
+
 const createPendingItem = (): PendingItem => ({
   id: `item-${Date.now()}-${Math.random().toString(16).slice(2)}`,
   item: '',
@@ -49,30 +54,65 @@ const paragraphHtml = (value: string) =>
     .map((paragraph) => `<p>${paragraph.replace(/\n/g, '<br />')}</p>`)
     .join('');
 
-const buildDefaultText = (
+const buildDefaultTexts = (
   order: PurchaseOrder | null,
   prazoDias: string,
   orgao: string,
-  fiscal: string,
   companyName: string,
   cnpj: string,
   orderNumber: string,
-  deliveryDate: string
-) => {
-  const orderText = order?.orderNumber || orderNumber || '[número da ordem]';
+  representante: string
+): DefaultTexts => {
+  const orderText = order?.orderNumber || orderNumber || '[ordem de compra]';
   const companyText = order?.companyName || companyName || '[empresa notificada]';
   const cnpjText = order?.cnpj || cnpj || '[CNPJ]';
-  const deliveryText = order?.expectedDeliveryDate ? formatBRDate(order.expectedDeliveryDate) : deliveryDate || '[data prevista]';
-  const days = order ? getDaysUntil(order.expectedDeliveryDate) : null;
-  const atraso = days !== null && days < 0 ? `${Math.abs(days)} dia(s)` : '[quantidade de dias]';
+  const representativeText = representante || '[representante]';
+  const prazoText = prazoDias || '[prazo]';
 
-  return `Conforme registros desta Administração, foi emitida a Ordem de Compra nº ${orderText}, em favor da empresa ${companyText}, inscrita no CNPJ sob o nº ${cnpjText}, com entrega prevista para ${deliveryText}.
+  return {
+    beforeItems: `Sr. ${representativeText},
 
-Verifica-se que, até a presente data, não houve a entrega do objeto correspondente, caracterizando atraso de ${atraso} em relação ao prazo previsto.
+Conforme é de conhecimento de Vossa Senhoria, foram enviadas as respectivas ordens de compra nº ${orderText}, referente ao contrato indicado, cujo objeto é o REGISTRO DE PREÇOS PARA A AQUISIÇÃO DE EQUIPAMENTOS E MATERIAIS PERMANENTES, destinados ao atendimento das necessidades do Município de Pereiro/CE, perante ${orgao || '[órgão notificante]'}.
 
-Diante disso, ${orgao || '[órgão notificante]'}, por intermédio de seu fiscal responsável${fiscal ? `, ${fiscal}` : ''}, NOTIFICA a empresa para que regularize a entrega dos itens constantes na ordem de compra no prazo de ${prazoDias || '[prazo]'} dia(s), contado do recebimento desta notificação.
+As referidas ordens de compra foram enviadas pelo e-mail oficial e, em que pese as reiteradas tentativas de contato, a empresa acusou o recebimento e, até o presente momento, não houve a entrega dos seguintes itens:`,
+    afterItems: `bem como sequer apresentou previsão de entrega, numa tentativa de solucionar o problema de forma mais célere e econômica para as partes.
 
-O não atendimento à presente notificação poderá ensejar a adoção das medidas administrativas cabíveis, inclusive apuração de responsabilidade, aplicação de penalidades contratuais e demais providências previstas na legislação aplicável.`;
+Nessa esteira, tal conduta causa sério prejuízo ao município e fere as normas do contrato celebrado entre a secretaria notificante e a empresa notificada, o qual dispõe de cláusulas expressas sobre as obrigações para cumprimento do objeto e as consequências/penalidades advindas do atraso na entrega, incluindo a possibilidade de rescisão unilateral pelo Ente Público. Vejamos:
+
+CLÁUSULA QUARTA - DAS OBRIGAÇÕES DA CONTRATANTE:
+
+(...)
+
+4.2.3. Exigir o cumprimento de todas as obrigações assumidas pelo Contratado, de acordo com o contrato e seus anexos;
+
+4.2.4. Receber o objeto no prazo e condições estabelecidas no Termo de Referência.
+
+CLÁUSULA QUINTA - DAS OBRIGAÇÕES DA CONTRATADA:
+
+5.1. Entregar materiais para o qual tenha sido considerada vencedora no Almoxarifado Central do Município de Pereiro, no prazo máximo de 10 (dez) dias corridos, sem que isso implique em acréscimos nos preços constantes da proposta, o qual será conferido e, se achado irregular, devolvido à empresa, que terá o prazo de 24 (vinte e quatro) horas para efetuar a substituição;
+
+(...)
+
+5.10. O Contratado deve cumprir todas as obrigações constantes deste Contrato e em seus anexos, assumindo como exclusivamente seus os riscos e as despesas decorrentes da boa e perfeita execução do objeto.
+
+(...)
+
+5.12. Comunicar ao contratante, no prazo máximo de 24 (vinte e quatro) horas que antecede a data da entrega, os motivos que impossibilitem o cumprimento do prazo previsto, com a devida comprovação.
+
+TERMO DE REFERÊNCIA
+
+(...)
+
+7.1. Os materiais deverão ser entregues no almoxarifado da Prefeitura Municipal de Pereiro, em dia de expediente normal, no horário de 07:00 às 11:00 e das 13:00 às 17:00 horas.
+
+7.1.1. Os materiais deverão ser entregues adequadamente, de forma a permitir completa segurança durante o transporte no prazo máximo de 10 (dez) dias, contados da data de entrega do empenho ou ordem de fornecimento ao fornecedor, através de Nota Fiscal/Fatura, sem qualquer acréscimo adicional.
+
+Dessa feita, atentando-se às cláusulas do contrato acima expostas, ao termo de referência e aos dispositivos legais aplicáveis ao caso, especialmente a Lei Federal nº 14.133/2021, a Lei Complementar nº 147/2014 e o Decreto Municipal nº 310/2023, ${orgao || '[órgão notificante]'} vem, pela presente, NOTIFICAR A EMPRESA ${companyText}, inscrita no CNPJ sob o nº ${cnpjText}, para que entregue, no prazo de ${prazoText} dia(s), os itens conforme ordem de compra encaminhada, como é de seu dever contratual, sob pena de resolução contratual por descumprimento pela contratada.
+
+Reitera-se que a referida entrega deve ser realizada com urgência, considerando tratar-se de materiais indispensáveis ao adequado funcionamento dos serviços públicos prestados pelo Município. A ausência desses itens compromete a estrutura e o atendimento, prejudicando a realização de procedimentos, atividades e demais serviços essenciais oferecidos à população. Diante disso, impõe-se prioridade absoluta ao cumprimento da obrigação contratual, sob pena de agravamento dos prejuízos à continuidade, à eficiência e à qualidade dos serviços.
+
+Obs.: A não acusação de recebimento quando do envio através do e-mail ou outro meio fornecido para contato pela própria empresa no prazo de 24 (vinte e quatro) horas ocasionará o recebimento tácito, a partir do qual será contabilizado o prazo de ${prazoText} dia(s), findo o qual as consequências do não atendimento a esta notificação terão prosseguimento.`
+  };
 };
 
 const buildItemsTable = (items: PendingItem[]) => {
@@ -88,7 +128,6 @@ const buildItemsTable = (items: PendingItem[]) => {
     </tr>`).join('');
 
   return `<section>
-    <h2>Itens pendentes de entrega</h2>
     <table>
       <thead>
         <tr>
@@ -134,26 +173,36 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
   const [emailEnvio, setEmailEnvio] = useState('compraspereiro@gmail.com');
   const [prazoDias, setPrazoDias] = useState('10');
   const [pendingItems, setPendingItems] = useState<PendingItem[]>([createPendingItem()]);
-  const [texto, setTexto] = useState('');
-
-  useEffect(() => {
-    if (initialOrder) {
-      setSelectedOrderId(initialOrder.id);
-      onInitialOrderHandled?.();
-    }
-  }, [initialOrder, onInitialOrderHandled]);
-
-  useEffect(() => {
-    if (!texto.trim() || initialOrder) {
-      setTexto(buildDefaultText(selectedOrder, prazoDias, orgao, fiscal, manualCompanyName, manualCnpj, manualOrderNumber, manualDeliveryDate));
-    }
-  }, [selectedOrderId]);
+  const [textoAntesItens, setTextoAntesItens] = useState('');
+  const [textoDepoisItens, setTextoDepoisItens] = useState('');
 
   const orderNumber = selectedOrder?.orderNumber || manualOrderNumber;
   const companyName = selectedOrder?.companyName || manualCompanyName;
   const cnpj = selectedOrder?.cnpj || manualCnpj;
   const deliveryDate = selectedOrder?.expectedDeliveryDate ? formatBRDate(selectedOrder.expectedDeliveryDate) : manualDeliveryDate;
   const today = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+  const fillDefaultTexts = (order: PurchaseOrder | null = selectedOrder) => {
+    const defaults = buildDefaultTexts(order, prazoDias, orgao, manualCompanyName, manualCnpj, manualOrderNumber, representante);
+    setTextoAntesItens(defaults.beforeItems);
+    setTextoDepoisItens(defaults.afterItems);
+  };
+
+  useEffect(() => {
+    if (initialOrder) {
+      setSelectedOrderId(initialOrder.id);
+      const defaults = buildDefaultTexts(initialOrder, prazoDias, orgao, manualCompanyName, manualCnpj, manualOrderNumber, representante);
+      setTextoAntesItens(defaults.beforeItems);
+      setTextoDepoisItens(defaults.afterItems);
+      onInitialOrderHandled?.();
+    }
+  }, [initialOrder, onInitialOrderHandled]);
+
+  useEffect(() => {
+    if (!textoAntesItens.trim() && !textoDepoisItens.trim()) {
+      fillDefaultTexts(selectedOrder);
+    }
+  }, [selectedOrderId]);
 
   const updatePendingItem = (id: string, field: keyof Omit<PendingItem, 'id'>, value: string) => {
     setPendingItems((current) => current.map((item) => item.id === id ? { ...item, [field]: value } : item));
@@ -169,11 +218,20 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
 
   const selectManualNotification = () => {
     setSelectedOrderId('manual');
-    setTexto(buildDefaultText(null, prazoDias, orgao, fiscal, manualCompanyName, manualCnpj, manualOrderNumber, manualDeliveryDate));
+    const defaults = buildDefaultTexts(null, prazoDias, orgao, manualCompanyName, manualCnpj, manualOrderNumber, representante);
+    setTextoAntesItens(defaults.beforeItems);
+    setTextoDepoisItens(defaults.afterItems);
+  };
+
+  const selectOrderNotification = (order: PurchaseOrder) => {
+    setSelectedOrderId(order.id);
+    const defaults = buildDefaultTexts(order, prazoDias, orgao, manualCompanyName, manualCnpj, manualOrderNumber, representante);
+    setTextoAntesItens(defaults.beforeItems);
+    setTextoDepoisItens(defaults.afterItems);
   };
 
   const resetText = () => {
-    setTexto(buildDefaultText(selectedOrder, prazoDias, orgao, fiscal, manualCompanyName, manualCnpj, manualOrderNumber, manualDeliveryDate));
+    fillDefaultTexts(selectedOrder);
   };
 
   const renderEditableOrText = (value: string, setter: (value: string) => void, placeholder: string, className = 'w-[70%]') => {
@@ -200,19 +258,18 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
   <style>
     @page { size: A4; margin: 14mm 18mm 16mm; }
     * { box-sizing: border-box; }
-    body { color: #111; font-family: 'Times New Roman', Times, serif; font-size: 10.8pt; line-height: 1.28; margin: 0; }
+    body { color: #111; font-family: 'Times New Roman', Times, serif; font-size: 10.7pt; line-height: 1.22; margin: 0; }
     .page { max-width: 174mm; margin: 0 auto; }
-    header { text-align: center; margin: 0 0 10px; }
+    header { text-align: center; margin: 0 0 8px; }
     header img { width: 82mm; max-width: 100%; height: auto; object-fit: contain; }
-    h1 { font-size: 10.5pt; margin: 4px 0 20px; text-align: center; text-transform: uppercase; font-weight: 700; }
-    h2 { font-size: 10pt; margin: 14px 0 6px; text-transform: uppercase; font-weight: 700; }
-    p { margin: 0 0 9px; text-align: justify; }
+    h1 { font-size: 10.5pt; margin: 4px 0 18px; text-align: center; text-transform: uppercase; font-weight: 700; }
+    p { margin: 0 0 8px; text-align: justify; }
     .process { margin: 0 0 14px; font-weight: 700; text-transform: uppercase; }
     .process p { margin: 0 0 2px; text-align: left; }
-    .meta { margin: 0 0 15px; }
+    .meta { margin: 0 0 14px; }
     .meta p { margin: 0 0 6px; text-align: left; }
     .meta strong { text-transform: uppercase; }
-    table { width: 100%; border-collapse: collapse; margin: 8px 0 14px; font-size: 9.8pt; }
+    table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; font-size: 9.8pt; }
     th, td { border: 1px solid #222; padding: 5px 6px; vertical-align: top; }
     th { background: #f4f4f4; text-align: left; text-transform: uppercase; font-size: 9pt; }
     th:nth-child(1), td:nth-child(1) { width: 14%; text-align: center; }
@@ -232,16 +289,15 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
       ${contrato ? `<p>Contrato nº ${escapeHtml(contrato)}</p>` : ''}
     </section>
     <section class="meta">
-      <p><strong>Notificante:</strong> ${escapeHtml(orgao || '[órgão notificante]')}</p>
-      <p><strong>Notificado:</strong> ${escapeHtml(companyName || '[empresa notificada]')}${cnpj ? `, CNPJ nº ${escapeHtml(cnpj)}` : ''}</p>
-      ${representante ? `<p><strong>Representante:</strong> ${escapeHtml(representante)}</p>` : ''}
-      ${endereco ? `<p><strong>Endereço:</strong> ${escapeHtml(endereco)}</p>` : ''}
+      <p><strong>Notificante:</strong> ${escapeHtml(orgao || '[órgão notificante]')}, neste ato representado pelo seu Fiscal de contrato, o Sr. ${escapeHtml(fiscal || '[fiscal]')}</p>
+      <p><strong>Notificado:</strong> ${escapeHtml(companyName || '[empresa notificada]')}${cnpj ? `, CNPJ sob o nº ${escapeHtml(cnpj)}` : ''}${endereco ? `, com endereço na ${escapeHtml(endereco)}` : ''}${representante ? `, representado por ${escapeHtml(representante)}` : ''}.</p>
       ${orderNumber ? `<p><strong>Ordem de Compra:</strong> ${escapeHtml(orderNumber)}</p>` : ''}
       ${deliveryDate ? `<p><strong>Entrega prevista:</strong> ${escapeHtml(deliveryDate)}</p>` : ''}
       ${emailEnvio ? `<p><strong>E-mail de envio:</strong> ${escapeHtml(emailEnvio)}</p>` : ''}
     </section>
-    <section>${paragraphHtml(texto)}</section>
+    <section>${paragraphHtml(textoAntesItens)}</section>
     ${buildItemsTable(pendingItems)}
+    <section>${paragraphHtml(textoDepoisItens)}</section>
     <p class="date">Pereiro/CE, em ${escapeHtml(today)}.</p>
     <div class="signature">
       <p>${escapeHtml(fiscal || '[responsável pela notificação]')}</p>
@@ -263,11 +319,11 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
             <FileText className="w-7 h-7 text-emerald-600" />
             <span>Notificação Administrativa</span>
           </h1>
-          <p className="text-xs text-slate-500 mt-1">Use uma ordem atrasada ou crie uma notificação manual.</p>
+          <p className="text-xs text-slate-500 mt-1">Modelo oficial editável com texto, tabela de itens e geração em PDF.</p>
         </div>
         <button
           onClick={handleGeneratePdf}
-          disabled={!texto.trim()}
+          disabled={!textoAntesItens.trim() && !textoDepoisItens.trim()}
           className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-medium rounded-xl shadow-xs transition-colors cursor-pointer"
         >
           <Printer className="w-4 h-4" />
@@ -280,7 +336,7 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
           <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/70 space-y-3">
             <div>
               <p className="text-xs font-semibold text-slate-800">Notificações</p>
-              <p className="text-[11px] text-slate-500 mt-0.5">Comece manualmente ou selecione uma ordem atrasada.</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">Crie manualmente ou selecione uma ordem atrasada.</p>
             </div>
             <button
               onClick={selectManualNotification}
@@ -300,7 +356,7 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
             ) : overdueOrders.map((order) => (
               <button
                 key={order.id}
-                onClick={() => setSelectedOrderId(order.id)}
+                onClick={() => selectOrderNotification(order)}
                 className={`w-full text-left px-4 py-3 transition-colors cursor-pointer ${selectedOrderId === order.id ? 'bg-rose-50' : 'hover:bg-slate-50'}`}
               >
                 <p className="text-xs font-semibold text-slate-900 truncate" title={order.companyName}>{order.companyName}</p>
@@ -312,7 +368,7 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
         </aside>
 
         <section className="bg-slate-200/70 border border-slate-300 rounded-2xl p-3 sm:p-6 overflow-x-auto">
-          <div className="mx-auto bg-white text-black shadow-lg border border-slate-300 w-full max-w-[860px] min-h-[1120px] px-8 sm:px-14 py-10 font-serif text-[15px] leading-[1.35]">
+          <div className="mx-auto bg-white text-black shadow-lg border border-slate-300 w-full max-w-[900px] min-h-[1180px] px-8 sm:px-16 py-10 font-serif text-[15px] leading-[1.35]">
             <div className="text-center mb-4">
               <img src={notificationHeader} alt="Prefeitura Municipal de Pereiro" className="w-72 mx-auto object-contain" />
             </div>
@@ -331,21 +387,22 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
               <p><strong>ENDEREÇO:</strong> <input value={endereco} onChange={(e) => setEndereco(e.target.value)} className="w-[78%] border-0 border-b border-dashed border-slate-300 px-1 outline-none focus:border-slate-700" /></p>
               <p><strong>ORDEM DE COMPRA:</strong> {renderEditableOrText(orderNumber, setManualOrderNumber, 'número da ordem', 'w-[32%]')} <span className="ml-3"><strong>ENTREGA:</strong> {renderEditableOrText(deliveryDate, setManualDeliveryDate, 'data prevista', 'w-[28%]')}</span></p>
               <p><strong>E-MAIL DE ENVIO:</strong> <input value={emailEnvio} onChange={(e) => setEmailEnvio(e.target.value)} className="w-[62%] border-0 border-b border-dashed border-slate-300 px-1 outline-none focus:border-slate-700" /></p>
+              <p><strong>PRAZO:</strong> <input type="number" min="1" value={prazoDias} onChange={(e) => setPrazoDias(e.target.value)} className="w-20 border-0 border-b border-dashed border-slate-300 px-1 text-center outline-none focus:border-slate-700" /> dia(s)</p>
             </div>
 
             <textarea
-              value={texto}
-              onChange={(e) => setTexto(e.target.value)}
-              className="w-full min-h-[290px] resize-y border border-dashed border-slate-300 bg-white p-3 text-justify font-serif text-[15px] leading-[1.45] outline-none focus:border-slate-700 whitespace-pre-wrap"
+              value={textoAntesItens}
+              onChange={(e) => setTextoAntesItens(e.target.value)}
+              className="w-full min-h-[185px] resize-y border border-dashed border-slate-300 bg-white p-3 text-justify font-serif text-[15px] leading-[1.45] outline-none focus:border-slate-700 whitespace-pre-wrap"
             />
 
-            <div className="mt-5 space-y-2">
+            <div className="mt-4 space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <h3 className="uppercase font-bold text-[13px]">Itens pendentes de entrega</h3>
                 <div className="flex items-center gap-2 print:hidden">
                   <button onClick={resetText} className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-600 hover:bg-slate-100 rounded border border-slate-200 cursor-pointer">
                     <RefreshCw className="w-3 h-3" />
-                    <span>Repreencher</span>
+                    <span>Repreencher texto</span>
                   </button>
                   <button onClick={addPendingItem} className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-emerald-700 hover:bg-emerald-50 rounded border border-emerald-100 cursor-pointer">
                     <Plus className="w-3 h-3" />
@@ -380,6 +437,12 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
                 </tbody>
               </table>
             </div>
+
+            <textarea
+              value={textoDepoisItens}
+              onChange={(e) => setTextoDepoisItens(e.target.value)}
+              className="mt-4 w-full min-h-[560px] resize-y border border-dashed border-slate-300 bg-white p-3 text-justify font-serif text-[15px] leading-[1.45] outline-none focus:border-slate-700 whitespace-pre-wrap"
+            />
 
             <p className="text-right mt-8">Pereiro/CE, em {today}.</p>
             <div className="text-center font-bold mt-8 leading-snug">
