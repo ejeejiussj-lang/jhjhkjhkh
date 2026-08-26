@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, FileText, Plus, Printer, RefreshCw, Trash2 } from 'lucide-react';
 import { PurchaseOrder } from '../types';
 import { formatBRDate, parseBRDate } from '../utils/dateFormat';
-import notificationHeader from '../../assets/templates/notification-image1.png';
+const notificationHeader = '/notification-header.png';
 
 interface AdministrativeNotificationViewProps {
   purchaseOrders: PurchaseOrder[];
@@ -22,6 +22,34 @@ interface DefaultTexts {
   beforeItems: string;
   afterItems: string;
 }
+
+interface AutoGrowTextareaProps {
+  value: string;
+  onChange: (value: string) => void;
+  minHeight: number;
+  className?: string;
+}
+
+const AutoGrowTextarea: React.FC<AutoGrowTextareaProps> = ({ value, onChange, minHeight, className = '' }) => {
+  const ref = useRef<HTMLTextAreaElement | null>(null);
+
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    element.style.height = 'auto';
+    element.style.height = `${Math.max(minHeight, element.scrollHeight)}px`;
+  }, [value, minHeight]);
+
+  return (
+    <textarea
+      ref={ref}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      style={{ minHeight }}
+      className={`w-full resize-none overflow-hidden border border-dashed border-slate-300 bg-white p-3 text-justify text-[15px] leading-[1.45] outline-none focus:border-slate-700 whitespace-pre-wrap ${className}`}
+    />
+  );
+};
 
 const createPendingItem = (): PendingItem => ({
   id: `item-${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -241,7 +269,7 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
         value={value}
         onChange={(event) => setter(event.target.value)}
         placeholder={placeholder}
-        className={`${className} border-0 border-b border-dashed border-slate-300 px-1 outline-none focus:border-slate-700`}
+        className={`${className} border-0 border-b border-dashed border-slate-300 px-1 font-bold outline-none focus:border-slate-700`}
       />
     );
   };
@@ -249,6 +277,7 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
   const handleGeneratePdf = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
+    const headerUrl = new URL(notificationHeader, window.location.origin).href;
 
     printWindow.document.write(`<!doctype html>
 <html lang="pt-BR">
@@ -282,7 +311,7 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
 </head>
 <body>
   <main class="page">
-    <header><img src="${notificationHeader}" alt="Prefeitura Municipal de Pereiro" /></header>
+    <header><img src="${headerUrl}" alt="Prefeitura Municipal de Pereiro" /></header>
     <h1>Notificação Administrativa</h1>
     <section class="process">
       ${processo ? `<p>Pregão Eletrônico nº ${escapeHtml(processo)}</p>` : ''}
@@ -368,32 +397,32 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
         </aside>
 
         <section className="bg-slate-200/70 border border-slate-300 rounded-2xl p-3 sm:p-6 overflow-x-auto">
-          <div className="mx-auto bg-white text-black shadow-lg border border-slate-300 w-full max-w-[900px] min-h-[1180px] px-8 sm:px-16 py-10 font-serif text-[15px] leading-[1.35]">
+          <div className="mx-auto bg-white text-black shadow-lg border border-slate-300 w-full max-w-[900px] min-h-[1180px] px-8 sm:px-16 py-10 text-[15px] leading-[1.35]" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
             <div className="text-center mb-4">
               <img src={notificationHeader} alt="Prefeitura Municipal de Pereiro" className="w-72 mx-auto object-contain" />
             </div>
             <h2 className="text-center uppercase font-bold text-sm mb-7">Notificação Administrativa</h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-5 font-bold uppercase text-[13px]">
-              <input value={processo} onChange={(e) => setProcesso(e.target.value)} placeholder="Pregão Eletrônico nº" className="border-0 border-b border-dashed border-slate-300 px-1 py-1 outline-none focus:border-slate-700" />
-              <input value={contrato} onChange={(e) => setContrato(e.target.value)} placeholder="Contrato nº" className="border-0 border-b border-dashed border-slate-300 px-1 py-1 outline-none focus:border-slate-700" />
+              <input value={processo} onChange={(e) => setProcesso(e.target.value)} placeholder="Pregão Eletrônico nº" className="border-0 border-b border-dashed border-slate-300 px-1 py-1 font-bold outline-none focus:border-slate-700" />
+              <input value={contrato} onChange={(e) => setContrato(e.target.value)} placeholder="Contrato nº" className="border-0 border-b border-dashed border-slate-300 px-1 py-1 font-bold outline-none focus:border-slate-700" />
             </div>
 
             <div className="space-y-2 mb-5 text-[14px]">
-              <p><strong>NOTIFICANTE:</strong> <input value={orgao} onChange={(e) => setOrgao(e.target.value)} className="w-[70%] border-0 border-b border-dashed border-slate-300 px-1 outline-none focus:border-slate-700" /></p>
+              <p><strong>NOTIFICANTE:</strong> <input value={orgao} onChange={(e) => setOrgao(e.target.value)} className="w-[70%] border-0 border-b border-dashed border-slate-300 px-1 font-bold outline-none focus:border-slate-700" /></p>
               <p><strong>NOTIFICADO:</strong> {renderEditableOrText(companyName, setManualCompanyName, 'Empresa notificada')}</p>
               <p><strong>CNPJ:</strong> {renderEditableOrText(cnpj, setManualCnpj, '00.000.000/0001-00', 'w-[42%]')}</p>
-              <p><strong>REPRESENTANTE:</strong> <input value={representante} onChange={(e) => setRepresentante(e.target.value)} className="w-[70%] border-0 border-b border-dashed border-slate-300 px-1 outline-none focus:border-slate-700" /></p>
-              <p><strong>ENDEREÇO:</strong> <input value={endereco} onChange={(e) => setEndereco(e.target.value)} className="w-[78%] border-0 border-b border-dashed border-slate-300 px-1 outline-none focus:border-slate-700" /></p>
+              <p><strong>REPRESENTANTE:</strong> <input value={representante} onChange={(e) => setRepresentante(e.target.value)} className="w-[70%] border-0 border-b border-dashed border-slate-300 px-1 font-bold outline-none focus:border-slate-700" /></p>
+              <p><strong>ENDEREÇO:</strong> <input value={endereco} onChange={(e) => setEndereco(e.target.value)} className="w-[78%] border-0 border-b border-dashed border-slate-300 px-1 font-bold outline-none focus:border-slate-700" /></p>
               <p><strong>ORDEM DE COMPRA:</strong> {renderEditableOrText(orderNumber, setManualOrderNumber, 'número da ordem', 'w-[32%]')} <span className="ml-3"><strong>ENTREGA:</strong> {renderEditableOrText(deliveryDate, setManualDeliveryDate, 'data prevista', 'w-[28%]')}</span></p>
-              <p><strong>E-MAIL DE ENVIO:</strong> <input value={emailEnvio} onChange={(e) => setEmailEnvio(e.target.value)} className="w-[62%] border-0 border-b border-dashed border-slate-300 px-1 outline-none focus:border-slate-700" /></p>
-              <p><strong>PRAZO:</strong> <input type="number" min="1" value={prazoDias} onChange={(e) => setPrazoDias(e.target.value)} className="w-20 border-0 border-b border-dashed border-slate-300 px-1 text-center outline-none focus:border-slate-700" /> dia(s)</p>
+              <p><strong>E-MAIL DE ENVIO:</strong> <input value={emailEnvio} onChange={(e) => setEmailEnvio(e.target.value)} className="w-[62%] border-0 border-b border-dashed border-slate-300 px-1 font-bold outline-none focus:border-slate-700" /></p>
+              <p><strong>PRAZO:</strong> <input type="number" min="1" value={prazoDias} onChange={(e) => setPrazoDias(e.target.value)} className="w-20 border-0 border-b border-dashed border-slate-300 px-1 text-center font-bold outline-none focus:border-slate-700" /> dia(s)</p>
             </div>
 
-            <textarea
+            <AutoGrowTextarea
               value={textoAntesItens}
-              onChange={(e) => setTextoAntesItens(e.target.value)}
-              className="w-full min-h-[185px] resize-y border border-dashed border-slate-300 bg-white p-3 text-justify font-serif text-[15px] leading-[1.45] outline-none focus:border-slate-700 whitespace-pre-wrap"
+              onChange={setTextoAntesItens}
+              minHeight={185}
             />
 
             <div className="mt-4 space-y-2">
@@ -423,10 +452,10 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
                 <tbody>
                   {pendingItems.map((item, index) => (
                     <tr key={item.id}>
-                      <td className="border border-slate-700 p-1"><input value={item.item} onChange={(e) => updatePendingItem(item.id, 'item', e.target.value)} placeholder={String(index + 1)} className="w-full text-center outline-none" /></td>
-                      <td className="border border-slate-700 p-1"><input value={item.description} onChange={(e) => updatePendingItem(item.id, 'description', e.target.value)} className="w-full outline-none" /></td>
-                      <td className="border border-slate-700 p-1"><input value={item.unit} onChange={(e) => updatePendingItem(item.id, 'unit', e.target.value)} className="w-full text-center outline-none" /></td>
-                      <td className="border border-slate-700 p-1"><input value={item.quantity} onChange={(e) => updatePendingItem(item.id, 'quantity', e.target.value)} className="w-full text-center outline-none" /></td>
+                      <td className="border border-slate-700 p-1"><input value={item.item} onChange={(e) => updatePendingItem(item.id, 'item', e.target.value)} placeholder={String(index + 1)} className="w-full text-center font-bold outline-none" /></td>
+                      <td className="border border-slate-700 p-1"><input value={item.description} onChange={(e) => updatePendingItem(item.id, 'description', e.target.value)} className="w-full font-bold outline-none" /></td>
+                      <td className="border border-slate-700 p-1"><input value={item.unit} onChange={(e) => updatePendingItem(item.id, 'unit', e.target.value)} className="w-full text-center font-bold outline-none" /></td>
+                      <td className="border border-slate-700 p-1"><input value={item.quantity} onChange={(e) => updatePendingItem(item.id, 'quantity', e.target.value)} className="w-full text-center font-bold outline-none" /></td>
                       <td className="border border-slate-700 p-1 text-center print:hidden">
                         <button onClick={() => removePendingItem(item.id)} disabled={pendingItems.length === 1} className="p-1 text-slate-500 hover:text-rose-600 disabled:opacity-40 cursor-pointer" title="Remover item">
                           <Trash2 className="w-3.5 h-3.5" />
@@ -438,10 +467,11 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
               </table>
             </div>
 
-            <textarea
+            <AutoGrowTextarea
               value={textoDepoisItens}
-              onChange={(e) => setTextoDepoisItens(e.target.value)}
-              className="mt-4 w-full min-h-[560px] resize-y border border-dashed border-slate-300 bg-white p-3 text-justify font-serif text-[15px] leading-[1.45] outline-none focus:border-slate-700 whitespace-pre-wrap"
+              onChange={setTextoDepoisItens}
+              minHeight={560}
+              className="mt-4"
             />
 
             <p className="text-right mt-8">Pereiro/CE, em {today}.</p>
