@@ -36,6 +36,7 @@ import { AlertsView } from './components/AlertsView';
 import { FiscaisView } from './components/FiscaisView';
 import { AmendmentsView } from './components/AmendmentsView';
 import { PurchaseOrdersView } from './components/PurchaseOrdersView';
+import { AdministrativeNotificationView } from './components/AdministrativeNotificationView';
 import { CommitmentsView } from './components/CommitmentsView';
 import { AiAssistantView } from './components/AiAssistantView';
 import { AuthModal } from './components/AuthModal';
@@ -187,6 +188,7 @@ const ACTIVE_TABS: ActiveTab[] = [
   'notas',
   'aditivos',
   'ordens-compra',
+  'notificacao-administrativa',
   'relatorios',
   'relatorio-fiscalizacao',
   'alertas',
@@ -650,6 +652,7 @@ export default function App() {
   const [selectedContractDetail, setSelectedContractDetail] = useState<Contract | null>(null);
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
   const [editingAmendmentFromDetails, setEditingAmendmentFromDetails] = useState<ContractAmendment | null>(null);
+  const [administrativeNotificationOrder, setAdministrativeNotificationOrder] = useState<PurchaseOrder | null>(null);
 
   // Handle Tab Switch
   const handleTabChange = (tab: ActiveTab) => {
@@ -748,6 +751,11 @@ export default function App() {
   const handleDeletePurchaseOrder = (id: string) => {
     setPurchaseOrders(purchaseOrders.filter((order) => order.id !== id));
     deletePurchaseOrderFromSupabase(id);
+  };
+
+  const handleNotifyPurchaseOrder = (order: PurchaseOrder) => {
+    setAdministrativeNotificationOrder(order);
+    setActiveTab('notificacao-administrativa');
   };
 
   const handleAddContract = (newContract: Omit<Contract, 'id'>) => {
@@ -1554,6 +1562,15 @@ export default function App() {
               onAddPurchaseOrder={handleAddPurchaseOrder}
               onUpdatePurchaseOrder={handleUpdatePurchaseOrder}
               onDeletePurchaseOrder={handleDeletePurchaseOrder}
+              onNotifyAdministrative={handleNotifyPurchaseOrder}
+            />
+          )}
+
+          {activeTab === 'notificacao-administrativa' && (
+            <AdministrativeNotificationView
+              purchaseOrders={purchaseOrders}
+              initialOrder={administrativeNotificationOrder}
+              onInitialOrderHandled={() => setAdministrativeNotificationOrder(null)}
             />
           )}
 

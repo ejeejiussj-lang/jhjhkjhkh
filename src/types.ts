@@ -133,6 +133,7 @@ export type ActiveTab =
   | 'notas'
   | 'aditivos'
   | 'ordens-compra'
+  | 'notificacao-administrativa'
   | 'relatorios'
   | 'relatorio-fiscalizacao'
   | 'alertas'

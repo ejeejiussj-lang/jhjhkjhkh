@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   FileCheck2,
   FileText,
+  FileWarning,
   UserCheck,
   ClipboardList,
   ShoppingCart,
@@ -52,6 +53,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'alertas', label: 'Alertas', icon: BellRing },
     { id: 'controle-contratos', label: 'Controle de Contratos', icon: ClipboardList },
     { id: 'ia', label: 'IA', icon: Bot },
+    { id: 'notificacao-administrativa', label: 'Notificação Administrativa', icon: FileWarning },
     { id: 'relatorio-fiscalizacao', label: 'Relatório de Fiscalização de Contratos', icon: ClipboardList },
     { id: 'relatorios', label: 'Relatórios', icon: BarChart3 }
   ];

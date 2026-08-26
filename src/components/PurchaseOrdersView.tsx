@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Calendar, Check, Edit3, Plus, Search, ShoppingCart, Trash2, X } from 'lucide-react';
+import { BellRing, Calendar, Check, Edit3, Plus, Search, ShoppingCart, Trash2, X } from 'lucide-react';
 import { PurchaseOrder } from '../types';
 import { brDateToInputDate, formatBRDate, inputDateToBRDate, parseBRDate } from '../utils/dateFormat';
 
@@ -8,6 +8,7 @@ interface PurchaseOrdersViewProps {
   onAddPurchaseOrder: (order: PurchaseOrder) => void;
   onUpdatePurchaseOrder: (order: PurchaseOrder) => void;
   onDeletePurchaseOrder: (id: string) => void;
+  onNotifyAdministrative?: (order: PurchaseOrder) => void;
 }
 
 const getDaysUntil = (dateText: string) => {
@@ -23,7 +24,8 @@ export const PurchaseOrdersView: React.FC<PurchaseOrdersViewProps> = ({
   purchaseOrders,
   onAddPurchaseOrder,
   onUpdatePurchaseOrder,
-  onDeletePurchaseOrder
+  onDeletePurchaseOrder,
+  onNotifyAdministrative
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -115,6 +117,11 @@ export const PurchaseOrdersView: React.FC<PurchaseOrdersViewProps> = ({
     return 'No prazo';
   };
 
+  const isOverduePendingOrder = (order: PurchaseOrder) => {
+    const days = getDaysUntil(order.expectedDeliveryDate);
+    return order.status === 'Pendente' && days !== null && days < 0;
+  };
+
   return (
     <div className="space-y-6 animate-fadeIn pb-12">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -192,6 +199,16 @@ export const PurchaseOrdersView: React.FC<PurchaseOrdersViewProps> = ({
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                      {onNotifyAdministrative && isOverduePendingOrder(order) && (
+                        <button
+                          onClick={() => onNotifyAdministrative(order)}
+                          className="inline-flex items-center gap-1.5 px-2 py-1.5 mr-1 text-[11px] font-medium text-rose-700 hover:text-rose-800 hover:bg-rose-50 border border-rose-100 rounded-lg transition-colors cursor-pointer"
+                          title="Criar notificação administrativa"
+                        >
+                          <BellRing className="w-3.5 h-3.5" />
+                          <span>Notificar</span>
+                        </button>
+                      )}
                       <button
                         onClick={() => openEditModal(order)}
                         className="p-1.5 text-slate-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
