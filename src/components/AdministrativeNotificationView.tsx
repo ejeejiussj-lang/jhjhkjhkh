@@ -425,6 +425,13 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
 
         <section className="bg-slate-200/70 border border-slate-300 rounded-2xl p-3 sm:p-6 overflow-x-auto">
           <div className="mx-auto bg-white text-black shadow-lg border border-slate-300 w-full max-w-[900px] min-h-[1180px] px-8 sm:px-16 py-10 text-[15px] leading-[1.35]" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
+            <div className="border-b border-slate-200 pb-5 mb-5">
+              <img
+                src={notificationHeader}
+                alt="Prefeitura Municipal de Pereiro"
+                className="max-h-24 object-contain"
+              />
+            </div>
             <h2 className="text-center uppercase font-bold text-sm mb-7">Notificação Administrativa</h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-5 font-bold uppercase text-[13px]">
