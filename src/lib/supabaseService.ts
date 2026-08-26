@@ -329,7 +329,7 @@ export async function deleteNoteFromSupabase(id: string) {
 
 export async function fetchCommitmentsFromSupabase(): Promise<Commitment[] | null> {
   try {
-    const { data, error } = await supabase.from('commitments').select('*');
+    const { data, error } = await supabase.from('commitments').select('*').order('created_at', { ascending: false });
     if (error || !data) return null;
     return data.map((item) => ({
       id: item.id,

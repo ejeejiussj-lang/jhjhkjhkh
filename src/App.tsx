@@ -108,20 +108,12 @@ const getCommitmentMergeKey = (commitment: Commitment) =>
   (commitment.id || commitment.number || '').toLowerCase().trim();
 
 const mergeCommitmentsPreservingLocal = (localCommitments: Commitment[], remoteCommitments: Commitment[]) => {
-  const merged = new Map<string, Commitment>();
+  const remoteByKey = new Map(remoteCommitments.map((commitment) => [getCommitmentMergeKey(commitment), commitment]));
+  const localKeys = new Set(localCommitments.map(getCommitmentMergeKey));
+  const mergedLocal = localCommitments.map((commitment) => remoteByKey.get(getCommitmentMergeKey(commitment)) || commitment);
+  const remoteOnly = remoteCommitments.filter((commitment) => !localKeys.has(getCommitmentMergeKey(commitment)));
 
-  remoteCommitments.forEach((commitment) => {
-    merged.set(getCommitmentMergeKey(commitment), commitment);
-  });
-
-  localCommitments.forEach((commitment) => {
-    const key = getCommitmentMergeKey(commitment);
-    if (!merged.has(key)) {
-      merged.set(key, commitment);
-    }
-  });
-
-  return Array.from(merged.values());
+  return [...mergedLocal, ...remoteOnly];
 };
 
 const getCommitmentsMissingRemotely = (localCommitments: Commitment[], remoteCommitments: Commitment[]) => {
