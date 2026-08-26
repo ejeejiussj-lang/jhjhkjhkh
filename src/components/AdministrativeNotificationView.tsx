@@ -2,7 +2,7 @@ import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 're
 import { AlertTriangle, FileText, Plus, Printer, RefreshCw, Trash2 } from 'lucide-react';
 import { GeneratedAdministrativeNotification, PurchaseOrder } from '../types';
 import { formatBRDate, parseBRDate } from '../utils/dateFormat';
-const notificationHeader = '/notification-header.png';
+import notificationHeader from '../../assets/templates/notification-image3.png';
 
 interface AdministrativeNotificationViewProps {
   purchaseOrders: PurchaseOrder[];

@@ -54,7 +54,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'controle-contratos', label: 'Controle de Contratos', icon: ClipboardList },
     { id: 'ia', label: 'IA', icon: Bot },
     { id: 'notificacao-administrativa', label: 'Notificação Administrativa', icon: FileWarning },
-    { id: 'notificacoes-geradas', label: 'Notificacoes Geradas', icon: BellRing },
+    { id: 'notificacoes-geradas', label: 'Notificacoes Enviadas', icon: BellRing },
     { id: 'relatorio-fiscalizacao', label: 'Relatório de Fiscalização de Contratos', icon: ClipboardList },
     { id: 'relatorios', label: 'Relatórios', icon: BarChart3 }
   ];
