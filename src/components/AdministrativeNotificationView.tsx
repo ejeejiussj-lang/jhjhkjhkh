@@ -49,15 +49,24 @@ const paragraphHtml = (value: string) =>
     .map((paragraph) => `<p>${paragraph.replace(/\n/g, '<br />')}</p>`)
     .join('');
 
-const buildDefaultText = (order: PurchaseOrder | null, prazoDias: string, orgao: string, fiscal: string) => {
-  const orderNumber = order?.orderNumber || '[número da ordem]';
-  const companyName = order?.companyName || '[empresa notificada]';
-  const cnpj = order?.cnpj || '[CNPJ]';
-  const deliveryDate = order?.expectedDeliveryDate ? formatBRDate(order.expectedDeliveryDate) : '[data prevista]';
+const buildDefaultText = (
+  order: PurchaseOrder | null,
+  prazoDias: string,
+  orgao: string,
+  fiscal: string,
+  companyName: string,
+  cnpj: string,
+  orderNumber: string,
+  deliveryDate: string
+) => {
+  const orderText = order?.orderNumber || orderNumber || '[número da ordem]';
+  const companyText = order?.companyName || companyName || '[empresa notificada]';
+  const cnpjText = order?.cnpj || cnpj || '[CNPJ]';
+  const deliveryText = order?.expectedDeliveryDate ? formatBRDate(order.expectedDeliveryDate) : deliveryDate || '[data prevista]';
   const days = order ? getDaysUntil(order.expectedDeliveryDate) : null;
   const atraso = days !== null && days < 0 ? `${Math.abs(days)} dia(s)` : '[quantidade de dias]';
 
-  return `Conforme registros desta Administração, foi emitida a Ordem de Compra nº ${orderNumber}, em favor da empresa ${companyName}, inscrita no CNPJ sob o nº ${cnpj}, com entrega prevista para ${deliveryDate}.
+  return `Conforme registros desta Administração, foi emitida a Ordem de Compra nº ${orderText}, em favor da empresa ${companyText}, inscrita no CNPJ sob o nº ${cnpjText}, com entrega prevista para ${deliveryText}.
 
 Verifica-se que, até a presente data, não houve a entrega do objeto correspondente, caracterizando atraso de ${atraso} em relação ao prazo previsto.
 
@@ -107,9 +116,14 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
     [purchaseOrders]
   );
 
-  const [selectedOrderId, setSelectedOrderId] = useState(initialOrder?.id || overdueOrders[0]?.id || '');
-  const selectedOrder = overdueOrders.find((order) => order.id === selectedOrderId) || null;
+  const [selectedOrderId, setSelectedOrderId] = useState(initialOrder?.id || 'manual');
+  const selectedOrder = selectedOrderId === 'manual' ? null : overdueOrders.find((order) => order.id === selectedOrderId) || null;
+  const isManual = selectedOrderId === 'manual';
 
+  const [manualCompanyName, setManualCompanyName] = useState('');
+  const [manualCnpj, setManualCnpj] = useState('');
+  const [manualOrderNumber, setManualOrderNumber] = useState('');
+  const [manualDeliveryDate, setManualDeliveryDate] = useState('');
   const [processo, setProcesso] = useState('');
   const [contrato, setContrato] = useState('');
   const [orgao, setOrgao] = useState('Secretaria de Saúde e Saneamento');
@@ -130,14 +144,16 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
   }, [initialOrder, onInitialOrderHandled]);
 
   useEffect(() => {
-    if (!selectedOrderId && overdueOrders[0]) {
-      setSelectedOrderId(overdueOrders[0].id);
+    if (!texto.trim() || initialOrder) {
+      setTexto(buildDefaultText(selectedOrder, prazoDias, orgao, fiscal, manualCompanyName, manualCnpj, manualOrderNumber, manualDeliveryDate));
     }
-  }, [overdueOrders, selectedOrderId]);
-
-  useEffect(() => {
-    setTexto(buildDefaultText(selectedOrder, prazoDias, orgao, fiscal));
   }, [selectedOrderId]);
+
+  const orderNumber = selectedOrder?.orderNumber || manualOrderNumber;
+  const companyName = selectedOrder?.companyName || manualCompanyName;
+  const cnpj = selectedOrder?.cnpj || manualCnpj;
+  const deliveryDate = selectedOrder?.expectedDeliveryDate ? formatBRDate(selectedOrder.expectedDeliveryDate) : manualDeliveryDate;
+  const today = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
 
   const updatePendingItem = (id: string, field: keyof Omit<PendingItem, 'id'>, value: string) => {
     setPendingItems((current) => current.map((item) => item.id === id ? { ...item, [field]: value } : item));
@@ -151,16 +167,28 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
     setPendingItems((current) => current.length === 1 ? current : current.filter((item) => item.id !== id));
   };
 
+  const selectManualNotification = () => {
+    setSelectedOrderId('manual');
+    setTexto(buildDefaultText(null, prazoDias, orgao, fiscal, manualCompanyName, manualCnpj, manualOrderNumber, manualDeliveryDate));
+  };
+
   const resetText = () => {
-    setTexto(buildDefaultText(selectedOrder, prazoDias, orgao, fiscal));
+    setTexto(buildDefaultText(selectedOrder, prazoDias, orgao, fiscal, manualCompanyName, manualCnpj, manualOrderNumber, manualDeliveryDate));
+  };
+
+  const renderEditableOrText = (value: string, setter: (value: string) => void, placeholder: string, className = 'w-[70%]') => {
+    if (!isManual) return value || placeholder;
+    return (
+      <input
+        value={value}
+        onChange={(event) => setter(event.target.value)}
+        placeholder={placeholder}
+        className={`${className} border-0 border-b border-dashed border-slate-300 px-1 outline-none focus:border-slate-700`}
+      />
+    );
   };
 
   const handleGeneratePdf = () => {
-    const orderNumber = selectedOrder?.orderNumber || '[número da ordem]';
-    const companyName = selectedOrder?.companyName || '[empresa notificada]';
-    const cnpj = selectedOrder?.cnpj || '[CNPJ]';
-    const deliveryDate = selectedOrder?.expectedDeliveryDate ? formatBRDate(selectedOrder.expectedDeliveryDate) : '[data prevista]';
-    const today = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
@@ -168,7 +196,7 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <title>Notificação Administrativa - ${escapeHtml(orderNumber)}</title>
+  <title>Notificação Administrativa - ${escapeHtml(orderNumber || 'manual')}</title>
   <style>
     @page { size: A4; margin: 14mm 18mm 16mm; }
     * { box-sizing: border-box; }
@@ -197,9 +225,7 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
 </head>
 <body>
   <main class="page">
-    <header>
-      <img src="${notificationHeader}" alt="Prefeitura Municipal de Pereiro" />
-    </header>
+    <header><img src="${notificationHeader}" alt="Prefeitura Municipal de Pereiro" /></header>
     <h1>Notificação Administrativa</h1>
     <section class="process">
       ${processo ? `<p>Pregão Eletrônico nº ${escapeHtml(processo)}</p>` : ''}
@@ -207,11 +233,11 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
     </section>
     <section class="meta">
       <p><strong>Notificante:</strong> ${escapeHtml(orgao || '[órgão notificante]')}</p>
-      <p><strong>Notificado:</strong> ${escapeHtml(companyName)}, CNPJ nº ${escapeHtml(cnpj)}</p>
+      <p><strong>Notificado:</strong> ${escapeHtml(companyName || '[empresa notificada]')}${cnpj ? `, CNPJ nº ${escapeHtml(cnpj)}` : ''}</p>
       ${representante ? `<p><strong>Representante:</strong> ${escapeHtml(representante)}</p>` : ''}
       ${endereco ? `<p><strong>Endereço:</strong> ${escapeHtml(endereco)}</p>` : ''}
-      <p><strong>Ordem de Compra:</strong> ${escapeHtml(orderNumber)}</p>
-      <p><strong>Entrega prevista:</strong> ${escapeHtml(deliveryDate)}</p>
+      ${orderNumber ? `<p><strong>Ordem de Compra:</strong> ${escapeHtml(orderNumber)}</p>` : ''}
+      ${deliveryDate ? `<p><strong>Entrega prevista:</strong> ${escapeHtml(deliveryDate)}</p>` : ''}
       ${emailEnvio ? `<p><strong>E-mail de envio:</strong> ${escapeHtml(emailEnvio)}</p>` : ''}
     </section>
     <section>${paragraphHtml(texto)}</section>
@@ -237,11 +263,11 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
             <FileText className="w-7 h-7 text-emerald-600" />
             <span>Notificação Administrativa</span>
           </h1>
-          <p className="text-xs text-slate-500 mt-1">Editor para notificar fornecedores com ordens de compra atrasadas.</p>
+          <p className="text-xs text-slate-500 mt-1">Use uma ordem atrasada ou crie uma notificação manual.</p>
         </div>
         <button
           onClick={handleGeneratePdf}
-          disabled={!selectedOrder}
+          disabled={!texto.trim()}
           className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-medium rounded-xl shadow-xs transition-colors cursor-pointer"
         >
           <Printer className="w-4 h-4" />
@@ -249,138 +275,121 @@ export const AdministrativeNotificationView: React.FC<AdministrativeNotification
         </button>
       </div>
 
-      {overdueOrders.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center shadow-2xs">
-          <AlertTriangle className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-          <p className="text-sm font-medium text-slate-700">Nenhuma ordem de compra atrasada.</p>
-          <p className="text-xs text-slate-500 mt-1">A notificação fica disponível quando uma ordem pendente passa da data prevista de entrega.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 xl:grid-cols-[360px_1fr] gap-5">
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xs overflow-hidden">
-            <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/70">
-              <p className="text-xs font-semibold text-slate-800">Ordens atrasadas</p>
-              <p className="text-[11px] text-slate-500 mt-0.5">Selecione uma ordem para preencher o documento.</p>
+      <div className="grid grid-cols-1 2xl:grid-cols-[320px_1fr] gap-5 items-start">
+        <aside className="bg-white border border-slate-200 rounded-2xl shadow-2xs overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/70 space-y-3">
+            <div>
+              <p className="text-xs font-semibold text-slate-800">Notificações</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">Comece manualmente ou selecione uma ordem atrasada.</p>
             </div>
-            <div className="divide-y divide-slate-100 max-h-[620px] overflow-y-auto">
-              {overdueOrders.map((order) => (
-                <button
-                  key={order.id}
-                  onClick={() => setSelectedOrderId(order.id)}
-                  className={`w-full text-left px-4 py-3 transition-colors cursor-pointer ${selectedOrderId === order.id ? 'bg-rose-50' : 'hover:bg-slate-50'}`}
-                >
-                  <p className="text-xs font-semibold text-slate-900 truncate" title={order.companyName}>{order.companyName}</p>
-                  <p className="text-[11px] text-slate-500 font-mono mt-1">{order.orderNumber}</p>
-                  <p className="text-[11px] text-rose-700 mt-1">Atrasada há {Math.abs(order.daysRemaining ?? 0)} dia(s)</p>
-                </button>
-              ))}
-            </div>
+            <button
+              onClick={selectManualNotification}
+              className={`w-full inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium rounded-lg border transition-colors cursor-pointer ${isManual ? 'bg-emerald-600 text-white border-emerald-600' : 'text-emerald-700 border-emerald-100 hover:bg-emerald-50'}`}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Criar notificação manual</span>
+            </button>
           </div>
+          <div className="divide-y divide-slate-100 max-h-[360px] overflow-y-auto">
+            {overdueOrders.length === 0 ? (
+              <div className="px-4 py-6 text-center">
+                <AlertTriangle className="w-7 h-7 text-slate-300 mx-auto mb-2" />
+                <p className="text-xs font-medium text-slate-700">Nenhuma ordem atrasada.</p>
+                <p className="text-[11px] text-slate-500 mt-1">A criação manual continua disponível.</p>
+              </div>
+            ) : overdueOrders.map((order) => (
+              <button
+                key={order.id}
+                onClick={() => setSelectedOrderId(order.id)}
+                className={`w-full text-left px-4 py-3 transition-colors cursor-pointer ${selectedOrderId === order.id ? 'bg-rose-50' : 'hover:bg-slate-50'}`}
+              >
+                <p className="text-xs font-semibold text-slate-900 truncate" title={order.companyName}>{order.companyName}</p>
+                <p className="text-[11px] text-slate-500 font-mono mt-1">{order.orderNumber}</p>
+                <p className="text-[11px] text-rose-700 mt-1">Atrasada há {Math.abs(order.daysRemaining ?? 0)} dia(s)</p>
+              </button>
+            ))}
+          </div>
+        </aside>
 
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xs p-5 space-y-5">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <label className="space-y-1">
-                <span className="text-xs font-medium text-slate-700">Processo / Pregão</span>
-                <input value={processo} onChange={(e) => setProcesso(e.target.value)} className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
-              </label>
-              <label className="space-y-1">
-                <span className="text-xs font-medium text-slate-700">Contrato</span>
-                <input value={contrato} onChange={(e) => setContrato(e.target.value)} className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
-              </label>
-              <label className="space-y-1">
-                <span className="text-xs font-medium text-slate-700">Órgão notificante</span>
-                <input value={orgao} onChange={(e) => setOrgao(e.target.value)} className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
-              </label>
-              <label className="space-y-1">
-                <span className="text-xs font-medium text-slate-700">Fiscal / responsável</span>
-                <input value={fiscal} onChange={(e) => setFiscal(e.target.value)} className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
-              </label>
-              <label className="space-y-1">
-                <span className="text-xs font-medium text-slate-700">Portaria</span>
-                <input value={portaria} onChange={(e) => setPortaria(e.target.value)} className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
-              </label>
-              <label className="space-y-1">
-                <span className="text-xs font-medium text-slate-700">Prazo para regularização</span>
-                <input type="number" min="1" value={prazoDias} onChange={(e) => setPrazoDias(e.target.value)} className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
-              </label>
-              <label className="space-y-1">
-                <span className="text-xs font-medium text-slate-700">Representante da empresa</span>
-                <input value={representante} onChange={(e) => setRepresentante(e.target.value)} className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
-              </label>
-              <label className="space-y-1">
-                <span className="text-xs font-medium text-slate-700">E-mail de envio</span>
-                <input value={emailEnvio} onChange={(e) => setEmailEnvio(e.target.value)} className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
-              </label>
-              <label className="space-y-1 md:col-span-2">
-                <span className="text-xs font-medium text-slate-700">Endereço da empresa</span>
-                <input value={endereco} onChange={(e) => setEndereco(e.target.value)} className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
-              </label>
+        <section className="bg-slate-200/70 border border-slate-300 rounded-2xl p-3 sm:p-6 overflow-x-auto">
+          <div className="mx-auto bg-white text-black shadow-lg border border-slate-300 w-full max-w-[860px] min-h-[1120px] px-8 sm:px-14 py-10 font-serif text-[15px] leading-[1.35]">
+            <div className="text-center mb-4">
+              <img src={notificationHeader} alt="Prefeitura Municipal de Pereiro" className="w-72 mx-auto object-contain" />
+            </div>
+            <h2 className="text-center uppercase font-bold text-sm mb-7">Notificação Administrativa</h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-5 font-bold uppercase text-[13px]">
+              <input value={processo} onChange={(e) => setProcesso(e.target.value)} placeholder="Pregão Eletrônico nº" className="border-0 border-b border-dashed border-slate-300 px-1 py-1 outline-none focus:border-slate-700" />
+              <input value={contrato} onChange={(e) => setContrato(e.target.value)} placeholder="Contrato nº" className="border-0 border-b border-dashed border-slate-300 px-1 py-1 outline-none focus:border-slate-700" />
             </div>
 
-            <div className="space-y-2">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <span className="text-xs font-medium text-slate-700">Itens pendentes</span>
-                <button onClick={addPendingItem} className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50 border border-emerald-100 rounded-lg transition-colors cursor-pointer self-start sm:self-auto">
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Adicionar item</span>
-                </button>
+            <div className="space-y-2 mb-5 text-[14px]">
+              <p><strong>NOTIFICANTE:</strong> <input value={orgao} onChange={(e) => setOrgao(e.target.value)} className="w-[70%] border-0 border-b border-dashed border-slate-300 px-1 outline-none focus:border-slate-700" /></p>
+              <p><strong>NOTIFICADO:</strong> {renderEditableOrText(companyName, setManualCompanyName, 'Empresa notificada')}</p>
+              <p><strong>CNPJ:</strong> {renderEditableOrText(cnpj, setManualCnpj, '00.000.000/0001-00', 'w-[42%]')}</p>
+              <p><strong>REPRESENTANTE:</strong> <input value={representante} onChange={(e) => setRepresentante(e.target.value)} className="w-[70%] border-0 border-b border-dashed border-slate-300 px-1 outline-none focus:border-slate-700" /></p>
+              <p><strong>ENDEREÇO:</strong> <input value={endereco} onChange={(e) => setEndereco(e.target.value)} className="w-[78%] border-0 border-b border-dashed border-slate-300 px-1 outline-none focus:border-slate-700" /></p>
+              <p><strong>ORDEM DE COMPRA:</strong> {renderEditableOrText(orderNumber, setManualOrderNumber, 'número da ordem', 'w-[32%]')} <span className="ml-3"><strong>ENTREGA:</strong> {renderEditableOrText(deliveryDate, setManualDeliveryDate, 'data prevista', 'w-[28%]')}</span></p>
+              <p><strong>E-MAIL DE ENVIO:</strong> <input value={emailEnvio} onChange={(e) => setEmailEnvio(e.target.value)} className="w-[62%] border-0 border-b border-dashed border-slate-300 px-1 outline-none focus:border-slate-700" /></p>
+            </div>
+
+            <textarea
+              value={texto}
+              onChange={(e) => setTexto(e.target.value)}
+              className="w-full min-h-[290px] resize-y border border-dashed border-slate-300 bg-white p-3 text-justify font-serif text-[15px] leading-[1.45] outline-none focus:border-slate-700 whitespace-pre-wrap"
+            />
+
+            <div className="mt-5 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="uppercase font-bold text-[13px]">Itens pendentes de entrega</h3>
+                <div className="flex items-center gap-2 print:hidden">
+                  <button onClick={resetText} className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-600 hover:bg-slate-100 rounded border border-slate-200 cursor-pointer">
+                    <RefreshCw className="w-3 h-3" />
+                    <span>Repreencher</span>
+                  </button>
+                  <button onClick={addPendingItem} className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-emerald-700 hover:bg-emerald-50 rounded border border-emerald-100 cursor-pointer">
+                    <Plus className="w-3 h-3" />
+                    <span>Adicionar item</span>
+                  </button>
+                </div>
               </div>
-              <div className="overflow-x-auto rounded-xl border border-slate-200">
-                <table className="w-full min-w-[720px] text-xs">
-                  <thead className="bg-slate-50 text-slate-600 uppercase text-[11px]">
-                    <tr>
-                      <th className="px-3 py-2 text-left font-semibold w-28">Item</th>
-                      <th className="px-3 py-2 text-left font-semibold">Descrição</th>
-                      <th className="px-3 py-2 text-left font-semibold w-32">Unidade</th>
-                      <th className="px-3 py-2 text-left font-semibold w-32">Quantidade</th>
-                      <th className="px-3 py-2 text-right font-semibold w-16">Ação</th>
+              <table className="w-full border-collapse text-[13px]">
+                <thead>
+                  <tr className="bg-slate-100">
+                    <th className="border border-slate-700 px-2 py-1 w-20 text-center">Item</th>
+                    <th className="border border-slate-700 px-2 py-1 text-left">Descrição</th>
+                    <th className="border border-slate-700 px-2 py-1 w-24 text-center">Unidade</th>
+                    <th className="border border-slate-700 px-2 py-1 w-28 text-center">Quantidade</th>
+                    <th className="border border-slate-700 px-2 py-1 w-14 text-center print:hidden">Ação</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingItems.map((item, index) => (
+                    <tr key={item.id}>
+                      <td className="border border-slate-700 p-1"><input value={item.item} onChange={(e) => updatePendingItem(item.id, 'item', e.target.value)} placeholder={String(index + 1)} className="w-full text-center outline-none" /></td>
+                      <td className="border border-slate-700 p-1"><input value={item.description} onChange={(e) => updatePendingItem(item.id, 'description', e.target.value)} className="w-full outline-none" /></td>
+                      <td className="border border-slate-700 p-1"><input value={item.unit} onChange={(e) => updatePendingItem(item.id, 'unit', e.target.value)} className="w-full text-center outline-none" /></td>
+                      <td className="border border-slate-700 p-1"><input value={item.quantity} onChange={(e) => updatePendingItem(item.id, 'quantity', e.target.value)} className="w-full text-center outline-none" /></td>
+                      <td className="border border-slate-700 p-1 text-center print:hidden">
+                        <button onClick={() => removePendingItem(item.id)} disabled={pendingItems.length === 1} className="p-1 text-slate-500 hover:text-rose-600 disabled:opacity-40 cursor-pointer" title="Remover item">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {pendingItems.map((item, index) => (
-                      <tr key={item.id}>
-                        <td className="px-2 py-2">
-                          <input value={item.item} onChange={(e) => updatePendingItem(item.id, 'item', e.target.value)} placeholder={String(index + 1)} className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
-                        </td>
-                        <td className="px-2 py-2">
-                          <input value={item.description} onChange={(e) => updatePendingItem(item.id, 'description', e.target.value)} className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
-                        </td>
-                        <td className="px-2 py-2">
-                          <input value={item.unit} onChange={(e) => updatePendingItem(item.id, 'unit', e.target.value)} placeholder="unid." className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
-                        </td>
-                        <td className="px-2 py-2">
-                          <input value={item.quantity} onChange={(e) => updatePendingItem(item.id, 'quantity', e.target.value)} placeholder="0" className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
-                        </td>
-                        <td className="px-2 py-2 text-right">
-                          <button onClick={() => removePendingItem(item.id)} disabled={pendingItems.length === 1} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-colors cursor-pointer" title="Remover item">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-xs font-medium text-slate-700">Texto da notificação</span>
-                <button onClick={resetText} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer">
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Repreencher</span>
-                </button>
-              </div>
-              <textarea
-                value={texto}
-                onChange={(e) => setTexto(e.target.value)}
-                rows={14}
-                className="w-full px-4 py-3 text-sm leading-6 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 resize-y"
-              />
+            <p className="text-right mt-8">Pereiro/CE, em {today}.</p>
+            <div className="text-center font-bold mt-8 leading-snug">
+              <input value={fiscal} onChange={(e) => setFiscal(e.target.value)} className="text-center font-bold border-0 border-b border-dashed border-slate-300 px-2 py-1 outline-none focus:border-slate-700" />
+              <p>Fiscal de contrato</p>
+              <p>Portaria nº: <input value={portaria} onChange={(e) => setPortaria(e.target.value)} className="text-center font-bold border-0 border-b border-dashed border-slate-300 px-1 py-1 outline-none focus:border-slate-700" /></p>
             </div>
           </div>
-        </div>
-      )}
+        </section>
+      </div>
     </div>
   );
 };
