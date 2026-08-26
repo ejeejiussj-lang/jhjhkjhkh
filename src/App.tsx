@@ -104,13 +104,46 @@ const isNoteLinkedToCommitment = (note: ServiceNote, commitment: Commitment) =>
 const getNoteUniqueKey = (note: ServiceNote) =>
   `${note.noteNumber || ''}|${note.contractNum || ''}`.toLowerCase().trim();
 
+const getCommitmentUsedValue = (commitment: Commitment, notes: ServiceNote[]) =>
+  notes
+    .filter((note) => isNoteLinkedToCommitment(note, commitment))
+    .reduce((sum, note) => sum + Number(note.value || 0), 0);
+
+const withRecalculatedCommitmentBalance = (commitment: Commitment, notes: ServiceNote[]) => {
+  const value = Number(commitment.value || 0);
+  const balance = Number(commitment.balance || value);
+  return {
+    ...commitment,
+    value,
+    balance,
+    currentBalance: balance - getCommitmentUsedValue(commitment, notes)
+  };
+};
 const getCommitmentMergeKey = (commitment: Commitment) =>
   (commitment.id || commitment.number || '').toLowerCase().trim();
 
 const mergeCommitmentsPreservingLocal = (localCommitments: Commitment[], remoteCommitments: Commitment[]) => {
   const remoteByKey = new Map(remoteCommitments.map((commitment) => [getCommitmentMergeKey(commitment), commitment]));
   const localKeys = new Set(localCommitments.map(getCommitmentMergeKey));
-  const mergedLocal = localCommitments.map((commitment) => remoteByKey.get(getCommitmentMergeKey(commitment)) || commitment);
+  const mergedLocal = localCommitments.map((localCommitment) => {
+    const remoteCommitment = remoteByKey.get(getCommitmentMergeKey(localCommitment));
+    if (!remoteCommitment) return localCommitment;
+
+    const localValue = Number(localCommitment.value || 0);
+    const remoteValue = Number(remoteCommitment.value || 0);
+    const localBalance = Number(localCommitment.balance || localValue);
+    const remoteBalance = Number(remoteCommitment.balance || remoteValue);
+    const localCurrentBalance = Number(localCommitment.currentBalance || 0);
+    const remoteCurrentBalance = Number(remoteCommitment.currentBalance || 0);
+
+    return {
+      ...localCommitment,
+      ...remoteCommitment,
+      value: remoteValue > 0 ? remoteValue : localValue,
+      balance: remoteBalance > 0 ? remoteBalance : localBalance,
+      currentBalance: remoteCurrentBalance !== 0 || localCurrentBalance === 0 ? remoteCurrentBalance : localCurrentBalance
+    };
+  });
   const remoteOnly = remoteCommitments.filter((commitment) => !localKeys.has(getCommitmentMergeKey(commitment)));
 
   return [...mergedLocal, ...remoteOnly];
@@ -614,7 +647,7 @@ export default function App() {
     const adjustedNotes = uniqueNotes.map((note) => ({ ...note }));
 
     commitments.forEach((commitment) => {
-      let runningBalance = Number(commitment.value || 0);
+      let runningBalance = Number(commitment.balance || commitment.value || 0);
       adjustedNotes
         .filter((note) => isNoteLinkedToCommitment(note, commitment))
         .sort((a, b) => parseNoteCompetencyDate(a) - parseNoteCompetencyDate(b) || a.noteNumber.localeCompare(b.noteNumber))
@@ -630,15 +663,7 @@ export default function App() {
         });
     });
 
-    const adjustedCommitments = commitments.map((commitment) => {
-      const usedValue = adjustedNotes
-        .filter((note) => isNoteLinkedToCommitment(note, commitment))
-        .reduce((sum, note) => sum + Number(note.value || 0), 0);
-      return {
-        ...commitment,
-        currentBalance: Number(commitment.value || 0) - usedValue
-      };
-    });
+    const adjustedCommitments = commitments.map((commitment) => withRecalculatedCommitmentBalance(commitment, adjustedNotes));
 
     const signature = JSON.stringify({
       notes: adjustedNotes.map((note) => [
@@ -661,9 +686,11 @@ export default function App() {
       duplicateNotes.length > 0 ||
       adjustedNotes.length !== notes.length ||
       adjustedNotes.some((note, index) => JSON.stringify(note) !== JSON.stringify(notes[index]));
-    const commitmentsChanged = adjustedCommitments.some(
-      (commitment, index) => commitment.currentBalance !== commitments[index]?.currentBalance
-    );
+    const previousCommitmentsByKey = new Map(commitments.map((commitment) => [getCommitmentMergeKey(commitment), commitment]));
+    const commitmentsChanged = adjustedCommitments.some((commitment) => {
+      const previous = previousCommitmentsByKey.get(getCommitmentMergeKey(commitment));
+      return !previous || previous.value !== commitment.value || previous.balance !== commitment.balance || previous.currentBalance !== commitment.currentBalance;
+    });
 
     if (notesChanged) {
       setNotes(adjustedNotes);
@@ -673,8 +700,9 @@ export default function App() {
 
     if (commitmentsChanged) {
       setCommitments(adjustedCommitments);
-      adjustedCommitments.forEach((commitment, index) => {
-        if (commitment.currentBalance !== commitments[index]?.currentBalance) {
+      adjustedCommitments.forEach((commitment) => {
+        const previous = previousCommitmentsByKey.get(getCommitmentMergeKey(commitment));
+        if (!previous || previous.value !== commitment.value || previous.balance !== commitment.balance || previous.currentBalance !== commitment.currentBalance) {
           saveCommitmentToSupabase(commitment);
         }
       });
@@ -901,7 +929,7 @@ export default function App() {
     const adjustedNotes = uniqueNotes.map((note) => ({ ...note }));
 
     commitments.forEach((commitment) => {
-      let runningBalance = Number(commitment.value || 0);
+      let runningBalance = Number(commitment.balance || commitment.value || 0);
       const linkedNotes = adjustedNotes
         .filter((note) => isNoteLinkedToCommitment(note, commitment))
         .sort((a, b) => parseNoteCompetencyDate(a) - parseNoteCompetencyDate(b) || a.noteNumber.localeCompare(b.noteNumber));
@@ -924,13 +952,7 @@ export default function App() {
 
     setCommitments((prev) =>
       prev.map((commitment) => {
-        const usedValue = adjustedNotes
-          .filter((note) => isNoteLinkedToCommitment(note, commitment))
-          .reduce((sum, note) => sum + Number(note.value || 0), 0);
-        const updatedCommitment = {
-          ...commitment,
-          currentBalance: Number(commitment.value || 0) - usedValue
-        };
+        const updatedCommitment = withRecalculatedCommitmentBalance(commitment, adjustedNotes);
 
         if (updatedCommitment.currentBalance !== commitment.currentBalance) {
           saveCommitmentToSupabase(updatedCommitment);
