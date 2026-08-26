@@ -60,7 +60,10 @@ import {
   deleteFiscalFromSupabase,
   fetchAmendmentsFromSupabase,
   saveAmendmentToSupabase,
-  deleteAmendmentFromSupabase
+  deleteAmendmentFromSupabase,
+  fetchPurchaseOrdersFromSupabase,
+  savePurchaseOrderToSupabase,
+  deletePurchaseOrderFromSupabase
 } from './lib/supabaseService';
 
 import { Contract, ActiveTab, Creditor, ServiceNote, FiscalPortaria, ContractAmendment, SystemNotification, Commitment, ContractItem, PurchaseOrder } from './types';
@@ -469,13 +472,14 @@ export default function App() {
 
     const syncRemoteData = async () => {
       try {
-        const [remoteContracts, remoteCreditors, remoteNotes, remoteCommitments, remoteFiscais, remoteAmendments] = await Promise.all([
+        const [remoteContracts, remoteCreditors, remoteNotes, remoteCommitments, remoteFiscais, remoteAmendments, remotePurchaseOrders] = await Promise.all([
           fetchContractsFromSupabase().catch((error) => { console.warn('Supabase contratos indisponivel; mantendo dados locais.', error); return null; }),
           fetchCreditorsFromSupabase().catch((error) => { console.warn('Supabase credores indisponivel; mantendo dados locais.', error); return null; }),
           fetchNotesFromSupabase().catch((error) => { console.warn('Supabase notas indisponivel; mantendo dados locais.', error); return null; }),
           fetchCommitmentsFromSupabase().catch((error) => { console.warn('Supabase empenhos indisponivel; mantendo dados locais.', error); return null; }),
           fetchFiscaisFromSupabase().catch((error) => { console.warn('Supabase fiscais indisponivel; mantendo dados locais.', error); return null; }),
-          fetchAmendmentsFromSupabase().catch((error) => { console.warn('Supabase aditivos indisponivel; mantendo dados locais.', error); return null; })
+          fetchAmendmentsFromSupabase().catch((error) => { console.warn('Supabase aditivos indisponivel; mantendo dados locais.', error); return null; }),
+          fetchPurchaseOrdersFromSupabase().catch((error) => { console.warn('Supabase ordens de compra indisponivel; mantendo dados locais.', error); return null; })
         ]);
 
         if (!isActive) return;
@@ -501,6 +505,7 @@ export default function App() {
         if (remoteCommitments) setCommitments((current) => remoteCommitments.length === 0 && current.length > 0 ? current : remoteCommitments);
         if (remoteFiscais) setFiscais((current) => remoteFiscais.length === 0 && current.length > 0 ? current : remoteFiscais);
         if (remoteAmendments) setAmendments((current) => remoteAmendments.length === 0 && current.length > 0 ? current : remoteAmendments);
+        if (remotePurchaseOrders) setPurchaseOrders((current) => remotePurchaseOrders.length === 0 && current.length > 0 ? current : remotePurchaseOrders);
       } catch (error) {
         console.warn('Sincronizacao automatica indisponivel; mantendo dados locais.', error);
       }
@@ -716,12 +721,13 @@ export default function App() {
   const purchaseOrdersDeliveryAlerts = purchaseOrders
     .filter((order) => order.status === 'Pendente')
     .map((order) => ({ ...order, daysRemaining: getDaysUntilDate(order.expectedDeliveryDate) }))
-    .filter((order) => order.daysRemaining !== null && order.daysRemaining <= 7)
+    .filter((order) => order.daysRemaining !== null && order.daysRemaining >= 0 && order.daysRemaining <= 7)
     .sort((a, b) => (a.daysRemaining ?? 0) - (b.daysRemaining ?? 0));
 
   // Handlers
   const handleAddPurchaseOrder = (order: PurchaseOrder) => {
     setPurchaseOrders([order, ...purchaseOrders]);
+    savePurchaseOrderToSupabase(order);
     setActivities([
       {
         id: `act-${Date.now()}`,
@@ -736,10 +742,12 @@ export default function App() {
 
   const handleUpdatePurchaseOrder = (order: PurchaseOrder) => {
     setPurchaseOrders(purchaseOrders.map((item) => (item.id === order.id ? order : item)));
+    savePurchaseOrderToSupabase(order);
   };
 
   const handleDeletePurchaseOrder = (id: string) => {
     setPurchaseOrders(purchaseOrders.filter((order) => order.id !== id));
+    deletePurchaseOrderFromSupabase(id);
   };
 
   const handleAddContract = (newContract: Omit<Contract, 'id'>) => {
@@ -1079,14 +1087,13 @@ export default function App() {
       }
     });
 
-    // 4. Ordens de Compras com entrega próxima ou atrasada
+    // 4. Ordens de Compras com entrega próxima do vencimento
     purchaseOrdersDeliveryAlerts.forEach((order) => {
-      const overdue = (order.daysRemaining ?? 0) < 0;
       items.push({
         id: `purchase-delivery-${order.id}`,
-        title: overdue ? `Ordem de Compras Atrasada: ${order.orderNumber}` : `Entrega de Ordem de Compras Próxima: ${order.orderNumber}`,
+        title: `Entrega de Ordem de Compras Próxima: ${order.orderNumber}`,
         desc: `${order.companyName} | CNPJ: ${order.cnpj} | Entrega: ${formatBRDate(order.expectedDeliveryDate)}`,
-        time: overdue ? 'Entrega atrasada' : `Vence em ${order.daysRemaining}d`,
+        time: `Vence em ${order.daysRemaining}d`,
         type: 'purchase',
         read: readNotificationIds.includes(`purchase-delivery-${order.id}`),
         linkTab: 'ordens-compra'
@@ -1271,7 +1278,7 @@ export default function App() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-100 pb-3">
                   <div>
                     <h3 className="text-sm font-medium text-amber-800">Entregas de Ordens de Compras</h3>
-                    <p className="text-xs text-amber-700/80 mt-0.5">Ordens pendentes com entrega atrasada ou prevista para os próximos 7 dias</p>
+                    <p className="text-xs text-amber-700/80 mt-0.5">Ordens pendentes com entrega prevista para os próximos 7 dias</p>
                   </div>
                   <span className="text-xs font-medium text-amber-700 bg-white/70 border border-amber-100 px-2 py-0.5 rounded-full">
                     {purchaseOrdersDeliveryAlerts.length} alerta(s)

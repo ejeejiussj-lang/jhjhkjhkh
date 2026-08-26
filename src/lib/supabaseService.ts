@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { Contract, Creditor, ServiceNote, FiscalPortaria, ContractAmendment, Commitment } from '../types';
+import { Contract, Creditor, ServiceNote, FiscalPortaria, ContractAmendment, Commitment, PurchaseOrder } from '../types';
 
 export interface UserProfile {
   id: string;
@@ -466,5 +466,48 @@ export async function deleteAmendmentFromSupabase(id: string) {
     await supabase.from('contract_amendments').delete().eq('id', id);
   } catch (err) {
     console.error('Erro ao deletar aditivo no Supabase:', err);
+  }
+}
+
+export async function fetchPurchaseOrdersFromSupabase(): Promise<PurchaseOrder[] | null> {
+  try {
+    const { data, error } = await supabase.from('purchase_orders').select('*').order('created_at', { ascending: false });
+    if (error || !data) return null;
+    return data.map((item) => ({
+      id: item.id,
+      orderNumber: item.order_number,
+      companyName: item.company_name || '',
+      cnpj: item.cnpj || '',
+      expectedDeliveryDate: item.expected_delivery_date || '',
+      status: item.status || 'Pendente',
+      createdAt: item.created_at || '',
+    }));
+  } catch (err) {
+    console.error('Erro ao buscar ordens de compra no Supabase:', err);
+    return null;
+  }
+}
+
+export async function savePurchaseOrderToSupabase(order: PurchaseOrder) {
+  try {
+    await supabase.from('purchase_orders').upsert({
+      id: order.id,
+      order_number: order.orderNumber,
+      company_name: order.companyName,
+      cnpj: order.cnpj,
+      expected_delivery_date: order.expectedDeliveryDate,
+      status: order.status,
+      created_at: order.createdAt,
+    });
+  } catch (err) {
+    console.error('Erro ao salvar ordem de compra no Supabase:', err);
+  }
+}
+
+export async function deletePurchaseOrderFromSupabase(id: string) {
+  try {
+    await supabase.from('purchase_orders').delete().eq('id', id);
+  } catch (err) {
+    console.error('Erro ao deletar ordem de compra no Supabase:', err);
   }
 }

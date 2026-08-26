@@ -38,22 +38,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleSidebar,
 }) => {
   const cadastrosItems = [
-    { id: 'lancar-contrato', label: 'Lançar Contratos', icon: FilePlus },
+    { id: 'aditivos', label: 'Aditivos', icon: Layers },
     { id: 'contratos-lancados', label: 'Contratos Lançados', icon: FileText },
-    { id: 'fiscais', label: 'Cadastrar Fiscais / Portarias', icon: UserCheck },
     { id: 'credores', label: 'Credores', icon: Users },
     { id: 'empenhos', label: 'Empenhos', icon: Banknote },
+    { id: 'fiscais', label: 'Fiscais / Portarias', icon: UserCheck },
+    { id: 'lancar-contrato', label: 'Lançar Contratos', icon: FilePlus },
     { id: 'notas', label: 'Notas de Serviços', icon: Receipt },
-    { id: 'aditivos', label: 'Aditivos', icon: Layers },
-    { id: 'ordens-compra', label: 'Ordem de Compras', icon: ShoppingCart }
+    { id: 'ordens-compra', label: 'Ordens de Compra', icon: ShoppingCart }
   ];
 
   const gestaoItems = [
-    { id: 'controle-contratos', label: 'Controle de Contratos', icon: ClipboardList },
-    { id: 'relatorios', label: 'Relatórios', icon: BarChart3 },
-    { id: 'relatorio-fiscalizacao', label: 'Relatório de Fiscalização de Contratos', icon: ClipboardList },
     { id: 'alertas', label: 'Alertas', icon: BellRing },
-    { id: 'ia', label: 'IA', icon: Bot }
+    { id: 'controle-contratos', label: 'Controle de Contratos', icon: ClipboardList },
+    { id: 'ia', label: 'IA', icon: Bot },
+    { id: 'relatorio-fiscalizacao', label: 'Relatório de Fiscalização de Contratos', icon: ClipboardList },
+    { id: 'relatorios', label: 'Relatórios', icon: BarChart3 }
   ];
 
   const configuracoesItems = [
