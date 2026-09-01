@@ -142,6 +142,7 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
       commitment.number.toLowerCase().includes(term) ||
       commitment.budgetAllocation.toLowerCase().includes(term) ||
       commitment.program.toLowerCase().includes(term) ||
+      (commitment.creditor || '').toLowerCase().includes(term) ||
       (commitment.description || '').toLowerCase().includes(term)
     );
   }, [commitments, searchTerm]);
@@ -382,7 +383,7 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar por número, dotação ou programa..."
+            placeholder="Buscar por número, credor, dotação ou programa..."
             className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
           />
         </div>
@@ -398,6 +399,7 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-medium uppercase text-slate-600 tracking-wider">
                 <th className="py-3.5 px-4">Número</th>
+                <th className="py-3.5 px-4">Credor</th>
                 <th className="py-3.5 px-4">Dotação</th>
                 <th className="py-3.5 px-4">Programa</th>
                 <th className="py-3.5 px-4 text-right">Valor do Empenho</th>
@@ -408,7 +410,7 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
             <tbody className="divide-y divide-slate-100">
               {filteredCommitments.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400">
+                  <td colSpan={7} className="py-12 text-center text-slate-400">
                     <Banknote className="w-8 h-8 mx-auto text-slate-300 mb-2" />
                     <p className="font-medium text-slate-700 text-xs">Nenhum empenho cadastrado.</p>
                   </td>
@@ -417,6 +419,11 @@ export const CommitmentsView: React.FC<CommitmentsViewProps> = ({
                 filteredCommitments.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="py-3.5 px-4 font-medium text-slate-900">{item.number}</td>
+                    <td className="py-3.5 px-4 text-slate-700 min-w-48">
+                      <p className="line-clamp-2" title={item.creditor || 'Sem credor vinculado'}>
+                        {item.creditor || '-'}
+                      </p>
+                    </td>
                     <td className="py-3.5 px-4 font-medium text-emerald-700">{item.budgetAllocation}</td>
                     <td className="py-3.5 px-4 text-slate-700 min-w-72">
                       <p className="line-clamp-2" title={item.program}>{item.program}</p>

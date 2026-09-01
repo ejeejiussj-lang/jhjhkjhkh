@@ -770,7 +770,7 @@ export default function App() {
     matchesSearch(globalSearchTerm, [n.noteNumber, n.contractNum, n.creditor, n.status, n.issueDate, n.attestationDate])
   );
   const filteredCommitments = commitments.filter((c) =>
-    matchesSearch(globalSearchTerm, [c.number, c.budgetAllocation, c.program, c.description])
+    matchesSearch(globalSearchTerm, [c.number, c.creditor, c.budgetAllocation, c.program, c.description])
   );
   const filteredFiscais = fiscais.filter((f) =>
     matchesSearch(globalSearchTerm, [f.name, f.portaria, f.organ, f.publicationDate, f.validity])
