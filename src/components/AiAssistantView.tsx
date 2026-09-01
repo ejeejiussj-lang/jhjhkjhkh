@@ -38,6 +38,7 @@ type AiAction =
       value: number;
       balance?: number;
       description?: string;
+      creditor?: string;
     }
   | {
       type: 'create_note';
@@ -183,7 +184,8 @@ const normalizeAction = (raw: any): AiAction | null => {
       program: String(raw.program || raw.programa || ''),
       value: Number(raw.value || raw.valor || raw.valorEmpenho || raw.valor_empenho || 0),
       balance: Number(raw.balance || raw.saldo || 0),
-      description: raw.description || raw.descricao || raw.descrição || ''
+      description: raw.description || raw.descricao || raw.descrição || '',
+      creditor: String(raw.creditor || raw.credor || raw.empresa || raw.contratada || '')
     };
   }
 
@@ -449,7 +451,8 @@ const createLocalResponse = (prompt: string): AiResponse => {
       program: detectProgram(prompt, budgetAllocation),
       value: commitmentValue || commitmentBalance,
       balance: commitmentBalance || commitmentValue,
-      description: 'Identificado automaticamente pelo chat'
+      description: 'Identificado automaticamente pelo chat',
+      creditor
     });
   }
 
@@ -774,7 +777,8 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({
             budgetAllocation: action.budgetAllocation,
             program: action.program || detectProgram(action.description || '', action.budgetAllocation),
             value,
-            description: action.description || 'Cadastrado pela IA'
+            description: action.description || 'Cadastrado pela IA',
+            creditor: action.creditor || ''
           });
           executed.push(`Empenho cadastrado: ${action.number}`);
         } else {

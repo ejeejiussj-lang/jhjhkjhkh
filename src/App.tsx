@@ -119,39 +119,69 @@ const withRecalculatedCommitmentBalance = (commitment: Commitment, notes: Servic
     currentBalance: balance - getCommitmentUsedValue(commitment, notes)
   };
 };
-const getCommitmentMergeKey = (commitment: Commitment) =>
-  (commitment.id || commitment.number || '').toLowerCase().trim();
+const normalizeCommitmentIdentity = (value?: string) =>
+  String(value ?? '').toLowerCase().trim();
 
-const mergeCommitmentsPreservingLocal = (localCommitments: Commitment[], remoteCommitments: Commitment[]) => {
-  const remoteByKey = new Map(remoteCommitments.map((commitment) => [getCommitmentMergeKey(commitment), commitment]));
-  const localKeys = new Set(localCommitments.map(getCommitmentMergeKey));
-  const mergedLocal = localCommitments.map((localCommitment) => {
-    const remoteCommitment = remoteByKey.get(getCommitmentMergeKey(localCommitment));
-    if (!remoteCommitment) return localCommitment;
-
-    const localValue = Number(localCommitment.value || 0);
-    const remoteValue = Number(remoteCommitment.value || 0);
-    const localBalance = Number(localCommitment.balance || localValue);
-    const remoteBalance = Number(remoteCommitment.balance || remoteValue);
-    const localCurrentBalance = Number(localCommitment.currentBalance || 0);
-    const remoteCurrentBalance = Number(remoteCommitment.currentBalance || 0);
-
-    return {
-      ...localCommitment,
-      ...remoteCommitment,
-      value: remoteValue > 0 ? remoteValue : localValue,
-      balance: remoteBalance > 0 ? remoteBalance : localBalance,
-      currentBalance: remoteCurrentBalance !== 0 || localCurrentBalance === 0 ? remoteCurrentBalance : localCurrentBalance
-    };
-  });
-  const remoteOnly = remoteCommitments.filter((commitment) => !localKeys.has(getCommitmentMergeKey(commitment)));
-
-  return [...mergedLocal, ...remoteOnly];
+const getCommitmentMergeKey = (commitment: Commitment) => {
+  const numberKey = normalizeCommitmentIdentity(commitment.number);
+  if (numberKey) return `number:${numberKey}`;
+  return `id:${normalizeCommitmentIdentity(commitment.id)}`;
 };
 
-const getCommitmentsMissingRemotely = (localCommitments: Commitment[], remoteCommitments: Commitment[]) => {
-  const remoteKeys = new Set(remoteCommitments.map(getCommitmentMergeKey));
-  return localCommitments.filter((commitment) => !remoteKeys.has(getCommitmentMergeKey(commitment)));
+const dedupeCommitments = (items: Commitment[]) => {
+  const byKey = new Map<string, Commitment>();
+
+  items.forEach((commitment) => {
+    const key = getCommitmentMergeKey(commitment);
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, commitment);
+      return;
+    }
+
+    byKey.set(key, {
+      ...existing,
+      ...commitment,
+      value: Number(commitment.value || existing.value || 0),
+      balance: Number(commitment.balance || existing.balance || commitment.value || existing.value || 0),
+      currentBalance: Number(commitment.currentBalance ?? existing.currentBalance ?? commitment.balance ?? commitment.value ?? 0),
+      creditor: commitment.creditor || existing.creditor,
+      description: commitment.description || existing.description,
+      createdAt: commitment.createdAt || existing.createdAt
+    });
+  });
+
+  return Array.from(byKey.values());
+};
+
+const mergeCommitmentsPreservingLocal = (localCommitments: Commitment[], remoteCommitments: Commitment[]) => {
+  const localByKey = new Map(dedupeCommitments(localCommitments).map((commitment) => [getCommitmentMergeKey(commitment), commitment]));
+
+  if (remoteCommitments.length === 0) return dedupeCommitments(localCommitments);
+
+  return dedupeCommitments(
+    remoteCommitments.map((remoteCommitment) => {
+      const localCommitment = localByKey.get(getCommitmentMergeKey(remoteCommitment));
+      if (!localCommitment) return remoteCommitment;
+
+      const localValue = Number(localCommitment.value || 0);
+      const remoteValue = Number(remoteCommitment.value || 0);
+      const localBalance = Number(localCommitment.balance || localValue);
+      const remoteBalance = Number(remoteCommitment.balance || remoteValue);
+      const localCurrentBalance = Number(localCommitment.currentBalance || 0);
+      const remoteCurrentBalance = Number(remoteCommitment.currentBalance || 0);
+
+      return {
+        ...localCommitment,
+        ...remoteCommitment,
+        value: remoteValue > 0 ? remoteValue : localValue,
+        balance: remoteBalance > 0 ? remoteBalance : localBalance,
+        currentBalance: remoteCurrentBalance !== 0 || localCurrentBalance === 0 ? remoteCurrentBalance : localCurrentBalance,
+        creditor: remoteCommitment.creditor || localCommitment.creditor,
+        description: remoteCommitment.description || localCommitment.description
+      };
+    })
+  );
 };
 const normalizeSearchValue = (value: unknown) =>
   String(value ?? '')
@@ -345,7 +375,6 @@ export default function App() {
     fetchCommitmentsFromSupabase().catch((error) => { console.warn('Supabase empenhos indisponivel; mantendo dados locais.', error); return null; }).then((remoteCommitments) => {
       if (remoteCommitments) {
         setCommitments((currentCommitments) => {
-          getCommitmentsMissingRemotely(currentCommitments, remoteCommitments).forEach((commitment) => saveCommitmentToSupabase(commitment));
           return mergeCommitmentsPreservingLocal(currentCommitments, remoteCommitments);
         });
       }
@@ -448,8 +477,8 @@ export default function App() {
       if (Array.isArray(parsedSaved) && Array.isArray(parsedBackup)) {
         return mergeCommitmentsPreservingLocal(parsedBackup, parsedSaved);
       }
-      if (Array.isArray(parsedSaved)) return parsedSaved;
-      if (Array.isArray(parsedBackup)) return parsedBackup;
+      if (Array.isArray(parsedSaved)) return dedupeCommitments(parsedSaved);
+      if (Array.isArray(parsedBackup)) return dedupeCommitments(parsedBackup);
     } catch (e) {
       console.error(e);
     }
@@ -600,7 +629,6 @@ export default function App() {
         if (remoteCreditors) setCreditors((current) => remoteCreditors.length === 0 && current.length > 0 ? current : remoteCreditors);
         if (remoteNotes) setNotes((current) => remoteNotes.length === 0 && current.length > 0 ? current : remoteNotes);
         if (remoteCommitments) setCommitments((current) => {
-          getCommitmentsMissingRemotely(current, remoteCommitments).forEach((commitment) => saveCommitmentToSupabase(commitment));
           return mergeCommitmentsPreservingLocal(current, remoteCommitments);
         });
         if (remoteFiscais) setFiscais((current) => remoteFiscais.length === 0 && current.length > 0 ? current : remoteFiscais);
@@ -796,7 +824,7 @@ export default function App() {
       setActiveTab('credores');
     } else if (fiscais.some((f) => matchesSearch(q, [f.name, f.portaria, f.organ]))) {
       setActiveTab('fiscais');
-    } else if (commitments.some((c) => matchesSearch(q, [c.number, c.budgetAllocation, c.program, c.description]))) {
+    } else if (commitments.some((c) => matchesSearch(q, [c.number, c.creditor, c.budgetAllocation, c.program, c.description]))) {
       setActiveTab('empenhos');
     } else if (amendments.some((a) => matchesSearch(q, [a.amendmentNum, canViewDocuments ? a.amendmentLink : '', a.contractNum, a.creditor, a.type, a.status]))) {
       setActiveTab('aditivos');
@@ -992,18 +1020,38 @@ export default function App() {
   };
 
   const handleAddCommitment = (newCommitment: Omit<Commitment, 'id' | 'currentBalance' | 'balance'> & { balance?: number }) => {
-    const initialBalance = Number(newCommitment.value || 0);
-    const commitment: Commitment = {
-      ...newCommitment,
-      id: `commitment-${Date.now()}`,
-      balance: initialBalance,
-      currentBalance: initialBalance
-    };
+    setCommitments((currentCommitments) => {
+      const initialBalance = Number(newCommitment.balance ?? newCommitment.value ?? 0);
+      const draftCommitment: Commitment = {
+        ...newCommitment,
+        id: `commitment-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        balance: initialBalance,
+        currentBalance: initialBalance
+      };
+      const draftKey = getCommitmentMergeKey(draftCommitment);
+      const existingCommitment = currentCommitments.find((commitment) => getCommitmentMergeKey(commitment) === draftKey);
 
-    setCommitments([commitment, ...commitments]);
-    saveCommitmentToSupabase(commitment);
+      if (existingCommitment) {
+        const previousBalance = Number(existingCommitment.balance || existingCommitment.value || 0);
+        const balanceDelta = initialBalance - previousBalance;
+        const updatedCommitment: Commitment = {
+          ...existingCommitment,
+          ...newCommitment,
+          id: existingCommitment.id,
+          balance: initialBalance,
+          currentBalance: Number(existingCommitment.currentBalance || 0) + balanceDelta
+        };
+
+        saveCommitmentToSupabase(updatedCommitment);
+        return currentCommitments.map((commitment) =>
+          commitment.id === existingCommitment.id ? updatedCommitment : commitment
+        );
+      }
+
+      saveCommitmentToSupabase(draftCommitment);
+      return [draftCommitment, ...currentCommitments];
+    });
   };
-
   const handleDeleteCommitment = (id: string) => {
     setCommitments(commitments.filter((commitment) => commitment.id !== id));
     deleteCommitmentFromSupabase(id);
